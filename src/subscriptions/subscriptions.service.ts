@@ -1,0 +1,127 @@
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { MemberSubscription } from '../entities/member_subscriptions.entity';
+import { Member } from '../entities/members.entity';
+import { MembershipPlan } from '../entities/membership_plans.entity';
+import { CreateSubscriptionDto } from './dto/create-subscription.dto';
+import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
+
+@Injectable()
+export class SubscriptionsService {
+  constructor(
+    @InjectRepository(MemberSubscription)
+    private subscriptionsRepo: Repository<MemberSubscription>,
+    @InjectRepository(Member)
+    private membersRepo: Repository<Member>,
+    @InjectRepository(MembershipPlan)
+    private plansRepo: Repository<MembershipPlan>,
+  ) {}
+
+  async create(createDto: CreateSubscriptionDto) {
+    // Check if member exists
+    const member = await this.membersRepo.findOne({
+      where: { id: createDto.memberId },
+      relations: ['subscription'],
+    });
+    if (!member) {
+      throw new NotFoundException(`Member with ID ${createDto.memberId} not found`);
+    }
+
+    // Check if member already has an active subscription
+    if (member.subscription) {
+      throw new ConflictException('Member already has an active subscription');
+    }
+
+    // Check if plan exists
+    const plan = await this.plansRepo.findOne({
+      where: { id: createDto.planId },
+    });
+    if (!plan) {
+      throw new NotFoundException(`Membership plan with ID ${createDto.planId} not found`);
+    }
+
+    // Calculate end date based on plan duration
+    const startDate = new Date(createDto.startDate);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + plan.durationInDays);
+
+    const subscription = this.subscriptionsRepo.create({
+      member,
+      plan,
+      startDate,
+      endDate,
+      isActive: true,
+    });
+
+    return this.subscriptionsRepo.save(subscription);
+  }
+
+  async findAll() {
+    return this.subscriptionsRepo.find({
+      relations: ['member', 'plan'],
+    });
+  }
+
+  async findOne(id: number) {
+    const subscription = await this.subscriptionsRepo.findOne({
+      where: { id },
+      relations: ['member', 'plan'],
+    });
+    if (!subscription) {
+      throw new NotFoundException(`Subscription with ID ${id} not found`);
+    }
+    return subscription;
+  }
+
+  async findByMember(memberId: number) {
+    const member = await this.membersRepo.findOne({
+      where: { id: memberId },
+    });
+    if (!member) {
+      throw new NotFoundException(`Member with ID ${memberId} not found`);
+    }
+
+    const subscription = await this.subscriptionsRepo.findOne({
+      where: { member: { id: memberId } },
+      relations: ['member', 'plan'],
+    });
+
+    if (!subscription) {
+      throw new NotFoundException(`No subscription found for member ${memberId}`);
+    }
+
+    return subscription;
+  }
+
+  async update(id: number, updateDto: UpdateSubscriptionDto) {
+    const subscription = await this.findOne(id);
+
+    if (updateDto.startDate) {
+      const startDate = new Date(updateDto.startDate);
+      subscription.startDate = startDate;
+      
+      // Recalculate end date if start date changes
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + subscription.plan.durationInDays);
+      subscription.endDate = endDate;
+    }
+
+    if (updateDto.isActive !== undefined) {
+      subscription.isActive = updateDto.isActive;
+    }
+
+    return this.subscriptionsRepo.save(subscription);
+  }
+
+  async cancel(id: number) {
+    const subscription = await this.findOne(id);
+    subscription.isActive = false;
+    return this.subscriptionsRepo.save(subscription);
+  }
+
+  async remove(id: number) {
+    const subscription = await this.findOne(id);
+    return this.subscriptionsRepo.remove(subscription);
+  }
+}

@@ -1,0 +1,165 @@
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Member } from '../entities/members.entity';
+import { Branch } from '../entities/branch.entity';
+import { User } from '../entities/users.entity';
+import { Role } from '../entities/roles.entity';
+import { CreateMemberDto } from './dto/create-member.dto';
+import { UpdateMemberDto } from './dto/update-member.dto';
+import * as bcrypt from 'bcrypt';
+
+@Injectable()
+export class MembersService {
+  constructor(
+    @InjectRepository(Member)
+    private membersRepo: Repository<Member>,
+    @InjectRepository(Branch)
+    private branchesRepo: Repository<Branch>,
+    @InjectRepository(User)
+    private usersRepo: Repository<User>,
+    @InjectRepository(Role)
+    private rolesRepo: Repository<Role>,
+  ) {}
+
+  async create(createMemberDto: CreateMemberDto) {
+    // Check if member with email already exists
+    const existingMember = await this.membersRepo.findOne({
+      where: { email: createMemberDto.email },
+    });
+    if (existingMember) {
+      throw new ConflictException('Member with this email already exists');
+    }
+
+    // Check if user with email already exists
+    const existingUser = await this.usersRepo.findOne({
+      where: { email: createMemberDto.email },
+    });
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    // Get branch if branchId is provided
+    let branch: Branch | undefined = undefined;
+    if (createMemberDto.branchId) {
+      const foundBranch = await this.branchesRepo.findOne({
+        where: { branchId: createMemberDto.branchId },
+        relations: ['gym'],
+      });
+      if (!foundBranch) {
+        throw new NotFoundException(`Branch with ID ${createMemberDto.branchId} not found`);
+      }
+      branch = foundBranch;
+    }
+
+    // Create member
+    const member = this.membersRepo.create({
+      fullName: createMemberDto.fullName,
+      email: createMemberDto.email,
+      phone: createMemberDto.phone,
+      gender: createMemberDto.gender,
+      dateOfBirth: createMemberDto.dateOfBirth ? new Date(createMemberDto.dateOfBirth) : undefined,
+      addressLine1: createMemberDto.addressLine1,
+      addressLine2: createMemberDto.addressLine2,
+      city: createMemberDto.city,
+      state: createMemberDto.state,
+      postalCode: createMemberDto.postalCode,
+      avatarUrl: createMemberDto.avatarUrl,
+      emergencyContactName: createMemberDto.emergencyContactName,
+      emergencyContactPhone: createMemberDto.emergencyContactPhone,
+      isActive: createMemberDto.isActive ?? true,
+      branch,
+    });
+
+    const savedMember = await this.membersRepo.save(member);
+
+    // Create corresponding user with default password
+    const memberRole = await this.rolesRepo.findOne({
+      where: { name: 'MEMBER' },
+    });
+    
+    if (!memberRole) {
+      throw new NotFoundException('MEMBER role not found in the system');
+    }
+
+    const defaultPassword = 'pass@123';
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+    const user = this.usersRepo.create({
+      email: createMemberDto.email,
+      passwordHash: hashedPassword,
+      role: memberRole,
+      gym: branch?.gym,
+      branch: branch,
+      memberId: savedMember.id.toString(),
+    });
+
+    await this.usersRepo.save(user);
+
+    return savedMember;
+  }
+
+  async findAll() {
+    return this.membersRepo.find({
+      relations: ['branch', 'subscription'],
+    });
+  }
+
+  async findOne(id: number) {
+    const member = await this.membersRepo.findOne({
+      where: { id },
+      relations: ['branch', 'subscription'],
+    });
+    if (!member) {
+      throw new NotFoundException(`Member with ID ${id} not found`);
+    }
+    return member;
+  }
+
+  async update(id: number, updateMemberDto: UpdateMemberDto) {
+    const member = await this.findOne(id);
+
+    // If email is being updated, check for conflicts
+    if (updateMemberDto.email && updateMemberDto.email !== member.email) {
+      const existingMember = await this.membersRepo.findOne({
+        where: { email: updateMemberDto.email },
+      });
+      if (existingMember) {
+        throw new ConflictException('Member with this email already exists');
+      }
+    }
+
+    // If branchId is being updated, verify branch exists
+    if (updateMemberDto.branchId) {
+      const branch = await this.branchesRepo.findOne({
+        where: { branchId: updateMemberDto.branchId },
+      });
+      if (!branch) {
+        throw new NotFoundException(`Branch with ID ${updateMemberDto.branchId} not found`);
+      }
+      member.branch = branch;
+    }
+
+    Object.assign(member, updateMemberDto);
+    return this.membersRepo.save(member);
+  }
+
+  async remove(id: number) {
+    const member = await this.findOne(id);
+    return this.membersRepo.remove(member);
+  }
+
+  async findByBranch(branchId: string) {
+    const branch = await this.branchesRepo.findOne({
+      where: { branchId },
+    });
+    if (!branch) {
+      throw new NotFoundException(`Branch with ID ${branchId} not found`);
+    }
+
+    return this.membersRepo.find({
+      where: { branch: { branchId } },
+      relations: ['branch', 'subscription'],
+    });
+  }
+}
