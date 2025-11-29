@@ -1,3 +1,5 @@
+=== USER CREDENTIALS ===
+
 ================================================================================
 USER CREDENTIALS FOR LOGIN
 ================================================================================
@@ -19,14 +21,14 @@ USER CREDENTIALS FOR LOGIN
    Email: admin@ironparadise.com
    Password: Admin123!
    Gym: Iron Paradise Gym
-   Branch: Iron Paradise - Main
+   Branch: Fitness First - Northridge
 ----------------------------------------
 
 4. ADMIN
    Email: admin@peakperformance.com
    Password: Admin123!
    Gym: Peak Performance Center
-   Branch: Peak Performance - Houston
+   Branch: Iron Paradise - Brooklyn
 ----------------------------------------
 
 5. TRAINER
@@ -47,28 +49,28 @@ USER CREDENTIALS FOR LOGIN
    Email: mike.wilson@ironparadise.com
    Password: Trainer123!
    Gym: Iron Paradise Gym
-   Branch: Iron Paradise - Main
+   Branch: Fitness First - Northridge
 ----------------------------------------
 
 8. TRAINER
    Email: emma.davis@ironparadise.com
    Password: Trainer123!
    Gym: Iron Paradise Gym
-   Branch: Iron Paradise - Main
+   Branch: Fitness First - Northridge
 ----------------------------------------
 
 9. TRAINER
    Email: david.brown@peakperformance.com
    Password: Trainer123!
    Gym: Peak Performance Center
-   Branch: Peak Performance - Houston
+   Branch: Iron Paradise - Brooklyn
 ----------------------------------------
 
 10. TRAINER
    Email: lisa.garcia@peakperformance.com
    Password: Trainer123!
    Gym: Peak Performance Center
-   Branch: Peak Performance - Houston
+   Branch: Iron Paradise - Brooklyn
 ----------------------------------------
 
 11. MEMBER
@@ -82,14 +84,14 @@ USER CREDENTIALS FOR LOGIN
    Email: robert.miller@email.com
    Password: Member123!
    Gym: Iron Paradise Gym
-   Branch: Iron Paradise - Main
+   Branch: Fitness First - Northridge
 ----------------------------------------
 
 13. MEMBER
    Email: maria.rodriguez@email.com
    Password: Member123!
    Gym: Peak Performance Center
-   Branch: Peak Performance - Houston
+   Branch: Iron Paradise - Brooklyn
 ----------------------------------------
 
 14. MEMBER
@@ -103,12 +105,21 @@ USER CREDENTIALS FOR LOGIN
    Email: sophia.anderson@email.com
    Password: Member123!
    Gym: Iron Paradise Gym
-   Branch: Iron Paradise - Brooklyn
+   Branch: Iron Paradise - Main
 ----------------------------------------
 
 16. MEMBER
    Email: michael.white@email.com
    Password: Member123!
    Gym: Peak Performance Center
-   Branch: Peak Performance - Houston
+   Branch: Iron Paradise - Brooklyn
 ----------------------------------------
+
+================================================================================
+SUMMARY BY ROLE:
+----------------------------------------
+SUPERADMIN: 1 user(s)
+ADMIN: 3 user(s)
+TRAINER: 6 user(s)
+MEMBER: 6 user(s)
+================================================================================

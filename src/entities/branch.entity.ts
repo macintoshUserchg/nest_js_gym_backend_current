@@ -41,6 +41,9 @@ export class Branch {
   @Column({ nullable: true })
   state?: string;
 
+  @Column({ default: false })
+  mainBranch: boolean;
+
   // ---- USERS ----
   @OneToMany(() => User, (user) => user.branch)
   users: User[];

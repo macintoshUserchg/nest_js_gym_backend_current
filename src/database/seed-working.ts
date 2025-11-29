@@ -205,6 +205,78 @@ class DatabaseSeeder {
         location: 'Business District',
         state: 'Texas',
       },
+      {
+        name: 'Urban Fitness Hub',
+        email: 'contact@urbanfitness.com',
+        phone: '+1-555-0404',
+        address: '101 City Center Mall, Metro City, MC 22222',
+        location: 'City Center',
+        state: 'Illinois',
+      },
+      {
+        name: 'Elite Performance Gym',
+        email: 'info@eliteperformance.com',
+        phone: '+1-555-0505',
+        address: '202 Performance Plaza, Athlete Town, AT 33333',
+        location: 'Plaza District',
+        state: 'Florida',
+      },
+      {
+        name: 'Stronghold Fitness',
+        email: 'admin@strongholdfitness.com',
+        phone: '+1-555-0606',
+        address: '303 Strength Boulevard, Power City, PC 44444',
+        location: 'Boulevard',
+        state: 'Georgia',
+      },
+      {
+        name: 'Vitality Wellness Center',
+        email: 'contact@vitalitywellness.com',
+        phone: '+1-555-0707',
+        address: '404 Wellness Way, Healthy Village, HV 55555',
+        location: 'Wellness District',
+        state: 'Washington',
+      },
+      {
+        name: 'Titan Gym & Fitness',
+        email: 'info@titanfitness.com',
+        phone: '+1-555-0808',
+        address: '505 Titan Tower, Strong City, SC 66666',
+        location: 'Tower District',
+        state: 'Arizona',
+      },
+      {
+        name: 'Apex Fitness Club',
+        email: 'admin@apexfitness.com',
+        phone: '+1-555-0909',
+        address: '606 Apex Avenue, Summit Town, ST 77777',
+        location: 'Summit Area',
+        state: 'Colorado',
+      },
+      {
+        name: 'Powerhouse Gym Network',
+        email: 'contact@powerhouse.com',
+        phone: '+1-555-1010',
+        address: '707 Power Street, Energy City, EC 88888',
+        location: 'Energy District',
+        state: 'Nevada',
+      },
+      {
+        name: 'Champion Fitness Arena',
+        email: 'info@championarena.com',
+        phone: '+1-555-1111',
+        address: '808 Champion Lane, Winner City, WC 99999',
+        location: 'Arena District',
+        state: 'Oregon',
+      },
+      {
+        name: 'Victory Performance Center',
+        email: 'admin@victorycenter.com',
+        phone: '+1-555-1212',
+        address: '909 Victory Road, Success Town, ST 101010',
+        location: 'Success Area',
+        state: 'Virginia',
+      },
     ];
 
     const savedGyms = await gymRepository.save(gyms);
@@ -217,7 +289,7 @@ class DatabaseSeeder {
     const branchRepository = this.dataSource.getRepository(Branch);
 
     const branches = [
-      // Fitness First Elite branches
+      // Fitness First Elite branches (3 branches)
       {
         name: 'Fitness First - Downtown',
         email: 'downtown@fitnessfirst.com',
@@ -226,6 +298,7 @@ class DatabaseSeeder {
         location: 'Downtown',
         state: 'California',
         gym: gyms[0],
+        mainBranch: true,
       },
       {
         name: 'Fitness First - Westside',
@@ -235,9 +308,20 @@ class DatabaseSeeder {
         location: 'Westside',
         state: 'California',
         gym: gyms[0],
+        mainBranch: false,
+      },
+      {
+        name: 'Fitness First - Northridge',
+        email: 'northridge@fitnessfirst.com',
+        phone: '+1-555-0103',
+        address: '555 Northridge Ave, Health City, HC 12347',
+        location: 'Northridge',
+        state: 'California',
+        gym: gyms[0],
+        mainBranch: false,
       },
 
-      // Iron Paradise Gym branches
+      // Iron Paradise Gym branches (3 branches)
       {
         name: 'Iron Paradise - Main',
         email: 'main@ironparadise.com',
@@ -246,6 +330,7 @@ class DatabaseSeeder {
         location: 'Uptown',
         state: 'New York',
         gym: gyms[1],
+        mainBranch: true,
       },
       {
         name: 'Iron Paradise - Brooklyn',
@@ -255,9 +340,20 @@ class DatabaseSeeder {
         location: 'Brooklyn',
         state: 'New York',
         gym: gyms[1],
+        mainBranch: false,
+      },
+      {
+        name: 'Iron Paradise - Queens',
+        email: 'queens@ironparadise.com',
+        phone: '+1-555-0203',
+        address: '777 Empire Blvd, Queens, NY 11301',
+        location: 'Queens',
+        state: 'New York',
+        gym: gyms[1],
+        mainBranch: false,
       },
 
-      // Peak Performance Center branches
+      // Peak Performance Center branches (2 branches)
       {
         name: 'Peak Performance - Houston',
         email: 'houston@peakperformance.com',
@@ -266,6 +362,61 @@ class DatabaseSeeder {
         location: 'Downtown Houston',
         state: 'Texas',
         gym: gyms[2],
+        mainBranch: true,
+      },
+      {
+        name: 'Peak Performance - Austin',
+        email: 'austin@peakperformance.com',
+        phone: '+1-555-0302',
+        address: '888 Texan Way, Austin, TX 73301',
+        location: 'Downtown Austin',
+        state: 'Texas',
+        gym: gyms[2],
+        mainBranch: false,
+      },
+
+      // Urban Fitness Hub branches (2 branches)
+      {
+        name: 'Urban Fitness - City Center',
+        email: 'citycenter@urbanfitness.com',
+        phone: '+1-555-0401',
+        address: '101 City Center Mall, Metro City, MC 22222',
+        location: 'City Center',
+        state: 'Illinois',
+        gym: gyms[3],
+        mainBranch: true,
+      },
+      {
+        name: 'Urban Fitness - Suburb',
+        email: 'suburb@urbanfitness.com',
+        phone: '+1-555-0402',
+        address: '222 Suburb Mall, Metro Suburb, MS 22223',
+        location: 'Suburb',
+        state: 'Illinois',
+        gym: gyms[3],
+        mainBranch: false,
+      },
+
+      // Elite Performance Gym branches (2 branches)
+      {
+        name: 'Elite Performance - Plaza',
+        email: 'plaza@eliteperformance.com',
+        phone: '+1-555-0501',
+        address: '202 Performance Plaza, Athlete Town, AT 33333',
+        location: 'Plaza District',
+        state: 'Florida',
+        gym: gyms[4],
+        mainBranch: true,
+      },
+      {
+        name: 'Elite Performance - Beach',
+        email: 'beach@eliteperformance.com',
+        phone: '+1-555-0502',
+        address: '333 Ocean Drive, Beach City, BC 33334',
+        location: 'Beach',
+        state: 'Florida',
+        gym: gyms[4],
+        mainBranch: false,
       },
     ];
 
@@ -282,55 +433,115 @@ class DatabaseSeeder {
       this.dataSource.getRepository(MembershipPlan);
 
     const membershipPlans = [
-      // Basic plans
+      // Fitness First Elite Plans
       {
-        name: 'Basic Membership',
+        name: 'Fitness First Basic',
         price: 4999, // in cents ($49.99)
         durationInDays: 30,
         description: 'Access to gym facilities during basic hours',
         branch: branches[0],
       },
       {
-        name: 'Standard Membership',
+        name: 'Fitness First Standard',
         price: 7999, // in cents ($79.99)
         durationInDays: 30,
         description: 'Access to all facilities including group classes',
         branch: branches[0],
       },
       {
-        name: 'Premium Membership',
+        name: 'Fitness First Premium',
         price: 12999, // in cents ($129.99)
         durationInDays: 30,
         description: 'Full access plus personal training sessions',
         branch: branches[0],
       },
-
-      // VIP plans
       {
-        name: 'VIP Membership',
+        name: 'Fitness First Family',
+        price: 14999, // in cents ($149.99)
+        durationInDays: 30,
+        description: 'Family membership for up to 4 members',
+        branch: branches[0],
+      },
+
+      // Iron Paradise Gym Plans
+      {
+        name: 'Iron Paradise Basic',
+        price: 4499, // in cents ($44.99)
+        durationInDays: 30,
+        description: 'Basic gym access',
+        branch: branches[1],
+      },
+      {
+        name: 'Iron Paradise CrossFit',
+        price: 8999, // in cents ($89.99)
+        durationInDays: 30,
+        description: 'Includes all CrossFit classes',
+        branch: branches[1],
+      },
+      {
+        name: 'Iron Paradise VIP',
         price: 19999, // in cents ($199.99)
         durationInDays: 30,
         description: 'Premium access with unlimited personal training',
         branch: branches[1],
       },
 
-      // Corporate plans
+      // Peak Performance Center Plans
       {
-        name: 'Corporate Basic',
+        name: 'Peak Basic',
         price: 3999, // in cents ($39.99)
         durationInDays: 30,
         description: 'Corporate discount plan - Basic access',
         branch: branches[2],
       },
       {
-        name: 'Corporate Premium',
+        name: 'Peak Performance',
         price: 8999, // in cents ($89.99)
         durationInDays: 30,
         description: 'Corporate discount plan - Full access',
         branch: branches[2],
       },
+      {
+        name: 'Peak Elite',
+        price: 15999, // in cents ($159.99)
+        durationInDays: 30,
+        description: 'Elite performance coaching included',
+        branch: branches[2],
+      },
 
-      // General plans (no branch)
+      // Urban Fitness Hub Plans
+      {
+        name: 'Urban Basic',
+        price: 3499, // in cents ($34.99)
+        durationInDays: 30,
+        description: 'City center basic access',
+        branch: branches[3],
+      },
+      {
+        name: 'Urban All-Access',
+        price: 6999, // in cents ($69.99)
+        durationInDays: 30,
+        description: 'All facilities and classes included',
+        branch: branches[3],
+      },
+
+      // Elite Performance Gym Plans
+      {
+        name: 'Elite Basic',
+        price: 5999, // in cents ($59.99)
+        durationInDays: 30,
+        description: 'Performance training access',
+        branch: branches[4],
+      },
+      {
+        name: 'Elite Athlete',
+        price: 11999, // in cents ($119.99)
+        durationInDays: 30,
+        description: 'Athlete performance program',
+        branch: branches[4],
+      },
+
+      // General Plans (no branch)
       {
         name: 'Student Discount',
         price: 2999, // in cents ($29.99)
@@ -342,6 +553,30 @@ class DatabaseSeeder {
         price: 3499, // in cents ($34.99)
         durationInDays: 30,
         description: 'Special pricing for seniors aged 65+',
+      },
+      {
+        name: 'Day Pass',
+        price: 2500, // in cents ($25.00)
+        durationInDays: 1,
+        description: 'Single day access to facilities',
+      },
+      {
+        name: 'Week Pass',
+        price: 7999, // in cents ($79.99)
+        durationInDays: 7,
+        description: 'Weekly access pass',
+      },
+      {
+        name: '3-Month Commitment',
+        price: 29997, // in cents ($299.97)
+        durationInDays: 90,
+        description: '3-month commitment with 10% discount',
+      },
+      {
+        name: 'Annual Membership',
+        price: 49999, // in cents ($499.99)
+        durationInDays: 365,
+        description: 'Full year access with 2 months free',
       },
     ];
 
@@ -356,6 +591,7 @@ class DatabaseSeeder {
     const trainerRepository = this.dataSource.getRepository(Trainer);
 
     const trainers = [
+      // Fitness First Elite Trainers (4 trainers)
       {
         fullName: 'John Smith',
         email: 'john.smith@fitnessfirst.com',
@@ -375,13 +611,33 @@ class DatabaseSeeder {
         branch: branches[0],
       },
       {
+        fullName: 'Chris Thompson',
+        email: 'chris.thompson@fitnessfirst.com',
+        phone: '+1-555-1003',
+        specialization: 'Cardio, Running, Endurance',
+        avatarUrl:
+          'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=150',
+        branch: branches[1],
+      },
+      {
+        fullName: 'Emily Davis',
+        email: 'emily.davis@fitnessfirst.com',
+        phone: '+1-555-1004',
+        specialization: 'Functional Training, Mobility',
+        avatarUrl:
+          'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=150',
+        branch: branches[2],
+      },
+
+      // Iron Paradise Gym Trainers (3 trainers)
+      {
         fullName: 'Mike Wilson',
         email: 'mike.wilson@ironparadise.com',
         phone: '+1-555-2001',
         specialization: 'CrossFit, HIIT, Cardio',
         avatarUrl:
           'https://images.unsplash.com/photo-1567019371791-6f7f0e1b7c1a?w=150',
-        branch: branches[2],
+        branch: branches[3],
       },
       {
         fullName: 'Emma Davis',
@@ -390,8 +646,19 @@ class DatabaseSeeder {
         specialization: 'Personal Training, Nutrition Coaching',
         avatarUrl:
           'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=150',
-        branch: branches[2],
+        branch: branches[3],
       },
+      {
+        fullName: 'Alex Rodriguez',
+        email: 'alex.rodriguez@ironparadise.com',
+        phone: '+1-555-2003',
+        specialization: 'Olympic Lifting, Powerlifting',
+        avatarUrl:
+          'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=150',
+        branch: branches[5],
+      },
+
+      // Peak Performance Center Trainers (3 trainers)
       {
         fullName: 'David Brown',
         email: 'david.brown@peakperformance.com',
@@ -399,7 +666,7 @@ class DatabaseSeeder {
         specialization: 'Bodybuilding, Powerlifting',
         avatarUrl:
           'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=150',
-        branch: branches[4],
+        branch: branches[6],
       },
       {
         fullName: 'Lisa Garcia',
@@ -408,7 +675,36 @@ class DatabaseSeeder {
         specialization: 'Dance Fitness, Zumba, Aerobics',
         avatarUrl:
           'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=150',
-        branch: branches[4],
+        branch: branches[6],
+      },
+      {
+        fullName: 'Ryan Taylor',
+        email: 'ryan.taylor@peakperformance.com',
+        phone: '+1-555-3003',
+        specialization: 'Sports Performance, Agility',
+        avatarUrl:
+          'https://images.unsplash.com/photo-1567019371791-6f7f0e1b7c1a?w=150',
+        branch: branches[7],
+      },
+
+      // Urban Fitness Hub Trainers (2 trainers)
+      {
+        fullName: 'Jessica Moore',
+        email: 'jessica.moore@urbanfitness.com',
+        phone: '+1-555-4001',
+        specialization: 'Group Fitness, Bootcamp',
+        avatarUrl:
+          'https://images.unsplash.com/photo-1594736797933-d0f02ba1a7c5?w=150',
+        branch: branches[8],
+      },
+      {
+        fullName: 'Tom Anderson',
+        email: 'tom.anderson@urbanfitness.com',
+        phone: '+1-555-4002',
+        specialization: 'Martial Arts, Self-Defense',
+        avatarUrl:
+          'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=150',
+        branch: branches[9],
       },
     ];
 
@@ -422,6 +718,7 @@ class DatabaseSeeder {
     const memberRepository = this.dataSource.getRepository(Member);
 
     const members = [
+      // Fitness First Elite Members (3 members)
       {
         fullName: 'Alice Cooper',
         email: 'alice.cooper@email.com',
@@ -435,34 +732,6 @@ class DatabaseSeeder {
         emergencyContactName: 'Bob Cooper',
         emergencyContactPhone: '+1-555-5002',
         branch: branches[0],
-      },
-      {
-        fullName: 'Robert Miller',
-        email: 'robert.miller@email.com',
-        phone: '+1-555-5003',
-        gender: Gender.MALE,
-        dateOfBirth: new Date('1985-08-22'),
-        addressLine1: '456 Fitness Ave',
-        city: 'Strength Town',
-        state: 'New York',
-        postalCode: '67890',
-        emergencyContactName: 'Jennifer Miller',
-        emergencyContactPhone: '+1-555-5004',
-        branch: branches[2],
-      },
-      {
-        fullName: 'Maria Rodriguez',
-        email: 'maria.rodriguez@email.com',
-        phone: '+1-555-5005',
-        gender: Gender.FEMALE,
-        dateOfBirth: new Date('1992-12-03'),
-        addressLine1: '789 Wellness Blvd',
-        city: 'Champion City',
-        state: 'Texas',
-        postalCode: '11111',
-        emergencyContactName: 'Carlos Rodriguez',
-        emergencyContactPhone: '+1-555-5006',
-        branch: branches[4],
       },
       {
         fullName: 'James Taylor',
@@ -493,18 +762,130 @@ class DatabaseSeeder {
         branch: branches[3],
       },
       {
-        fullName: 'Michael White',
-        email: 'michael.white@email.com',
-        phone: '+1-555-5011',
+        fullName: 'Christopher Lee',
+        email: 'christopher.lee@email.com',
+        phone: '+1-555-5013',
         gender: Gender.MALE,
-        dateOfBirth: new Date('1987-11-25'),
-        addressLine1: '987 Victory Street',
-        city: 'Champion City',
-        state: 'Texas',
-        postalCode: '11112',
-        emergencyContactName: 'Sarah White',
-        emergencyContactPhone: '+1-555-5012',
-        branch: branches[4],
+        dateOfBirth: new Date('1991-09-25'),
+        addressLine1: '789 Active Ave',
+        city: 'Health City',
+        state: 'California',
+        postalCode: '12347',
+        emergencyContactName: 'Jessica Lee',
+        emergencyContactPhone: '+1-555-5014',
+        branch: branches[2],
+      },
+      {
+        fullName: 'Emma Thompson',
+        email: 'emma.thompson@email.com',
+        phone: '+1-555-5015',
+        gender: Gender.FEMALE,
+        dateOfBirth: new Date('1989-12-08'),
+        addressLine1: '456 Fit Street',
+        city: 'Metro City',
+        state: 'Illinois',
+        postalCode: '22222',
+        emergencyContactName: 'Mark Thompson',
+        emergencyContactPhone: '+1-555-5016',
+        branch: branches[5],
+      },
+      {
+        fullName: 'Ryan Martinez',
+        email: 'ryan.martinez@email.com',
+        phone: '+1-555-5017',
+        gender: Gender.MALE,
+        dateOfBirth: new Date('1993-03-14'),
+        addressLine1: '321 Performance Blvd',
+        city: 'Athlete Town',
+        state: 'Florida',
+        postalCode: '33333',
+        emergencyContactName: 'Laura Martinez',
+        emergencyContactPhone: '+1-555-5018',
+        branch: branches[7],
+      },
+      {
+        fullName: 'Olivia Davis',
+        email: 'olivia.davis@email.com',
+        phone: '+1-555-5019',
+        gender: Gender.FEMALE,
+        dateOfBirth: new Date('1987-06-30'),
+        addressLine1: '555 Strength Way',
+        city: 'Power City',
+        state: 'Georgia',
+        postalCode: '44444',
+        emergencyContactName: 'David Davis',
+        emergencyContactPhone: '+1-555-5020',
+        branch: branches[9],
+      },
+      {
+        fullName: 'William Wilson',
+        email: 'william.wilson@email.com',
+        phone: '+1-555-5021',
+        gender: Gender.MALE,
+        dateOfBirth: new Date('1994-01-22'),
+        addressLine1: '777 Wellness Lane',
+        city: 'Healthy Village',
+        state: 'Washington',
+        postalCode: '55555',
+        emergencyContactName: 'Susan Wilson',
+        emergencyContactPhone: '+1-555-5022',
+        branch: branches[8],
+      },
+      {
+        fullName: 'Ava Brown',
+        email: 'ava.brown@email.com',
+        phone: '+1-555-5023',
+        gender: Gender.FEMALE,
+        dateOfBirth: new Date('1992-08-18'),
+        addressLine1: '888 Fitness Tower',
+        city: 'Strong City',
+        state: 'Arizona',
+        postalCode: '66666',
+        emergencyContactName: 'John Brown',
+        emergencyContactPhone: '+1-555-5024',
+        branch: branches[10],
+      },
+      {
+        fullName: 'Liam Garcia',
+        email: 'liam.garcia@email.com',
+        phone: '+1-555-5025',
+        gender: Gender.MALE,
+        dateOfBirth: new Date('1985-11-05'),
+        addressLine1: '999 Performance Ave',
+        city: 'Summit Town',
+        state: 'Colorado',
+        postalCode: '77777',
+        emergencyContactName: 'Maria Garcia',
+        emergencyContactPhone: '+1-555-5026',
+        branch: branches[11],
+      },
+      {
+        fullName: 'Isabella Rodriguez',
+        email: 'isabella.rodriguez@email.com',
+        phone: '+1-555-5027',
+        gender: Gender.FEMALE,
+        dateOfBirth: new Date('1988-04-12'),
+        addressLine1: '111 Energy Street',
+        city: 'Energy City',
+        state: 'Nevada',
+        postalCode: '88888',
+        emergencyContactName: 'Carlos Rodriguez',
+        emergencyContactPhone: '+1-555-5028',
+        branch: branches[6],
+      },
+      {
+        fullName: 'Ethan Taylor',
+        email: 'ethan.taylor@email.com',
+        phone: '+1-555-5029',
+        gender: Gender.MALE,
+        dateOfBirth: new Date('1990-10-03'),
+        addressLine1: '222 Champion Lane',
+        city: 'Winner City',
+        state: 'Oregon',
+        postalCode: '99999',
+        emergencyContactName: 'Mia Taylor',
+        emergencyContactPhone: '+1-555-5030',
+        branch: branches[12],
       },
     ];
 

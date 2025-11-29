@@ -32,6 +32,7 @@ export class GymsService {
       location: savedGym.location,
       state: savedGym.state,
       gym: savedGym,
+      mainBranch: true,
     });
 
     await this.branchesRepo.save(defaultBranch);
@@ -73,10 +74,15 @@ export class GymsService {
 
   async createBranch(gymId: string, createBranchDto: CreateBranchDto) {
     const gym = await this.findOne(gymId);
-    const branch = this.branchesRepo.create({
+
+    // Set mainBranch to false if not provided (to ensure only one main branch per gym)
+    const branchData = {
       ...createBranchDto,
       gym,
-    });
+      mainBranch: createBranchDto.mainBranch || false,
+    };
+
+    const branch = this.branchesRepo.create(branchData);
     await this.branchesRepo.save(branch);
 
     // Fetch the gym with all branches to return structured response
@@ -108,6 +114,7 @@ export class GymsService {
           address: b.address,
           location: b.location,
           state: b.state,
+          mainBranch: b.mainBranch,
           createdAt: b.createdAt,
           updatedAt: b.updatedAt,
         })),
@@ -129,6 +136,7 @@ export class GymsService {
       address: branch.address,
       location: branch.location,
       state: branch.state,
+      mainBranch: branch.mainBranch,
       createdAt: branch.createdAt,
       updatedAt: branch.updatedAt,
     }));

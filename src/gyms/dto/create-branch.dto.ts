@@ -7,22 +7,34 @@ export class CreateBranchDto {
   @IsNotEmpty()
   name: string;
 
-  @ApiPropertyOptional({ description: 'Branch email address', example: 'downtown@fitzone.com' })
+  @ApiPropertyOptional({
+    description: 'Branch email address',
+    example: 'downtown@fitzone.com',
+  })
   @IsEmail()
   @IsOptional()
   email?: string;
 
-  @ApiPropertyOptional({ description: 'Branch phone number', example: '+1234567891' })
+  @ApiPropertyOptional({
+    description: 'Branch phone number',
+    example: '+1234567891',
+  })
   @IsString()
   @IsOptional()
   phone?: string;
 
-  @ApiPropertyOptional({ description: 'Branch address', example: '456 Downtown Ave, City, State' })
+  @ApiPropertyOptional({
+    description: 'Branch address',
+    example: '456 Downtown Ave, City, State',
+  })
   @IsString()
   @IsOptional()
   address?: string;
 
-  @ApiPropertyOptional({ description: 'Branch location/city', example: 'New York' })
+  @ApiPropertyOptional({
+    description: 'Branch location/city',
+    example: 'New York',
+  })
   @IsString()
   @IsOptional()
   location?: string;
@@ -31,4 +43,11 @@ export class CreateBranchDto {
   @IsString()
   @IsOptional()
   state?: string;
+
+  @ApiPropertyOptional({
+    description: 'Whether this is the main branch',
+    example: false,
+  })
+  @IsOptional()
+  mainBranch?: boolean;
 }

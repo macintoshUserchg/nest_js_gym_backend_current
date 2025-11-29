@@ -125,7 +125,7 @@ export class BranchesController {
   async findAll() {
     // This will get all branches across all gyms
     const gyms = await this.gymsService.findAll();
-    const branches = gyms.flatMap(gym => gym.branches || []);
+    const branches = gyms.flatMap((gym) => gym.branches || []);
     return branches;
   }
 
