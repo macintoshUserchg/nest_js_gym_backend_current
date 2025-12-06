@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -14,7 +13,7 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
-    console.log("🚀 ~ AuthService ~ validateUser ~ user:", user)
+    console.log('🚀 ~ AuthService ~ validateUser ~ user:', user);
     if (!user) throw new UnauthorizedException('User not found');
     const isPasswordMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordMatch)

@@ -32,7 +32,10 @@ export class MembersController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create a new member' })
   @ApiResponse({ status: 201, description: 'Member created successfully.' })
-  @ApiResponse({ status: 409, description: 'Member with this email already exists.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Member with this email already exists.',
+  })
   @ApiBody({ type: CreateMemberDto })
   create(@Body() createMemberDto: CreateMemberDto) {
     return this.membersService.create(createMemberDto);
@@ -65,7 +68,10 @@ export class MembersController {
   @ApiParam({ name: 'id', description: 'Member ID' })
   @ApiResponse({ status: 200, description: 'Member updated successfully.' })
   @ApiResponse({ status: 404, description: 'Member not found.' })
-  @ApiResponse({ status: 409, description: 'Member with this email already exists.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Member with this email already exists.',
+  })
   @ApiBody({ type: UpdateMemberDto })
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -84,6 +90,17 @@ export class MembersController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.membersService.remove(id);
   }
+
+  @Get(':memberId/dashboard')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get member dashboard data' })
+  @ApiParam({ name: 'memberId', description: 'Member ID' })
+  @ApiResponse({ status: 200, description: 'Return member dashboard data.' })
+  @ApiResponse({ status: 404, description: 'Member not found.' })
+  getMemberDashboard(@Param('memberId', ParseIntPipe) memberId: number) {
+    return this.membersService.getMemberDashboard(memberId);
+  }
 }
 
 @ApiTags('branches')
@@ -96,7 +113,10 @@ export class BranchMembersController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all members for a branch' })
   @ApiParam({ name: 'branchId', description: 'Branch ID' })
-  @ApiResponse({ status: 200, description: 'Return all members for the branch.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all members for the branch.',
+  })
   @ApiResponse({ status: 404, description: 'Branch not found.' })
   findByBranch(@Param('branchId') branchId: string) {
     return this.membersService.findByBranch(branchId);

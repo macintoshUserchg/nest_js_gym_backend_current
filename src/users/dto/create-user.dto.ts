@@ -1,8 +1,17 @@
-import { IsEmail, IsNotEmpty, IsString, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsUUID,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateUserDto {
-  @ApiProperty({ description: 'User email address', example: 'user@example.com' })
+  @ApiProperty({
+    description: 'User email address',
+    example: 'user@example.com',
+  })
   @IsEmail()
   @IsNotEmpty()
   email: string;
@@ -12,19 +21,27 @@ export class CreateUserDto {
   @IsNotEmpty()
   password: string;
 
-  @ApiProperty({ description: 'Role ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiProperty({
+    description: 'Role ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @IsUUID()
   @IsNotEmpty()
   roleId: string;
 
-  @ApiPropertyOptional({ description: 'Gym ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiPropertyOptional({
+    description: 'Gym ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @IsUUID()
   @IsOptional()
   gymId?: string;
 
-  @ApiPropertyOptional({ description: 'Branch ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiPropertyOptional({
+    description: 'Branch ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @IsUUID()
   @IsOptional()
   branchId?: string;
 }
-

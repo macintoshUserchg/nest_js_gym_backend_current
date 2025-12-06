@@ -5,6 +5,7 @@ import {
   Body,
   Param,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -70,5 +71,22 @@ export class InvoicePaymentsController {
   @ApiResponse({ status: 404, description: 'Invoice not found.' })
   findByInvoice(@Param('invoiceId') invoiceId: string) {
     return this.paymentsService.findByInvoice(invoiceId);
+  }
+}
+
+@ApiTags('members')
+@Controller('members')
+export class MemberPaymentsController {
+  constructor(private readonly paymentsService: PaymentsService) {}
+
+  @Get(':memberId/payments')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get member payment history' })
+  @ApiParam({ name: 'memberId', description: 'Member ID' })
+  @ApiResponse({ status: 200, description: 'Return member payment history.' })
+  @ApiResponse({ status: 404, description: 'Member not found.' })
+  findByMember(@Param('memberId', ParseIntPipe) memberId: number) {
+    return this.paymentsService.findByMember(memberId);
   }
 }

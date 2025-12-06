@@ -23,7 +23,9 @@ export class InvoicesService {
       where: { id: createDto.memberId },
     });
     if (!member) {
-      throw new NotFoundException(`Member with ID ${createDto.memberId} not found`);
+      throw new NotFoundException(
+        `Member with ID ${createDto.memberId} not found`,
+      );
     }
 
     let subscription: MemberSubscription | undefined;
@@ -32,7 +34,9 @@ export class InvoicesService {
         where: { id: createDto.subscriptionId },
       });
       if (!foundSubscription) {
-        throw new NotFoundException(`Subscription with ID ${createDto.subscriptionId} not found`);
+        throw new NotFoundException(
+          `Subscription with ID ${createDto.subscriptionId} not found`,
+        );
       }
       subscription = foundSubscription;
     }
@@ -92,7 +96,9 @@ export class InvoicesService {
       invoice.description = updateDto.description;
     }
     if (updateDto.dueDate !== undefined) {
-      invoice.due_date = updateDto.dueDate ? new Date(updateDto.dueDate) : undefined;
+      invoice.due_date = updateDto.dueDate
+        ? new Date(updateDto.dueDate)
+        : undefined;
     }
 
     return this.invoicesRepo.save(invoice);

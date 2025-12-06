@@ -91,7 +91,10 @@ export class BranchClassesController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all classes for a branch' })
   @ApiParam({ name: 'branchId', description: 'Branch ID' })
-  @ApiResponse({ status: 200, description: 'Return all classes for the branch.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all classes for the branch.',
+  })
   @ApiResponse({ status: 404, description: 'Branch not found.' })
   findByBranch(@Param('branchId') branchId: string) {
     return this.classesService.findByBranch(branchId);

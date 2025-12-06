@@ -32,7 +32,10 @@ export class TrainersController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create a new trainer' })
   @ApiResponse({ status: 201, description: 'Trainer created successfully.' })
-  @ApiResponse({ status: 409, description: 'Trainer with this email already exists.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Trainer with this email already exists.',
+  })
   @ApiBody({ type: CreateTrainerDto })
   create(@Body() createDto: CreateTrainerDto) {
     return this.trainersService.create(createDto);
@@ -65,7 +68,10 @@ export class TrainersController {
   @ApiParam({ name: 'id', description: 'Trainer ID' })
   @ApiResponse({ status: 200, description: 'Trainer updated successfully.' })
   @ApiResponse({ status: 404, description: 'Trainer not found.' })
-  @ApiResponse({ status: 409, description: 'Trainer with this email already exists.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Trainer with this email already exists.',
+  })
   @ApiBody({ type: UpdateTrainerDto })
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -96,7 +102,10 @@ export class BranchTrainersController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all trainers for a branch' })
   @ApiParam({ name: 'branchId', description: 'Branch ID' })
-  @ApiResponse({ status: 200, description: 'Return all trainers for the branch.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all trainers for the branch.',
+  })
   @ApiResponse({ status: 404, description: 'Branch not found.' })
   findByBranch(@Param('branchId') branchId: string) {
     return this.trainersService.findByBranch(branchId);

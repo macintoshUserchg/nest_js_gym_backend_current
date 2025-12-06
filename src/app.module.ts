@@ -29,6 +29,10 @@ import { RolesModule } from './roles/roles.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { PaymentsModule } from './payments/payments.module';
 import { InquiriesModule } from './inquiries/inquiries.module';
+import { DietPlansModule } from './diet-plans/diet-plans.module';
+import { WorkoutLogsModule } from './workout-logs/workout-logs.module';
+import { BodyProgressModule } from './body-progress/body-progress.module';
+import { GoalsModule } from './goals/goals.module';
 
 @Module({
   imports: [
@@ -64,6 +68,10 @@ import { InquiriesModule } from './inquiries/inquiries.module';
     InvoicesModule,
     PaymentsModule,
     InquiriesModule,
+    DietPlansModule,
+    WorkoutLogsModule,
+    BodyProgressModule,
+    GoalsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

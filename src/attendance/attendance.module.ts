@@ -11,9 +11,18 @@ import { Attendance } from '../entities/attendance.entity';
 import { Member } from '../entities/members.entity';
 import { Trainer } from '../entities/trainers.entity';
 import { Branch } from '../entities/branch.entity';
+import { AttendanceGoal } from '../entities/attendance_goals.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Attendance, Member, Trainer, Branch])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Attendance,
+      Member,
+      Trainer,
+      Branch,
+      AttendanceGoal,
+    ]),
+  ],
   controllers: [
     AttendanceController,
     MemberAttendanceController,

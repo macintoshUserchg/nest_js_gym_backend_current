@@ -78,7 +78,10 @@ export class MemberAssignmentsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all trainer assignments for a member' })
   @ApiParam({ name: 'memberId', description: 'Member ID' })
-  @ApiResponse({ status: 200, description: 'Return all assignments for the member.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all assignments for the member.',
+  })
   @ApiResponse({ status: 404, description: 'Member not found.' })
   findByMember(@Param('memberId', ParseIntPipe) memberId: number) {
     return this.assignmentsService.findByMember(memberId);
@@ -95,7 +98,10 @@ export class TrainerAssignmentsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all members assigned to a trainer' })
   @ApiParam({ name: 'trainerId', description: 'Trainer ID' })
-  @ApiResponse({ status: 200, description: 'Return all members for the trainer.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all members for the trainer.',
+  })
   @ApiResponse({ status: 404, description: 'Trainer not found.' })
   findByTrainer(@Param('trainerId', ParseIntPipe) trainerId: number) {
     return this.assignmentsService.findByTrainer(trainerId);

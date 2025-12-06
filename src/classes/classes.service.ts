@@ -23,7 +23,9 @@ export class ClassesService {
       where: { branchId: createDto.branchId },
     });
     if (!branch) {
-      throw new NotFoundException(`Branch with ID ${createDto.branchId} not found`);
+      throw new NotFoundException(
+        `Branch with ID ${createDto.branchId} not found`,
+      );
     }
 
     const classData: any = {
@@ -86,13 +88,16 @@ export class ClassesService {
         where: { branchId: updateDto.branchId },
       });
       if (!branch) {
-        throw new NotFoundException(`Branch with ID ${updateDto.branchId} not found`);
+        throw new NotFoundException(
+          `Branch with ID ${updateDto.branchId} not found`,
+        );
       }
       classEntity.branch = branch;
     }
 
     if (updateDto.name) classEntity.name = updateDto.name;
-    if (updateDto.description !== undefined) classEntity.description = updateDto.description;
+    if (updateDto.description !== undefined)
+      classEntity.description = updateDto.description;
 
     // Update timings
     if (updateDto.timings !== undefined) {

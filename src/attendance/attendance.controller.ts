@@ -31,7 +31,10 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Mark attendance (check-in)' })
   @ApiResponse({ status: 201, description: 'Attendance marked successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid request.' })
-  @ApiResponse({ status: 404, description: 'Member, trainer, or branch not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Member, trainer, or branch not found.',
+  })
   @ApiBody({ type: MarkAttendanceDto })
   markAttendance(@Body() dto: MarkAttendanceDto) {
     return this.attendanceService.markAttendance(dto);
@@ -80,7 +83,10 @@ export class MemberAttendanceController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get attendance records for a member' })
   @ApiParam({ name: 'memberId', description: 'Member ID' })
-  @ApiResponse({ status: 200, description: 'Return member attendance records.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return member attendance records.',
+  })
   @ApiResponse({ status: 404, description: 'Member not found.' })
   findByMember(@Param('memberId', ParseIntPipe) memberId: number) {
     return this.attendanceService.findByMember(memberId);
@@ -97,7 +103,10 @@ export class TrainerAttendanceController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get attendance records for a trainer' })
   @ApiParam({ name: 'trainerId', description: 'Trainer ID' })
-  @ApiResponse({ status: 200, description: 'Return trainer attendance records.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return trainer attendance records.',
+  })
   @ApiResponse({ status: 404, description: 'Trainer not found.' })
   findByTrainer(@Param('trainerId', ParseIntPipe) trainerId: number) {
     return this.attendanceService.findByTrainer(trainerId);
@@ -114,7 +123,10 @@ export class BranchAttendanceController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get attendance records for a branch' })
   @ApiParam({ name: 'branchId', description: 'Branch ID' })
-  @ApiResponse({ status: 200, description: 'Return branch attendance records.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return branch attendance records.',
+  })
   @ApiResponse({ status: 404, description: 'Branch not found.' })
   findByBranch(@Param('branchId') branchId: string) {
     return this.attendanceService.findByBranch(branchId);

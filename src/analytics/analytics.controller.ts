@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -35,7 +30,10 @@ export class AnalyticsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get branch dashboard analytics' })
   @ApiParam({ name: 'branchId', description: 'Branch ID' })
-  @ApiResponse({ status: 200, description: 'Return branch dashboard analytics.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return branch dashboard analytics.',
+  })
   @ApiResponse({ status: 404, description: 'Branch not found.' })
   getBranchDashboard(@Param('branchId') branchId: string) {
     return this.analyticsService.getBranchDashboard(branchId);
@@ -79,7 +77,10 @@ export class AnalyticsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get branch attendance analytics' })
   @ApiParam({ name: 'branchId', description: 'Branch ID' })
-  @ApiResponse({ status: 200, description: 'Return branch attendance analytics.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return branch attendance analytics.',
+  })
   @ApiResponse({ status: 404, description: 'Branch not found.' })
   getBranchAttendanceAnalytics(@Param('branchId') branchId: string) {
     return this.analyticsService.getBranchAttendanceAnalytics(branchId);
@@ -88,9 +89,14 @@ export class AnalyticsController {
   @Get('gym/:gymId/payments/recent')
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get 10 most recent payment transactions for a gym' })
+  @ApiOperation({
+    summary: 'Get 10 most recent payment transactions for a gym',
+  })
   @ApiParam({ name: 'gymId', description: 'Gym ID' })
-  @ApiResponse({ status: 200, description: 'Return recent payment transactions.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return recent payment transactions.',
+  })
   @ApiResponse({ status: 404, description: 'Gym not found.' })
   getGymRecentPayments(@Param('gymId') gymId: string) {
     return this.analyticsService.getGymRecentPayments(gymId);
@@ -99,9 +105,14 @@ export class AnalyticsController {
   @Get('branch/:branchId/payments/recent')
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get 10 most recent payment transactions for a branch' })
+  @ApiOperation({
+    summary: 'Get 10 most recent payment transactions for a branch',
+  })
   @ApiParam({ name: 'branchId', description: 'Branch ID' })
-  @ApiResponse({ status: 200, description: 'Return recent payment transactions.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return recent payment transactions.',
+  })
   @ApiResponse({ status: 404, description: 'Branch not found.' })
   getBranchRecentPayments(@Param('branchId') branchId: string) {
     return this.analyticsService.getBranchRecentPayments(branchId);

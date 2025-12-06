@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaymentTransaction } from '../entities/payment_transactions.entity';
@@ -20,7 +24,9 @@ export class PaymentsService {
       relations: ['payments'],
     });
     if (!invoice) {
-      throw new NotFoundException(`Invoice with ID ${createDto.invoiceId} not found`);
+      throw new NotFoundException(
+        `Invoice with ID ${createDto.invoiceId} not found`,
+      );
     }
 
     if (invoice.status === 'cancelled') {
@@ -43,8 +49,10 @@ export class PaymentsService {
     const savedPayment = await this.paymentsRepo.save(payment);
 
     // Calculate total paid amount
-    const totalPaid = invoice.payments.reduce((sum, p) => sum + Number(p.amount), 0) + Number(createDto.amount);
-    
+    const totalPaid =
+      invoice.payments.reduce((sum, p) => sum + Number(p.amount), 0) +
+      Number(createDto.amount);
+
     // Mark invoice as paid if total paid >= total amount
     if (totalPaid >= Number(invoice.total_amount)) {
       invoice.status = 'paid';
@@ -85,5 +93,19 @@ export class PaymentsService {
       relations: ['invoice'],
       order: { created_at: 'DESC' },
     });
+  }
+
+  async findByMember(memberId: number) {
+    const payments = await this.paymentsRepo.find({
+      where: {
+        invoice: {
+          member: { id: memberId },
+        },
+      },
+      relations: ['invoice', 'invoice.member'],
+      order: { created_at: 'DESC' },
+    });
+
+    return payments;
   }
 }

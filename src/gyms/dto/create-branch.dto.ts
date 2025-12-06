@@ -50,4 +50,12 @@ export class CreateBranchDto {
   })
   @IsOptional()
   mainBranch?: boolean;
+
+  @ApiPropertyOptional({ description: 'Branch latitude', example: 40.7128 })
+  @IsOptional()
+  latitude?: number;
+
+  @ApiPropertyOptional({ description: 'Branch longitude', example: -74.006 })
+  @IsOptional()
+  longitude?: number;
 }

@@ -31,7 +31,10 @@ export class InvoicesController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create invoice' })
   @ApiResponse({ status: 201, description: 'Invoice created successfully.' })
-  @ApiResponse({ status: 404, description: 'Member or subscription not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Member or subscription not found.',
+  })
   @ApiBody({ type: CreateInvoiceDto })
   create(@Body() createDto: CreateInvoiceDto) {
     return this.invoicesService.create(createDto);

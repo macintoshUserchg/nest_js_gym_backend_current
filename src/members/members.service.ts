@@ -1,10 +1,17 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { Member } from '../entities/members.entity';
 import { Branch } from '../entities/branch.entity';
 import { User } from '../entities/users.entity';
 import { Role } from '../entities/roles.entity';
+import { Attendance } from '../entities/attendance.entity';
+import { PaymentTransaction } from '../entities/payment_transactions.entity';
+import { MemberSubscription } from '../entities/member_subscriptions.entity';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import * as bcrypt from 'bcrypt';
@@ -20,6 +27,10 @@ export class MembersService {
     private usersRepo: Repository<User>,
     @InjectRepository(Role)
     private rolesRepo: Repository<Role>,
+    @InjectRepository(Attendance)
+    private attendanceRepo: Repository<Attendance>,
+    @InjectRepository(PaymentTransaction)
+    private paymentsRepo: Repository<PaymentTransaction>,
   ) {}
 
   async create(createMemberDto: CreateMemberDto) {
@@ -47,7 +58,9 @@ export class MembersService {
         relations: ['gym'],
       });
       if (!foundBranch) {
-        throw new NotFoundException(`Branch with ID ${createMemberDto.branchId} not found`);
+        throw new NotFoundException(
+          `Branch with ID ${createMemberDto.branchId} not found`,
+        );
       }
       branch = foundBranch;
     }
@@ -58,7 +71,9 @@ export class MembersService {
       email: createMemberDto.email,
       phone: createMemberDto.phone,
       gender: createMemberDto.gender,
-      dateOfBirth: createMemberDto.dateOfBirth ? new Date(createMemberDto.dateOfBirth) : undefined,
+      dateOfBirth: createMemberDto.dateOfBirth
+        ? new Date(createMemberDto.dateOfBirth)
+        : undefined,
       addressLine1: createMemberDto.addressLine1,
       addressLine2: createMemberDto.addressLine2,
       city: createMemberDto.city,
@@ -77,7 +92,7 @@ export class MembersService {
     const memberRole = await this.rolesRepo.findOne({
       where: { name: 'MEMBER' },
     });
-    
+
     if (!memberRole) {
       throw new NotFoundException('MEMBER role not found in the system');
     }
@@ -135,7 +150,9 @@ export class MembersService {
         where: { branchId: updateMemberDto.branchId },
       });
       if (!branch) {
-        throw new NotFoundException(`Branch with ID ${updateMemberDto.branchId} not found`);
+        throw new NotFoundException(
+          `Branch with ID ${updateMemberDto.branchId} not found`,
+        );
       }
       member.branch = branch;
     }
@@ -161,5 +178,78 @@ export class MembersService {
       where: { branch: { branchId } },
       relations: ['branch', 'subscription'],
     });
+  }
+
+  async getMemberDashboard(memberId: number) {
+    const member = await this.findOne(memberId);
+
+    // Get subscription details
+    const subscription = member.subscription;
+
+    // Get attendance count for current month
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDayOfMonth = new Date(
+      today.getFullYear(),
+      today.getMonth() + 1,
+      0,
+    );
+
+    const attendanceCount =
+      (await this.attendanceRepo?.count({
+        where: {
+          member: { id: memberId },
+          date: Between(firstDayOfMonth, lastDayOfMonth),
+        },
+      })) || 0;
+
+    // Get payment history (last 5 payments)
+    const paymentHistory =
+      (await this.paymentsRepo?.find({
+        where: {
+          invoice: {
+            member: { id: memberId },
+          },
+        },
+        relations: ['invoice'],
+        order: { created_at: 'DESC' },
+        take: 5,
+      })) || [];
+
+    return {
+      member: {
+        id: member.id,
+        fullName: member.fullName,
+        email: member.email,
+        phone: member.phone,
+        isActive: member.isActive,
+        branch: member.branch
+          ? {
+              branchId: member.branch.branchId,
+              name: member.branch.name,
+            }
+          : null,
+      },
+      subscription: subscription
+        ? {
+            id: subscription.id,
+            planName: subscription.plan?.name,
+            startDate: subscription.startDate,
+            endDate: subscription.endDate,
+            status: subscription.isActive ? 'active' : 'inactive',
+          }
+        : null,
+      attendance: {
+        currentMonthCount: attendanceCount,
+      },
+      paymentHistory: paymentHistory.map((payment) => ({
+        transactionId: payment.transaction_id,
+        amount: payment.amount,
+        method: payment.method,
+        status: payment.status,
+        createdAt: payment.created_at,
+        invoiceId: payment.invoice.invoice_id,
+      })),
+    };
   }
 }

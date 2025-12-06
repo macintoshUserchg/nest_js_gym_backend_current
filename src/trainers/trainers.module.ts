@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TrainersService } from './trainers.service';
-import { TrainersController, BranchTrainersController } from './trainers.controller';
+import {
+  TrainersController,
+  BranchTrainersController,
+} from './trainers.controller';
 import { Trainer } from '../entities/trainers.entity';
 import { Branch } from '../entities/branch.entity';
 import { User } from '../entities/users.entity';

@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsInt, IsDateString, IsEnum, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsInt,
+  IsDateString,
+  IsEnum,
+  IsOptional,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateAssignmentDto {
@@ -17,12 +23,19 @@ export class CreateAssignmentDto {
   @IsNotEmpty()
   startDate: string;
 
-  @ApiPropertyOptional({ description: 'Assignment end date', example: '2024-12-31' })
+  @ApiPropertyOptional({
+    description: 'Assignment end date',
+    example: '2024-12-31',
+  })
   @IsDateString()
   @IsOptional()
   endDate?: string;
 
-  @ApiPropertyOptional({ description: 'Assignment status', example: 'active', enum: ['active', 'ended'] })
+  @ApiPropertyOptional({
+    description: 'Assignment status',
+    example: 'active',
+    enum: ['active', 'ended'],
+  })
   @IsEnum(['active', 'ended'])
   @IsOptional()
   status?: string;

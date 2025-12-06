@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Trainer } from '../entities/trainers.entity';
@@ -47,7 +51,9 @@ export class TrainersService {
         relations: ['gym'],
       });
       if (!foundBranch) {
-        throw new NotFoundException(`Branch with ID ${createDto.branchId} not found`);
+        throw new NotFoundException(
+          `Branch with ID ${createDto.branchId} not found`,
+        );
       }
       branch = foundBranch;
     }
@@ -68,7 +74,7 @@ export class TrainersService {
     const trainerRole = await this.rolesRepo.findOne({
       where: { name: 'TRAINER' },
     });
-    
+
     if (!trainerRole) {
       throw new NotFoundException('TRAINER role not found in the system');
     }
@@ -139,7 +145,9 @@ export class TrainersService {
           where: { branchId: updateDto.branchId },
         });
         if (!branch) {
-          throw new NotFoundException(`Branch with ID ${updateDto.branchId} not found`);
+          throw new NotFoundException(
+            `Branch with ID ${updateDto.branchId} not found`,
+          );
         }
         trainer.branch = branch;
       } else {

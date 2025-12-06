@@ -94,7 +94,10 @@ export class BranchMembershipPlansController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all membership plans for a branch' })
   @ApiParam({ name: 'branchId', description: 'Branch ID' })
-  @ApiResponse({ status: 200, description: 'Return all membership plans for the branch.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all membership plans for the branch.',
+  })
   @ApiResponse({ status: 404, description: 'Branch not found.' })
   findByBranch(@Param('branchId') branchId: string) {
     return this.plansService.findByBranch(branchId);

@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  OneToMany,
+  CreateDateColumn,
+} from 'typeorm';
 import { Member } from './members.entity';
 import { MemberSubscription } from './member_subscriptions.entity';
 import { PaymentTransaction } from './payment_transactions.entity';
@@ -23,10 +30,14 @@ export class Invoice {
   @Column({ type: 'date', nullable: true })
   due_date?: Date;
 
-  @Column({ type: 'enum', enum: ['pending', 'paid', 'cancelled'], default: 'pending' })
+  @Column({
+    type: 'enum',
+    enum: ['pending', 'paid', 'cancelled'],
+    default: 'pending',
+  })
   status: string;
 
-  @OneToMany(() => PaymentTransaction, payment => payment.invoice)
+  @OneToMany(() => PaymentTransaction, (payment) => payment.invoice)
   payments: PaymentTransaction[];
 
   @CreateDateColumn()

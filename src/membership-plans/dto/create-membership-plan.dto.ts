@@ -1,4 +1,11 @@
-import { IsNotEmpty, IsString, IsInt, IsOptional, Min, IsUUID } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsInt,
+  IsOptional,
+  Min,
+  IsUUID,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateMembershipPlanDto {
@@ -19,12 +26,18 @@ export class CreateMembershipPlanDto {
   @IsNotEmpty()
   durationInDays: number;
 
-  @ApiPropertyOptional({ description: 'Plan description', example: 'Full access to all gym facilities' })
+  @ApiPropertyOptional({
+    description: 'Plan description',
+    example: 'Full access to all gym facilities',
+  })
   @IsString()
   @IsOptional()
   description?: string;
 
-  @ApiPropertyOptional({ description: 'Branch ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiPropertyOptional({
+    description: 'Branch ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @IsUUID()
   @IsOptional()
   branchId?: string;

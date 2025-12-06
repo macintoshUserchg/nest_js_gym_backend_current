@@ -31,16 +31,18 @@ export class UsersService {
       passwordHash: hashedPassword,
       role: { id: createUserDto.roleId },
       gym: createUserDto.gymId ? { gymId: createUserDto.gymId } : undefined,
-      branch: createUserDto.branchId ? { branchId: createUserDto.branchId } : undefined,
+      branch: createUserDto.branchId
+        ? { branchId: createUserDto.branchId }
+        : undefined,
     });
 
     return this.usersRepo.save(user);
   }
 
   async findById(id: string) {
-    const user = await this.usersRepo.findOne({ 
-      where: { userId: id }, 
-      relations: ['role', 'gym', 'branch'] 
+    const user = await this.usersRepo.findOne({
+      where: { userId: id },
+      relations: ['role', 'gym', 'branch'],
     });
 
     if (!user) {
@@ -52,9 +54,9 @@ export class UsersService {
     if (user.memberId) {
       const member = await this.membersRepo.findOne({
         where: { id: parseInt(user.memberId) },
-        relations: ['subscription']
+        relations: ['subscription'],
       });
-      
+
       // Remove branch from member to avoid duplication (it's already at user level)
       if (member) {
         const { branch, ...memberWithoutBranch } = member;
@@ -66,9 +68,9 @@ export class UsersService {
     let trainerData: Trainer | null = null;
     if (user.trainerId) {
       const trainer = await this.trainersRepo.findOne({
-        where: { id: parseInt(user.trainerId) }
+        where: { id: parseInt(user.trainerId) },
       });
-      
+
       // Remove branch from trainer to avoid duplication (it's already at user level)
       if (trainer) {
         const { branch, ...trainerWithoutBranch } = trainer;
@@ -83,7 +85,7 @@ export class UsersService {
     return {
       ...userWithoutPassword,
       member: memberData,
-      trainer: trainerData
+      trainer: trainerData,
     };
   }
 

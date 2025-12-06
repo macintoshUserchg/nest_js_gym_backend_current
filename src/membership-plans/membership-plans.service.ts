@@ -22,7 +22,9 @@ export class MembershipPlansService {
         where: { branchId: createDto.branchId },
       });
       if (!foundBranch) {
-        throw new NotFoundException(`Branch with ID ${createDto.branchId} not found`);
+        throw new NotFoundException(
+          `Branch with ID ${createDto.branchId} not found`,
+        );
       }
       branch = foundBranch;
     }
@@ -63,7 +65,9 @@ export class MembershipPlansService {
           where: { branchId: updateDto.branchId },
         });
         if (!branch) {
-          throw new NotFoundException(`Branch with ID ${updateDto.branchId} not found`);
+          throw new NotFoundException(
+            `Branch with ID ${updateDto.branchId} not found`,
+          );
         }
         plan.branch = branch;
       } else {
@@ -77,7 +81,7 @@ export class MembershipPlansService {
       durationInDays: updateDto.durationInDays,
       description: updateDto.description,
     });
-    
+
     return this.plansRepo.save(plan);
   }
 

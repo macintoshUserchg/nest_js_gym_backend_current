@@ -6,7 +6,7 @@ export class Class {
   @PrimaryGeneratedColumn('uuid')
   class_id: string;
 
-  @ManyToOne(() => Branch, b => b.classes)
+  @ManyToOne(() => Branch, (b) => b.classes)
   branch: Branch;
 
   @Column({ length: 100 })
@@ -15,14 +15,21 @@ export class Class {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'enum', enum: ['morning', 'evening', 'both', 'either'], nullable: true })
+  @Column({
+    type: 'enum',
+    enum: ['morning', 'evening', 'both', 'either'],
+    nullable: true,
+  })
   timings?: string;
 
   // Recurrence fields
-  @Column({ type: 'enum', enum: ['daily', 'weekly', 'monthly'], nullable: true })
+  @Column({
+    type: 'enum',
+    enum: ['daily', 'weekly', 'monthly'],
+    nullable: true,
+  })
   recurrence_type: string;
 
   @Column({ type: 'int', array: true, nullable: true })
   days_of_week: number[];
-
 }

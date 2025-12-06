@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  CreateDateColumn,
+} from 'typeorm';
 import { Invoice } from './invoices.entity';
 
 @Entity('payment_transactions')
@@ -6,7 +12,7 @@ export class PaymentTransaction {
   @PrimaryGeneratedColumn('uuid')
   transaction_id: string;
 
-  @ManyToOne(() => Invoice, invoice => invoice.payments)
+  @ManyToOne(() => Invoice, (invoice) => invoice.payments)
   invoice: Invoice;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
@@ -21,7 +27,11 @@ export class PaymentTransaction {
   @Column({ type: 'text', nullable: true })
   notes?: string;
 
-  @Column({ type: 'enum', enum: ['pending', 'completed', 'failed'], default: 'completed' })
+  @Column({
+    type: 'enum',
+    enum: ['pending', 'completed', 'failed'],
+    default: 'completed',
+  })
   status: string;
 
   @CreateDateColumn()

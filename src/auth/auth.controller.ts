@@ -19,10 +19,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   @ApiOperation({ summary: 'User login' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'User logged in successfully.',
-    type: LoginResponseDto 
+    type: LoginResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials.' })
   @ApiBody({ type: LoginUserDto })

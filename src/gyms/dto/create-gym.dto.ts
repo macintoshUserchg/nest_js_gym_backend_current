@@ -7,22 +7,34 @@ export class CreateGymDto {
   @IsNotEmpty()
   name: string;
 
-  @ApiPropertyOptional({ description: 'Gym email address', example: 'contact@fitzone.com' })
+  @ApiPropertyOptional({
+    description: 'Gym email address',
+    example: 'contact@fitzone.com',
+  })
   @IsEmail()
   @IsOptional()
   email?: string;
 
-  @ApiPropertyOptional({ description: 'Gym phone number', example: '+1234567890' })
+  @ApiPropertyOptional({
+    description: 'Gym phone number',
+    example: '+1234567890',
+  })
   @IsString()
   @IsOptional()
   phone?: string;
 
-  @ApiPropertyOptional({ description: 'Gym address', example: '123 Main St, City, State' })
+  @ApiPropertyOptional({
+    description: 'Gym address',
+    example: '123 Main St, City, State',
+  })
   @IsString()
   @IsOptional()
   address?: string;
 
-  @ApiPropertyOptional({ description: 'Gym location/city', example: 'Los Angeles' })
+  @ApiPropertyOptional({
+    description: 'Gym location/city',
+    example: 'Los Angeles',
+  })
   @IsString()
   @IsOptional()
   location?: string;
@@ -31,4 +43,12 @@ export class CreateGymDto {
   @IsString()
   @IsOptional()
   state?: string;
+
+  @ApiPropertyOptional({ description: 'Gym latitude', example: 34.0522 })
+  @IsOptional()
+  latitude?: number;
+
+  @ApiPropertyOptional({ description: 'Gym longitude', example: -118.2437 })
+  @IsOptional()
+  longitude?: number;
 }

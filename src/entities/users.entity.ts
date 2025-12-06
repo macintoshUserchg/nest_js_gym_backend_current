@@ -4,7 +4,7 @@ import {
   Column,
   ManyToOne,
   CreateDateColumn,
-  UpdateDateColumn
+  UpdateDateColumn,
 } from 'typeorm';
 
 import { Gym } from './gym.entity';
@@ -16,10 +16,10 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   userId: string;
 
-  @ManyToOne(() => Gym, gym => gym.users, { nullable: true })
+  @ManyToOne(() => Gym, (gym) => gym.users, { nullable: true })
   gym?: Gym;
 
-  @ManyToOne(() => Branch, branch => branch.users, { nullable: true })
+  @ManyToOne(() => Branch, (branch) => branch.users, { nullable: true })
   branch?: Branch;
 
   @Column({ unique: true })
@@ -28,7 +28,7 @@ export class User {
   @Column()
   passwordHash: string;
 
-  @ManyToOne(() => Role, role => role.users, { nullable: false, eager: true })
+  @ManyToOne(() => Role, (role) => role.users, { nullable: false, eager: true })
   role: Role;
 
   @Column({ nullable: true })

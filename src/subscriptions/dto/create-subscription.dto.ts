@@ -12,7 +12,10 @@ export class CreateSubscriptionDto {
   @IsNotEmpty()
   planId: number;
 
-  @ApiProperty({ description: 'Subscription start date', example: '2024-01-01T00:00:00Z' })
+  @ApiProperty({
+    description: 'Subscription start date',
+    example: '2024-01-01T00:00:00Z',
+  })
   @IsDateString()
   @IsNotEmpty()
   startDate: string;

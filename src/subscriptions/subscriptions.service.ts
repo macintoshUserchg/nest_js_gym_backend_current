@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MemberSubscription } from '../entities/member_subscriptions.entity';
@@ -25,7 +29,9 @@ export class SubscriptionsService {
       relations: ['subscription'],
     });
     if (!member) {
-      throw new NotFoundException(`Member with ID ${createDto.memberId} not found`);
+      throw new NotFoundException(
+        `Member with ID ${createDto.memberId} not found`,
+      );
     }
 
     // Check if member already has an active subscription
@@ -38,7 +44,9 @@ export class SubscriptionsService {
       where: { id: createDto.planId },
     });
     if (!plan) {
-      throw new NotFoundException(`Membership plan with ID ${createDto.planId} not found`);
+      throw new NotFoundException(
+        `Membership plan with ID ${createDto.planId} not found`,
+      );
     }
 
     // Calculate end date based on plan duration
@@ -88,7 +96,9 @@ export class SubscriptionsService {
     });
 
     if (!subscription) {
-      throw new NotFoundException(`No subscription found for member ${memberId}`);
+      throw new NotFoundException(
+        `No subscription found for member ${memberId}`,
+      );
     }
 
     return subscription;
@@ -100,7 +110,7 @@ export class SubscriptionsService {
     if (updateDto.startDate) {
       const startDate = new Date(updateDto.startDate);
       subscription.startDate = startDate;
-      
+
       // Recalculate end date if start date changes
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + subscription.plan.durationInDays);

@@ -11,7 +11,9 @@ import { Member } from '../entities/members.entity';
 import { Trainer } from '../entities/trainers.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([MemberTrainerAssignment, Member, Trainer])],
+  imports: [
+    TypeOrmModule.forFeature([MemberTrainerAssignment, Member, Trainer]),
+  ],
   controllers: [
     AssignmentsController,
     MemberAssignmentsController,

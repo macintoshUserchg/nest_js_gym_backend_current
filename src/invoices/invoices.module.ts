@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { InvoicesService } from './invoices.service';
-import { InvoicesController, MemberInvoicesController } from './invoices.controller';
+import {
+  InvoicesController,
+  MemberInvoicesController,
+} from './invoices.controller';
 import { Invoice } from '../entities/invoices.entity';
 import { Member } from '../entities/members.entity';
 import { MemberSubscription } from '../entities/member_subscriptions.entity';

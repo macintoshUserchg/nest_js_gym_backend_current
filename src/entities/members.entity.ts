@@ -5,11 +5,17 @@ import {
   OneToOne,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   CreateDateColumn,
-  UpdateDateColumn
+  UpdateDateColumn,
 } from 'typeorm';
 import { MemberSubscription } from './member_subscriptions.entity';
 import { Branch } from './branch.entity';
+import { Attendance } from './attendance.entity';
+import { AttendanceGoal } from './attendance_goals.entity';
+import { WorkoutPlan } from './workout_plans.entity';
+import { DietPlan } from './diet_plans.entity';
+import { ProgressTracking } from './progress_tracking.entity';
 import { Gender } from '../common/enums/gender.enum';
 
 @Entity('members')
@@ -59,12 +65,29 @@ export class Member {
   @Column({ default: true })
   isActive: boolean;
 
-  @OneToOne(() => MemberSubscription, subscription => subscription.member, { cascade: true })
+  @OneToOne(() => MemberSubscription, (subscription) => subscription.member, {
+    cascade: true,
+  })
   @JoinColumn()
   subscription: MemberSubscription;
 
-  @ManyToOne(() => Branch, branch => branch.members, { nullable: true })
+  @ManyToOne(() => Branch, (branch) => branch.members, { nullable: true })
   branch?: Branch;
+
+  @OneToMany(() => Attendance, (attendance) => attendance.member)
+  attendanceRecords: Attendance[];
+
+  @OneToMany(() => AttendanceGoal, (goal) => goal.member)
+  attendanceGoals: AttendanceGoal[];
+
+  @OneToMany(() => WorkoutPlan, (plan) => plan.member)
+  workoutPlans: WorkoutPlan[];
+
+  @OneToMany(() => DietPlan, (plan) => plan.member)
+  dietPlans: DietPlan[];
+
+  @OneToMany(() => ProgressTracking, (progress) => progress.member)
+  progressRecords: ProgressTracking[];
 
   @CreateDateColumn()
   createdAt: Date;

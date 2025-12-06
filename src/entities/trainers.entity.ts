@@ -21,6 +21,6 @@ export class Trainer {
   @Column({ nullable: true })
   avatarUrl: string;
 
-  @ManyToOne(() => Branch, branch => branch.trainers)
+  @ManyToOne(() => Branch, (branch) => branch.trainers)
   branch: Branch;
 }

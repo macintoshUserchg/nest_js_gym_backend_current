@@ -1,4 +1,11 @@
-import { IsNotEmpty, IsNumber, IsInt, IsOptional, IsString, IsDateString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsDateString,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateInvoiceDto {
@@ -17,7 +24,10 @@ export class CreateInvoiceDto {
   @IsNotEmpty()
   totalAmount: number;
 
-  @ApiPropertyOptional({ description: 'Invoice description', example: 'Monthly membership fee' })
+  @ApiPropertyOptional({
+    description: 'Invoice description',
+    example: 'Monthly membership fee',
+  })
   @IsString()
   @IsOptional()
   description?: string;

@@ -22,14 +22,18 @@ export class AssignmentsService {
       where: { id: createDto.memberId },
     });
     if (!member) {
-      throw new NotFoundException(`Member with ID ${createDto.memberId} not found`);
+      throw new NotFoundException(
+        `Member with ID ${createDto.memberId} not found`,
+      );
     }
 
     const trainer = await this.trainersRepo.findOne({
       where: { id: createDto.trainerId },
     });
     if (!trainer) {
-      throw new NotFoundException(`Trainer with ID ${createDto.trainerId} not found`);
+      throw new NotFoundException(
+        `Trainer with ID ${createDto.trainerId} not found`,
+      );
     }
 
     const assignmentData: any = {

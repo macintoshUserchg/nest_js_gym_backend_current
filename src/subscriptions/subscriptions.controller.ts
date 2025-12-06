@@ -31,9 +31,15 @@ export class SubscriptionsController {
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Assign a member to a membership plan' })
-  @ApiResponse({ status: 201, description: 'Subscription created successfully.' })
+  @ApiResponse({
+    status: 201,
+    description: 'Subscription created successfully.',
+  })
   @ApiResponse({ status: 404, description: 'Member or plan not found.' })
-  @ApiResponse({ status: 409, description: 'Member already has an active subscription.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Member already has an active subscription.',
+  })
   @ApiBody({ type: CreateSubscriptionDto })
   create(@Body() createDto: CreateSubscriptionDto) {
     return this.subscriptionsService.create(createDto);
@@ -64,7 +70,10 @@ export class SubscriptionsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update a subscription' })
   @ApiParam({ name: 'id', description: 'Subscription ID' })
-  @ApiResponse({ status: 200, description: 'Subscription updated successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Subscription updated successfully.',
+  })
   @ApiResponse({ status: 404, description: 'Subscription not found.' })
   @ApiBody({ type: UpdateSubscriptionDto })
   update(
@@ -79,7 +88,10 @@ export class SubscriptionsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete a subscription' })
   @ApiParam({ name: 'id', description: 'Subscription ID' })
-  @ApiResponse({ status: 200, description: 'Subscription deleted successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Subscription deleted successfully.',
+  })
   @ApiResponse({ status: 404, description: 'Subscription not found.' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.subscriptionsService.remove(id);
@@ -90,7 +102,10 @@ export class SubscriptionsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Cancel a subscription' })
   @ApiParam({ name: 'id', description: 'Subscription ID' })
-  @ApiResponse({ status: 200, description: 'Subscription cancelled successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Subscription cancelled successfully.',
+  })
   @ApiResponse({ status: 404, description: 'Subscription not found.' })
   cancel(@Param('id', ParseIntPipe) id: number) {
     return this.subscriptionsService.cancel(id);
@@ -105,10 +120,16 @@ export class MemberSubscriptionsController {
   @Get(':memberId/subscription')
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get a member\'s subscription' })
+  @ApiOperation({ summary: "Get a member's subscription" })
   @ApiParam({ name: 'memberId', description: 'Member ID' })
-  @ApiResponse({ status: 200, description: 'Return the member\'s subscription.' })
-  @ApiResponse({ status: 404, description: 'Member or subscription not found.' })
+  @ApiResponse({
+    status: 200,
+    description: "Return the member's subscription.",
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Member or subscription not found.',
+  })
   findByMember(@Param('memberId', ParseIntPipe) memberId: number) {
     return this.subscriptionsService.findByMember(memberId);
   }

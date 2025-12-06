@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -43,7 +38,10 @@ export class RolesController {
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get role by name' })
-  @ApiParam({ name: 'name', description: 'Role name (e.g., SUPERADMIN, ADMIN, TRAINER, MEMBER)' })
+  @ApiParam({
+    name: 'name',
+    description: 'Role name (e.g., SUPERADMIN, ADMIN, TRAINER, MEMBER)',
+  })
   @ApiResponse({ status: 200, description: 'Return the role with ID.' })
   @ApiResponse({ status: 404, description: 'Role not found.' })
   findByName(@Param('name') name: string) {

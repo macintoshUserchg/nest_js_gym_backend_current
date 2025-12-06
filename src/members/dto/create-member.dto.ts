@@ -1,4 +1,13 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID, IsBoolean, IsEnum, IsDateString } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  IsBoolean,
+  IsEnum,
+  IsDateString,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Gender } from '../../common/enums/gender.enum';
 
@@ -8,17 +17,27 @@ export class CreateMemberDto {
   @IsNotEmpty()
   fullName: string;
 
-  @ApiProperty({ description: 'Member email address', example: 'john.doe@example.com' })
+  @ApiProperty({
+    description: 'Member email address',
+    example: 'john.doe@example.com',
+  })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
-  @ApiPropertyOptional({ description: 'Member phone number', example: '1234567890' })
+  @ApiPropertyOptional({
+    description: 'Member phone number',
+    example: '1234567890',
+  })
   @IsString()
   @IsOptional()
   phone?: string;
 
-  @ApiPropertyOptional({ description: 'Gender', enum: Gender, example: Gender.MALE })
+  @ApiPropertyOptional({
+    description: 'Gender',
+    enum: Gender,
+    example: Gender.MALE,
+  })
   @IsEnum(Gender)
   @IsOptional()
   gender?: Gender;
@@ -28,7 +47,10 @@ export class CreateMemberDto {
   @IsOptional()
   dateOfBirth?: string;
 
-  @ApiPropertyOptional({ description: 'Address line 1', example: '123 Main St' })
+  @ApiPropertyOptional({
+    description: 'Address line 1',
+    example: '123 Main St',
+  })
   @IsString()
   @IsOptional()
   addressLine1?: string;
@@ -53,27 +75,43 @@ export class CreateMemberDto {
   @IsOptional()
   postalCode?: string;
 
-  @ApiPropertyOptional({ description: 'Member avatar URL', example: 'https://example.com/avatar.jpg' })
+  @ApiPropertyOptional({
+    description: 'Member avatar URL',
+    example: 'https://example.com/avatar.jpg',
+  })
   @IsString()
   @IsOptional()
   avatarUrl?: string;
 
-  @ApiPropertyOptional({ description: 'Emergency contact name', example: 'Jane Doe' })
+  @ApiPropertyOptional({
+    description: 'Emergency contact name',
+    example: 'Jane Doe',
+  })
   @IsString()
   @IsOptional()
   emergencyContactName?: string;
 
-  @ApiPropertyOptional({ description: 'Emergency contact phone', example: '0987654321' })
+  @ApiPropertyOptional({
+    description: 'Emergency contact phone',
+    example: '0987654321',
+  })
   @IsString()
   @IsOptional()
   emergencyContactPhone?: string;
 
-  @ApiPropertyOptional({ description: 'Branch ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiPropertyOptional({
+    description: 'Branch ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @IsUUID()
   @IsOptional()
   branchId?: string;
 
-  @ApiPropertyOptional({ description: 'Member active status', example: true, default: true })
+  @ApiPropertyOptional({
+    description: 'Member active status',
+    example: true,
+    default: true,
+  })
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
