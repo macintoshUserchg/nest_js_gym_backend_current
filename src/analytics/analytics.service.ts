@@ -1,12 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  Repository,
-  MoreThanOrEqual,
-  LessThanOrEqual,
-  Between,
-  In,
-} from 'typeorm';
+import { Repository, MoreThanOrEqual, Between, In } from 'typeorm';
 import { Gym } from '../entities/gym.entity';
 import { Branch } from '../entities/branch.entity';
 import { Member } from '../entities/members.entity';
@@ -493,8 +487,6 @@ export class AnalyticsService {
     const branchIds = gym.branches.map((b) => b.branchId);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     const totalMembers = await this.membersRepo.count({
       where: { branch: { branchId: In(branchIds) } },

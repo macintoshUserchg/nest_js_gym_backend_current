@@ -65,6 +65,9 @@ export class Member {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ default: true })
+  is_managed_by_member: boolean;
+
   @OneToOne(() => MemberSubscription, (subscription) => subscription.member, {
     cascade: true,
   })

@@ -302,7 +302,7 @@ export class AttendanceService {
 
     // Calculate current streak
     let currentStreak = 0;
-    let dateToCheck = new Date(today);
+    const dateToCheck = new Date(today);
     while (attendedDates.includes(dateToCheck.toISOString().split('T')[0])) {
       currentStreak++;
       dateToCheck.setDate(dateToCheck.getDate() - 1);

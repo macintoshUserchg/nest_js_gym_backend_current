@@ -44,11 +44,26 @@ export class GoalsService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    // Check if user has permission (GYM_OWNER or TRAINER)
+    // Check if user has permission (GYM_OWNER, TRAINER, or MEMBER if managing themselves)
     const userRole = user.role.name;
-    if (userRole !== 'GYM_OWNER' && userRole !== 'TRAINER') {
+    const isMember = userRole === 'MEMBER';
+
+    if (isMember) {
+      // Check if member is allowed to manage their own goals
+      if (!member.is_managed_by_member) {
+        throw new ForbiddenException(
+          'This member is not allowed to manage their own goals',
+        );
+      }
+      // Check if the user is the member themselves
+      if (!user.memberId || parseInt(user.memberId) !== member.id) {
+        throw new ForbiddenException(
+          'Members can only create goals for themselves',
+        );
+      }
+    } else if (userRole !== 'GYM_OWNER' && userRole !== 'TRAINER') {
       throw new ForbiddenException(
-        'Only gym owners and trainers can create goals',
+        'Only gym owners, trainers, or members (if allowed) can create goals',
       );
     }
 
@@ -109,7 +124,7 @@ export class GoalsService {
   async update(id: number, updateGoalDto: UpdateGoalDto, userId: string) {
     const goal = await this.findOne(id);
 
-    // Check if user has permission to update (GYM_OWNER or TRAINER who created it)
+    // Check if user exists
     const user = await this.usersRepo.findOne({
       where: { userId },
     });
@@ -120,15 +135,27 @@ export class GoalsService {
     const userRole = user.role.name;
     const isOwner = userRole === 'GYM_OWNER';
     const isTrainer = userRole === 'TRAINER';
+    const isMember = userRole === 'MEMBER';
 
     let isAssignedTrainer = false;
     if (goal.trainer && user.trainerId) {
       isAssignedTrainer = goal.trainer.id === parseInt(user.trainerId);
     }
 
-    if (!isOwner && !(isTrainer && isAssignedTrainer)) {
+    // Check if member is allowed to manage their own goals
+    if (isMember) {
+      if (!goal.member.is_managed_by_member) {
+        throw new ForbiddenException(
+          'This member is not allowed to manage their own goals',
+        );
+      }
+      // Check if the user is the member themselves
+      if (!user.memberId || parseInt(user.memberId) !== goal.member.id) {
+        throw new ForbiddenException('Members can only update their own goals');
+      }
+    } else if (!isOwner && !(isTrainer && isAssignedTrainer)) {
       throw new ForbiddenException(
-        'Only gym owners or the trainer assigned to this goal can update it',
+        'Only gym owners, assigned trainers, or members (if allowed) can update goals',
       );
     }
 
@@ -155,7 +182,7 @@ export class GoalsService {
   async remove(id: number, userId: string) {
     const goal = await this.findOne(id);
 
-    // Check if user has permission to delete (GYM_OWNER or TRAINER who created it)
+    // Check if user exists
     const user = await this.usersRepo.findOne({
       where: { userId },
     });
@@ -166,15 +193,27 @@ export class GoalsService {
     const userRole = user.role.name;
     const isOwner = userRole === 'GYM_OWNER';
     const isTrainer = userRole === 'TRAINER';
+    const isMember = userRole === 'MEMBER';
 
     let isAssignedTrainer = false;
     if (goal.trainer && user.trainerId) {
       isAssignedTrainer = goal.trainer.id === parseInt(user.trainerId);
     }
 
-    if (!isOwner && !(isTrainer && isAssignedTrainer)) {
+    // Check if member is allowed to manage their own goals
+    if (isMember) {
+      if (!goal.member.is_managed_by_member) {
+        throw new ForbiddenException(
+          'This member is not allowed to manage their own goals',
+        );
+      }
+      // Check if the user is the member themselves
+      if (!user.memberId || parseInt(user.memberId) !== goal.member.id) {
+        throw new ForbiddenException('Members can only delete their own goals');
+      }
+    } else if (!isOwner && !(isTrainer && isAssignedTrainer)) {
       throw new ForbiddenException(
-        'Only gym owners or the trainer assigned to this goal can delete it',
+        'Only gym owners, assigned trainers, or members (if allowed) can delete goals',
       );
     }
 

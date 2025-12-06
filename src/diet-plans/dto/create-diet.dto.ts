@@ -1,10 +1,4 @@
-import {
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsDateString,
-  IsArray,
-} from 'class-validator';
+import { IsNumber, IsOptional, IsArray } from 'class-validator';
 
 export class CreateDietDto {
   @IsNumber()

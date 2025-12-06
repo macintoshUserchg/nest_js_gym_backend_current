@@ -44,11 +44,26 @@ export class BodyProgressService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    // Check if user has permission (GYM_OWNER or TRAINER)
+    // Check if user has permission (GYM_OWNER, TRAINER, or MEMBER if managing themselves)
     const userRole = user.role.name;
-    if (userRole !== 'GYM_OWNER' && userRole !== 'TRAINER') {
+    const isMember = userRole === 'MEMBER';
+
+    if (isMember) {
+      // Check if member is allowed to manage their own body progress records
+      if (!member.is_managed_by_member) {
+        throw new ForbiddenException(
+          'This member is not allowed to manage their own body progress records',
+        );
+      }
+      // Check if the user is the member themselves
+      if (!user.memberId || parseInt(user.memberId) !== member.id) {
+        throw new ForbiddenException(
+          'Members can only create body progress records for themselves',
+        );
+      }
+    } else if (userRole !== 'GYM_OWNER' && userRole !== 'TRAINER') {
       throw new ForbiddenException(
-        'Only gym owners and trainers can create body progress records',
+        'Only gym owners, trainers, or members (if allowed) can create body progress records',
       );
     }
 
@@ -113,7 +128,7 @@ export class BodyProgressService {
   ) {
     const bodyProgress = await this.findOne(id);
 
-    // Check if user has permission to update (GYM_OWNER or TRAINER who created it)
+    // Check if user exists
     const user = await this.usersRepo.findOne({
       where: { userId },
     });
@@ -124,15 +139,32 @@ export class BodyProgressService {
     const userRole = user.role.name;
     const isOwner = userRole === 'GYM_OWNER';
     const isTrainer = userRole === 'TRAINER';
+    const isMember = userRole === 'MEMBER';
 
     let isAssignedTrainer = false;
     if (bodyProgress.trainer && user.trainerId) {
       isAssignedTrainer = bodyProgress.trainer.id === parseInt(user.trainerId);
     }
 
-    if (!isOwner && !(isTrainer && isAssignedTrainer)) {
+    // Check if member is allowed to manage their own body progress records
+    if (isMember) {
+      if (!bodyProgress.member.is_managed_by_member) {
+        throw new ForbiddenException(
+          'This member is not allowed to manage their own body progress records',
+        );
+      }
+      // Check if the user is the member themselves
+      if (
+        !user.memberId ||
+        parseInt(user.memberId) !== bodyProgress.member.id
+      ) {
+        throw new ForbiddenException(
+          'Members can only update their own body progress records',
+        );
+      }
+    } else if (!isOwner && !(isTrainer && isAssignedTrainer)) {
       throw new ForbiddenException(
-        'Only gym owners or the trainer assigned to this body progress record can update it',
+        'Only gym owners, assigned trainers, or members (if allowed) can update body progress records',
       );
     }
 
@@ -159,7 +191,7 @@ export class BodyProgressService {
   async remove(id: number, userId: string) {
     const bodyProgress = await this.findOne(id);
 
-    // Check if user has permission to delete (GYM_OWNER or TRAINER who created it)
+    // Check if user exists
     const user = await this.usersRepo.findOne({
       where: { userId },
     });
@@ -170,15 +202,32 @@ export class BodyProgressService {
     const userRole = user.role.name;
     const isOwner = userRole === 'GYM_OWNER';
     const isTrainer = userRole === 'TRAINER';
+    const isMember = userRole === 'MEMBER';
 
     let isAssignedTrainer = false;
     if (bodyProgress.trainer && user.trainerId) {
       isAssignedTrainer = bodyProgress.trainer.id === parseInt(user.trainerId);
     }
 
-    if (!isOwner && !(isTrainer && isAssignedTrainer)) {
+    // Check if member is allowed to manage their own body progress records
+    if (isMember) {
+      if (!bodyProgress.member.is_managed_by_member) {
+        throw new ForbiddenException(
+          'This member is not allowed to manage their own body progress records',
+        );
+      }
+      // Check if the user is the member themselves
+      if (
+        !user.memberId ||
+        parseInt(user.memberId) !== bodyProgress.member.id
+      ) {
+        throw new ForbiddenException(
+          'Members can only delete their own body progress records',
+        );
+      }
+    } else if (!isOwner && !(isTrainer && isAssignedTrainer)) {
       throw new ForbiddenException(
-        'Only gym owners or the trainer assigned to this body progress record can delete it',
+        'Only gym owners, assigned trainers, or members (if allowed) can delete body progress records',
       );
     }
 

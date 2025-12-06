@@ -35,30 +35,9 @@ Authenticate a user and receive a JWT token.
 }
 ```
 
-**Response (200 OK):**
-
-```json
-{
-  "userid": "user-uuid",
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-**Error Responses:**
-
-- 401 Unauthorized: Invalid credentials
-
 #### POST /auth/logout
 
 Logout a user (client-side token removal).
-
-**Response (200 OK):**
-
-```json
-{
-  "message": "Logged out successfully. Please discard your token."
-}
-```
 
 ## API Endpoints
 
@@ -82,83 +61,17 @@ Create a new user.
 }
 ```
 
-**Response (201 Created):**
-
-```json
-{
-  "userId": "user-uuid",
-  "email": "john@example.com",
-  "gymId": "gym-uuid",
-  "branchId": "branch-uuid",
-  "roleId": "role-uuid",
-  "memberId": 1,
-  "trainerId": 1,
-  "createdAt": "2024-01-01T00:00:00.000Z",
-  "updatedAt": "2024-01-01T00:00:00.000Z"
-}
-```
-
 #### GET /users
 
 Get all users (Authenticated).
-
-**Response (200 OK):**
-
-```json
-[
-  {
-    "userId": "user-uuid",
-    "email": "john@example.com",
-    "gymId": "gym-uuid",
-    "branchId": "branch-uuid",
-    "roleId": "role-uuid",
-    "memberId": 1,
-    "trainerId": 1,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
-  }
-]
-```
 
 #### GET /users/profile
 
 Get current user profile (Authenticated).
 
-**Response (200 OK):**
-
-```json
-{
-  "userId": "user-uuid",
-  "email": "john@example.com",
-  "gymId": "gym-uuid",
-  "branchId": "branch-uuid",
-  "roleId": "role-uuid",
-  "memberId": 1,
-  "trainerId": 1,
-  "createdAt": "2024-01-01T00:00:00.000Z",
-  "updatedAt": "2024-01-01T00:00:00.000Z"
-}
-```
-
 #### GET /users/:id
 
 Get user by ID (Authenticated).
-
-**Response (200 OK):**
-
-```json
-{
-  "userId": "user-uuid",
-  "email": "john@example.com",
-  "gymId": "gym-uuid",
-  "branchId": "branch-uuid",
-  "roleId": "role-uuid",
-  "memberId": 1,
-  "trainerId": 1,
-  "createdAt": "2024-01-01T00:00:00.000Z",
-  "updatedAt": "2024-01-01T00:00:00.000Z"
-}
-```
 
 #### PATCH /users/:id
 
@@ -184,18 +97,6 @@ Delete user (Authenticated).
 #### GET /roles
 
 Get all roles.
-
-**Response (200 OK):**
-
-```json
-[
-  {
-    "id": "role-uuid",
-    "name": "ADMIN",
-    "description": "Administrator role"
-  }
-]
-```
 
 #### GET /roles/:id
 
@@ -236,6 +137,18 @@ Get gym by ID.
 
 Update gym.
 
+**Request Body:**
+
+```json
+{
+  "name": "Updated Gym Name",
+  "email": "updated@example.com",
+  "phone": "+1234567890",
+  "address": "New Address",
+  "location": "New Location"
+}
+```
+
 #### DELETE /gyms/:id
 
 Delete gym.
@@ -273,6 +186,18 @@ Get branch by ID.
 #### PATCH /branches/:id
 
 Update branch.
+
+**Request Body:**
+
+```json
+{
+  "name": "Updated Branch Name",
+  "email": "updatedbranch@example.com",
+  "phone": "+1234567891",
+  "address": "Updated Address",
+  "mainBranch": false
+}
+```
 
 #### DELETE /branches/:id
 
@@ -318,6 +243,17 @@ Get member by ID.
 
 Update member.
 
+**Request Body:**
+
+```json
+{
+  "fullName": "John Updated Doe",
+  "phone": "+1234567899",
+  "email": "johnupdated@example.com",
+  "isActive": true
+}
+```
+
 #### DELETE /members/:id
 
 Delete member.
@@ -357,6 +293,16 @@ Get trainer by ID.
 
 Update trainer.
 
+**Request Body:**
+
+```json
+{
+  "fullName": "Jane Updated Smith",
+  "specialization": "Yoga Instructor",
+  "phone": "+1234567899"
+}
+```
+
 #### DELETE /trainers/:id
 
 Delete trainer.
@@ -395,6 +341,17 @@ Get membership plan by ID.
 
 Update membership plan.
 
+**Request Body:**
+
+```json
+{
+  "name": "Updated Premium Plan",
+  "price": 60,
+  "durationInDays": 30,
+  "description": "Updated description"
+}
+```
+
 #### DELETE /membership-plans/:id
 
 Delete membership plan.
@@ -431,6 +388,16 @@ Get subscription by ID.
 #### PATCH /subscriptions/:id
 
 Update subscription.
+
+**Request Body:**
+
+```json
+{
+  "startDate": "2024-02-01",
+  "endDate": "2024-02-28",
+  "isActive": true
+}
+```
 
 #### DELETE /subscriptions/:id
 
@@ -474,6 +441,17 @@ Get class by ID.
 #### PATCH /classes/:id
 
 Update class.
+
+**Request Body:**
+
+```json
+{
+  "name": "Advanced Yoga Class",
+  "description": "Advanced yoga session",
+  "timings": "evening",
+  "daysOfWeek": [2, 4, 6]
+}
+```
 
 #### DELETE /classes/:id
 
@@ -526,7 +504,7 @@ Get trainer's members.
 
 Mark attendance (check-in).
 
-**Request Body:**
+**Request Body (Member):**
 
 ```json
 {
@@ -536,7 +514,7 @@ Mark attendance (check-in).
 }
 ```
 
-**For Trainer Attendance:**
+**Request Body (Trainer):**
 
 ```json
 {
@@ -642,6 +620,16 @@ Get invoice by ID.
 
 Update invoice.
 
+**Request Body:**
+
+```json
+{
+  "amount": 60.0,
+  "description": "Updated membership fee",
+  "dueDate": "2024-02-15"
+}
+```
+
 #### POST /invoices/:id/cancel
 
 Cancel invoice.
@@ -736,6 +724,17 @@ Get inquiry by ID.
 
 Update inquiry.
 
+**Request Body:**
+
+```json
+{
+  "fullName": "Alice Updated Johnson",
+  "phone": "+1234567899",
+  "fitnessGoals": "Muscle gain and endurance",
+  "leadStatus": "contacted"
+}
+```
+
 #### PATCH /inquiries/:id/status
 
 Update inquiry status.
@@ -775,19 +774,6 @@ Get inquiry by email.
 
 Get gym dashboard analytics.
 
-**Response:**
-
-```json
-{
-  "totalMembers": 150,
-  "activeMembers": 120,
-  "newMembersThisMonth": 15,
-  "revenueThisMonth": 7500.0,
-  "totalTrainers": 8,
-  "totalBranches": 3
-}
-```
-
 #### GET /analytics/branch/:branchId/dashboard
 
 Get branch dashboard analytics.
@@ -819,6 +805,8 @@ Get recent branch payments.
 ## Error Responses
 
 ### Standard Error Format
+
+All error responses follow this format:
 
 ```json
 {
@@ -1025,5 +1013,5 @@ For API support and questions:
 
 ---
 
-**Last Updated**: November 2025
+**Last Updated**: December 2025
 **API Version**: v1.0.0

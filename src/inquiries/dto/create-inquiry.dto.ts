@@ -7,7 +7,6 @@ import {
   IsEnum,
   IsDateString,
   IsUUID,
-  IsPhoneNumber,
   MinLength,
   MaxLength,
 } from 'class-validator';

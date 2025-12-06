@@ -11,7 +11,6 @@ import { User } from '../entities/users.entity';
 import { Role } from '../entities/roles.entity';
 import { Attendance } from '../entities/attendance.entity';
 import { PaymentTransaction } from '../entities/payment_transactions.entity';
-import { MemberSubscription } from '../entities/member_subscriptions.entity';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import * as bcrypt from 'bcrypt';

@@ -13,7 +13,6 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
-    console.log('🚀 ~ AuthService ~ validateUser ~ user:', user);
     if (!user) throw new UnauthorizedException('User not found');
     const isPasswordMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordMatch)
@@ -28,7 +27,6 @@ export class AuthService {
       email: user.email,
       role: user.role,
     };
-    Logger.log(payload, 'payload');
     return this.jwtService.sign(payload);
   }
 }
