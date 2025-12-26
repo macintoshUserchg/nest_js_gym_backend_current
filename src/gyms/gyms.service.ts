@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Gym } from '../entities/gym.entity';
 import { Branch } from '../entities/branch.entity';
+import { Member } from '../entities/members.entity';
 import { CreateGymDto } from './dto/create-gym.dto';
 import { UpdateGymDto } from './dto/update-gym.dto';
 import { CreateBranchDto } from './dto/create-branch.dto';
@@ -15,6 +16,8 @@ export class GymsService {
     private gymsRepo: Repository<Gym>,
     @InjectRepository(Branch)
     private branchesRepo: Repository<Branch>,
+    @InjectRepository(Member)
+    private membersRepo: Repository<Member>,
   ) {}
 
   // ========== GYM OPERATIONS ==========
@@ -46,8 +49,19 @@ export class GymsService {
     });
   }
 
-  async findAll() {
-    return this.gymsRepo.find({ relations: ['branches'] });
+  async findAll(location?: string, search?: string) {
+    const queryBuilder = this.gymsRepo.createQueryBuilder('gym')
+      .leftJoinAndSelect('gym.branches', 'branches');
+    
+    if (location) {
+      queryBuilder.andWhere('gym.location ILIKE :location', { location: `%${location}%` });
+    }
+    
+    if (search) {
+      queryBuilder.andWhere('gym.name ILIKE :search', { search: `%${search}%` });
+    }
+    
+    return queryBuilder.getMany();
   }
 
   async findOne(id: string) {
@@ -170,5 +184,57 @@ export class GymsService {
   async removeBranch(id: string) {
     const branch = await this.findOneBranch(id);
     return this.branchesRepo.remove(branch);
+  }
+
+  // ========== MEMBER OPERATIONS BY GYM ==========
+
+  async findMembersByGym(gymId: string) {
+    // Verify gym exists
+    await this.findOne(gymId);
+
+    // Get all members from all branches of this gym
+    const members = await this.membersRepo.find({
+      where: {
+        branch: {
+          gym: { gymId },
+        },
+      },
+      relations: ['branch', 'subscription'],
+    });
+
+    return members.map((member) => ({
+      id: member.id,
+      fullName: member.fullName,
+      email: member.email,
+      phone: member.phone,
+      gender: member.gender,
+      dateOfBirth: member.dateOfBirth,
+      addressLine1: member.addressLine1,
+      addressLine2: member.addressLine2,
+      city: member.city,
+      state: member.state,
+      postalCode: member.postalCode,
+      avatarUrl: member.avatarUrl,
+      emergencyContactName: member.emergencyContactName,
+      emergencyContactPhone: member.emergencyContactPhone,
+      isActive: member.isActive,
+      branch: member.branch
+        ? {
+            branchId: member.branch.branchId,
+            name: member.branch.name,
+            location: member.branch.location,
+          }
+        : null,
+      subscription: member.subscription
+        ? {
+            id: member.subscription.id,
+            isActive: member.subscription.isActive,
+            startDate: member.subscription.startDate,
+            endDate: member.subscription.endDate,
+          }
+        : null,
+      createdAt: member.createdAt,
+      updatedAt: member.updatedAt,
+    }));
   }
 }

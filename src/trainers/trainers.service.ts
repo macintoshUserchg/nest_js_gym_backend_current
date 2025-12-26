@@ -96,10 +96,19 @@ export class TrainersService {
     return savedTrainer;
   }
 
-  async findAll() {
-    return this.trainersRepo.find({
-      relations: ['branch'],
-    });
+  async findAll(branchId?: string, specialization?: string) {
+    const queryBuilder = this.trainersRepo.createQueryBuilder('trainer')
+      .leftJoinAndSelect('trainer.branch', 'branch');
+    
+    if (branchId) {
+      queryBuilder.andWhere('branch.branchId = :branchId', { branchId });
+    }
+    
+    if (specialization) {
+      queryBuilder.andWhere('trainer.specialization ILIKE :specialization', { specialization: `%${specialization}%` });
+    }
+    
+    return queryBuilder.getMany();
   }
 
   async findOne(id: number) {

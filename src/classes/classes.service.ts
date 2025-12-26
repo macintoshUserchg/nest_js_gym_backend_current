@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Class } from '../entities/classes.entity';
 import { Branch } from '../entities/branch.entity';
 import { Trainer } from '../entities/trainers.entity';
+import { Gym } from '../entities/gym.entity';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 
@@ -16,6 +17,8 @@ export class ClassesService {
     private branchesRepo: Repository<Branch>,
     @InjectRepository(Trainer)
     private trainersRepo: Repository<Trainer>,
+    @InjectRepository(Gym)
+    private gymsRepo: Repository<Gym>,
   ) {}
 
   async create(createDto: CreateClassDto) {
@@ -50,10 +53,23 @@ export class ClassesService {
     return this.classesRepo.save(classEntity);
   }
 
-  async findAll() {
-    return this.classesRepo.find({
-      relations: ['branch'],
-    });
+  async findAll(branchId?: string, timing?: string, day?: number) {
+    const queryBuilder = this.classesRepo.createQueryBuilder('class')
+      .leftJoinAndSelect('class.branch', 'branch');
+    
+    if (branchId) {
+      queryBuilder.andWhere('branch.branchId = :branchId', { branchId });
+    }
+    
+    if (timing) {
+      queryBuilder.andWhere('class.timings ILIKE :timing', { timing: `%${timing}%` });
+    }
+    
+    if (day !== undefined) {
+      queryBuilder.andWhere('class.days_of_week::int[] && :day', { day: [day] });
+    }
+    
+    return queryBuilder.getMany();
   }
 
   async findOne(id: string) {
@@ -117,5 +133,31 @@ export class ClassesService {
   async remove(id: string) {
     const classEntity = await this.findOne(id);
     return this.classesRepo.remove(classEntity);
+  }
+
+  async findByGym(gymId: string) {
+    // Verify gym exists
+    const gym = await this.gymsRepo.findOne({
+      where: { gymId },
+    });
+    if (!gym) {
+      throw new NotFoundException(`Gym with ID ${gymId} not found`);
+    }
+
+    // Get all branches for the gym
+    const branches = await this.branchesRepo.find({
+      where: { gym: { gymId } },
+    });
+
+    if (branches.length === 0) {
+      return [];
+    }
+
+    // Get all classes for all branches
+    const branchIds = branches.map((branch) => branch.branchId);
+    return this.classesRepo.find({
+      where: branchIds.map((branchId) => ({ branch: { branchId } })),
+      relations: ['branch'],
+    });
   }
 }

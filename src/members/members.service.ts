@@ -113,10 +113,27 @@ export class MembersService {
     return savedMember;
   }
 
-  async findAll() {
-    return this.membersRepo.find({
-      relations: ['branch', 'subscription'],
-    });
+  async findAll(branchId?: string, status?: string, search?: string) {
+    const queryBuilder = this.membersRepo.createQueryBuilder('member')
+      .leftJoinAndSelect('member.branch', 'branch')
+      .leftJoinAndSelect('member.subscription', 'subscription');
+    
+    if (branchId) {
+      queryBuilder.andWhere('branch.branchId = :branchId', { branchId });
+    }
+    
+    if (status) {
+      queryBuilder.andWhere('member.isActive = :status', { status: status === 'active' });
+    }
+    
+    if (search) {
+      queryBuilder.andWhere(
+        '(member.fullName ILIKE :search OR member.email ILIKE :search)',
+        { search: `%${search}%` }
+      );
+    }
+    
+    return queryBuilder.getMany();
   }
 
   async findOne(id: number) {

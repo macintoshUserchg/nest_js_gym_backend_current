@@ -1,8 +1,8 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
-  ApiOperation,
   ApiResponse,
+  ApiOperation,
   ApiParam,
   ApiBearerAuth,
 } from '@nestjs/swagger';
@@ -18,9 +18,118 @@ export class AnalyticsController {
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get gym dashboard analytics' })
-  @ApiParam({ name: 'gymId', description: 'Gym ID' })
-  @ApiResponse({ status: 200, description: 'Return gym dashboard analytics.' })
-  @ApiResponse({ status: 404, description: 'Gym not found.' })
+  @ApiParam({ name: 'gymId', description: 'Gym ID', example: 'gym-123' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return gym dashboard analytics.',
+    schema: {
+      example: {
+        gym: {
+          id: '7c3296b9-604b-40ee-8b7d-43e645c01bba',
+          name: 'Fitness First Elite',
+          branchId: '34b08021-5f99-4df8-a3c6-efb78c9a17e2',
+          branchName: 'Fitness First - Downtown',
+        },
+        today: {
+          payments: {
+            online: 0,
+            cash: 0,
+          },
+          attendance: 0,
+          admissions: 0,
+          renewals: 0,
+          duesPaid: 0,
+        },
+        members: {
+          total: 60,
+          active: 59,
+          inactive: 1,
+          expiring: {
+            today: {
+              count: 3,
+              members: [850, 852, 855],
+            },
+            next3Days: {
+              count: 5,
+              members: [860, 862, 865, 870, 872],
+            },
+          },
+          birthdays: {
+            today: {
+              count: 2,
+              members: [840, 847],
+            },
+          },
+          dues: {
+            count: 2,
+            totalAmount: 249.98,
+            members: [
+              {
+                id: 838,
+                amount: 124.99,
+              },
+              {
+                id: 845,
+                amount: 124.99,
+              },
+            ],
+          },
+        },
+        resources: {
+          trainers: 12,
+          classes: 12,
+        },
+        revenue: {
+          current: 339.96,
+          lastMonth: 0,
+          change: {
+            percent: 100,
+            type: 'increase',
+          },
+        },
+        memberGrowth: {
+          current: 59,
+          lastMonth: 0,
+          change: {
+            percent: 100,
+            type: 'increase',
+          },
+        },
+        recentPayments: [
+          {
+            txnId: '282c8dd6-3f57-4eee-a2c6-e79662c9a304',
+            amount: 79.99,
+            method: 'card',
+            status: 'completed',
+            ref: 'TXN001',
+            date: '2025-12-19T08:48:52.313Z',
+            member: {
+              id: 838,
+              name: 'Alice Cooper',
+              email: 'alice.cooper0@email.com',
+            },
+            invoice: {
+              id: 'c84ba55c-ddcf-415f-bd26-95871af8e0fe',
+              amount: 79.99,
+              status: 'paid',
+            },
+            notes: 'Payment for January membership',
+          },
+        ],
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Gym not found.',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Gym with ID gym-999 not found',
+        error: 'Not Found',
+      },
+    },
+  })
   getGymDashboard(@Param('gymId') gymId: string) {
     return this.analyticsService.getGymDashboard(gymId);
   }
@@ -29,12 +138,122 @@ export class AnalyticsController {
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get branch dashboard analytics' })
-  @ApiParam({ name: 'branchId', description: 'Branch ID' })
+  @ApiParam({
+    name: 'branchId',
+    description: 'Branch ID',
+    example: 'branch-456',
+  })
   @ApiResponse({
     status: 200,
     description: 'Return branch dashboard analytics.',
+    schema: {
+      example: {
+        gym: {
+          id: 'gym-123',
+          name: 'Fitness World',
+          branchId: 'branch-456',
+          branchName: 'Downtown Branch',
+        },
+        today: {
+          payments: {
+            online: 8,
+            cash: 5,
+          },
+          attendance: 25,
+          admissions: 1,
+          renewals: 3,
+          duesPaid: 2,
+        },
+        members: {
+          total: 75,
+          active: 60,
+          inactive: 15,
+          expiring: {
+            today: {
+              count: 2,
+              members: [850, 852],
+            },
+            next3Days: {
+              count: 6,
+              members: [860, 862, 865, 870, 872, 874],
+            },
+          },
+          birthdays: {
+            today: {
+              count: 1,
+              members: [840],
+            },
+          },
+          dues: {
+            count: 4,
+            totalAmount: 499.96,
+            members: [
+              {
+                id: 838,
+                amount: 124.99,
+              },
+              {
+                id: 845,
+                amount: 124.99,
+              },
+            ],
+          },
+        },
+        resources: {
+          trainers: 6,
+          classes: 4,
+        },
+        revenue: {
+          current: 1899.96,
+          lastMonth: 1500.0,
+          change: {
+            percent: 26.66,
+            type: 'increase',
+          },
+        },
+        memberGrowth: {
+          current: 30,
+          lastMonth: 25,
+          change: {
+            percent: 20.0,
+            type: 'increase',
+          },
+        },
+        recentPayments: [
+          {
+            txnId: '282c8dd6-3f57-4eee-a2c6-e79662c9a304',
+            amount: 79.99,
+            method: 'card',
+            status: 'completed',
+            ref: 'TXN001',
+            date: '2025-12-19T08:48:52.313Z',
+            member: {
+              id: 838,
+              name: 'Alice Cooper',
+              email: 'alice.cooper0@email.com',
+            },
+            invoice: {
+              id: 'c84ba55c-ddcf-415f-bd26-95871af8e0fe',
+              amount: 79.99,
+              status: 'paid',
+            },
+            notes: 'Payment for January membership',
+          },
+        ],
+      },
+    },
   })
-  @ApiResponse({ status: 404, description: 'Branch not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Branch not found.',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Branch with ID branch-999 not found',
+        error: 'Not Found',
+      },
+    },
+  })
   getBranchDashboard(@Param('branchId') branchId: string) {
     return this.analyticsService.getBranchDashboard(branchId);
   }
@@ -43,9 +262,38 @@ export class AnalyticsController {
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get gym member analytics' })
-  @ApiParam({ name: 'gymId', description: 'Gym ID' })
-  @ApiResponse({ status: 200, description: 'Return gym member analytics.' })
-  @ApiResponse({ status: 404, description: 'Gym not found.' })
+  @ApiParam({ name: 'gymId', description: 'Gym ID', example: 'gym-123' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return gym member analytics.',
+    schema: {
+      example: {
+        gymId: 'gym-123',
+        gymName: 'Fitness World',
+        members: {
+          total: 150,
+          active: 120,
+          inactive: 30,
+          expiringToday: 5,
+          amount_due_members: 8,
+          total_amount_due: 2500.0,
+          expiring3days: 12,
+          birthday_today: 2,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Gym not found.',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Gym with ID gym-999 not found',
+        error: 'Not Found',
+      },
+    },
+  })
   getGymMemberAnalytics(@Param('gymId') gymId: string) {
     return this.analyticsService.getGymMemberAnalytics(gymId);
   }
@@ -54,9 +302,43 @@ export class AnalyticsController {
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get branch member analytics' })
-  @ApiParam({ name: 'branchId', description: 'Branch ID' })
-  @ApiResponse({ status: 200, description: 'Return branch member analytics.' })
-  @ApiResponse({ status: 404, description: 'Branch not found.' })
+  @ApiParam({
+    name: 'branchId',
+    description: 'Branch ID',
+    example: 'branch-456',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Return branch member analytics.',
+    schema: {
+      example: {
+        gymId: 'gym-123',
+        gymName: 'Fitness World',
+        branchId: 'branch-456',
+        branchName: 'Downtown Branch',
+        members: {
+          total: 75,
+          active: 60,
+          inactive: 15,
+          expiringToday: 2,
+          amount_due_members: 4,
+          expiring3days: 6,
+          birthday_today: 1,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Branch not found.',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Branch with ID branch-999 not found',
+        error: 'Not Found',
+      },
+    },
+  })
   getBranchMemberAnalytics(@Param('branchId') branchId: string) {
     return this.analyticsService.getBranchMemberAnalytics(branchId);
   }
@@ -65,9 +347,33 @@ export class AnalyticsController {
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get gym attendance analytics' })
-  @ApiParam({ name: 'gymId', description: 'Gym ID' })
-  @ApiResponse({ status: 200, description: 'Return gym attendance analytics.' })
-  @ApiResponse({ status: 404, description: 'Gym not found.' })
+  @ApiParam({ name: 'gymId', description: 'Gym ID', example: 'gym-123' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return gym attendance analytics.',
+    schema: {
+      example: {
+        gymId: 'gym-123',
+        gymName: 'Fitness World',
+        branchId: 'branch-456',
+        branchName: 'Main Branch',
+        attendance: {
+          today: 42,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Gym not found.',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Gym with ID gym-999 not found',
+        error: 'Not Found',
+      },
+    },
+  })
   getGymAttendanceAnalytics(@Param('gymId') gymId: string) {
     return this.analyticsService.getGymAttendanceAnalytics(gymId);
   }
@@ -76,12 +382,37 @@ export class AnalyticsController {
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get branch attendance analytics' })
-  @ApiParam({ name: 'branchId', description: 'Branch ID' })
+  @ApiParam({
+    name: 'branchId',
+    description: 'Branch ID',
+    example: 'branch-456',
+  })
   @ApiResponse({
     status: 200,
     description: 'Return branch attendance analytics.',
+    schema: {
+      example: {
+        gymId: 'gym-123',
+        gymName: 'Fitness World',
+        branchId: 'branch-456',
+        branchName: 'Downtown Branch',
+        attendance: {
+          today: 25,
+        },
+      },
+    },
   })
-  @ApiResponse({ status: 404, description: 'Branch not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Branch not found.',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Branch with ID branch-999 not found',
+        error: 'Not Found',
+      },
+    },
+  })
   getBranchAttendanceAnalytics(@Param('branchId') branchId: string) {
     return this.analyticsService.getBranchAttendanceAnalytics(branchId);
   }
@@ -92,12 +423,51 @@ export class AnalyticsController {
   @ApiOperation({
     summary: 'Get 10 most recent payment transactions for a gym',
   })
-  @ApiParam({ name: 'gymId', description: 'Gym ID' })
+  @ApiParam({ name: 'gymId', description: 'Gym ID', example: 'gym-123' })
   @ApiResponse({
     status: 200,
     description: 'Return recent payment transactions.',
+    schema: {
+      example: {
+        gymId: 'gym-123',
+        gymName: 'Fitness World',
+        branchId: 'branch-456',
+        branchName: 'Main Branch',
+        recentPayments: [
+          {
+            transactionId: 'txn-001',
+            amount: 1200.0,
+            method: 'credit_card',
+            status: 'completed',
+            referenceNumber: 'REF-12345',
+            notes: 'Annual membership fee',
+            createdAt: '2023-12-20T10:30:00Z',
+            member: {
+              id: 'member-001',
+              fullName: 'John Doe',
+              email: 'john@example.com',
+            },
+            invoice: {
+              invoiceId: 'inv-001',
+              totalAmount: 1200.0,
+              status: 'paid',
+            },
+          },
+        ],
+      },
+    },
   })
-  @ApiResponse({ status: 404, description: 'Gym not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Gym not found.',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Gym with ID gym-999 not found',
+        error: 'Not Found',
+      },
+    },
+  })
   getGymRecentPayments(@Param('gymId') gymId: string) {
     return this.analyticsService.getGymRecentPayments(gymId);
   }
@@ -108,12 +478,55 @@ export class AnalyticsController {
   @ApiOperation({
     summary: 'Get 10 most recent payment transactions for a branch',
   })
-  @ApiParam({ name: 'branchId', description: 'Branch ID' })
+  @ApiParam({
+    name: 'branchId',
+    description: 'Branch ID',
+    example: 'branch-456',
+  })
   @ApiResponse({
     status: 200,
     description: 'Return recent payment transactions.',
+    schema: {
+      example: {
+        gymId: 'gym-123',
+        gymName: 'Fitness World',
+        branchId: 'branch-456',
+        branchName: 'Downtown Branch',
+        recentPayments: [
+          {
+            transactionId: 'txn-002',
+            amount: 800.0,
+            method: 'cash',
+            status: 'completed',
+            referenceNumber: 'REF-67890',
+            notes: 'Monthly membership renewal',
+            createdAt: '2023-12-21T14:15:00Z',
+            member: {
+              id: 'member-002',
+              fullName: 'Jane Smith',
+              email: 'jane@example.com',
+            },
+            invoice: {
+              invoiceId: 'inv-002',
+              totalAmount: 800.0,
+              status: 'paid',
+            },
+          },
+        ],
+      },
+    },
   })
-  @ApiResponse({ status: 404, description: 'Branch not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Branch not found.',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Branch with ID branch-999 not found',
+        error: 'Not Found',
+      },
+    },
+  })
   getBranchRecentPayments(@Param('branchId') branchId: string) {
     return this.analyticsService.getBranchRecentPayments(branchId);
   }

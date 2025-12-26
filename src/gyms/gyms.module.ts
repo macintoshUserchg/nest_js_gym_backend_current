@@ -4,9 +4,10 @@ import { GymsService } from './gyms.service';
 import { GymsController, BranchesController } from './gyms.controller';
 import { Gym } from '../entities/gym.entity';
 import { Branch } from '../entities/branch.entity';
+import { Member } from '../entities/members.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Gym, Branch])],
+  imports: [TypeOrmModule.forFeature([Gym, Branch, Member])],
   controllers: [GymsController, BranchesController],
   providers: [GymsService],
   exports: [GymsService],

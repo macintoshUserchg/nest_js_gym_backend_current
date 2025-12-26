@@ -1,0 +1,38 @@
+{
+    "timestamp": "2025-12-26T10:44:59.000Z",
+    "request": {
+        "method": "POST",
+        "url": "http://localhost:3001/auth/login",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "body": {
+            "email": "sophia.johnson-smith0@email.com",
+            "password": "Member123!"
+        }
+    },
+    "response": {
+        "status": 200,
+        "statusText": "OK",
+        "headers": {
+            "x-powered-by": "Express",
+            "content-type": "application/json; charset=utf-8",
+            "content-length": "440",
+            "etag": "W/\"1b8-gb9qZ2Zj5abk08g2Q++rjFgx0x8\"",
+            "date": "Fri, 26 Dec 2025 05:14:59 GMT",
+            "connection": "keep-alive",
+            "keep-alive": "timeout=5"
+        },
+        "body": {
+            "userid": "e34bf100-ee2f-4ef2-a5f4-074ebc717131",
+            "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlMzRiZjEwMC1lZTJmLTRlZjItYTVmNC0wNzRlYmM3MTcxMzEiLCJlbWFpbCI6InNvcGhpYS5qb2huc29uLXNtaXRoMEBlbWFpbC5jb20iLCJyb2xlIjp7ImlkIjoiN2Q1NmJhMTItOWI4ZC00MTZhLWJlMTgtNmExMDg4NTcwMGFiIiwibmFtZSI6Ik1FTUJFUiIsImRlc2NyaXB0aW9uIjoiTUVNQkVSIHJvbGUifSwiaWF0IjoxNzY2NzI2MDk5LCJleHAiOjE3NjY4MTI0OTl9.FfLoeRZ4AHHbyu_AXlB3HOff4sbAUTNsbvY2dFGr_pQ"
+        }
+    },
+    "credentials": {
+        "email": "sophia.johnson-smith0@email.com",
+        "password": "Member123!",
+        "role": "MEMBER"
+    },
+    "token_expiry": "2025-12-26T18:54:59.000Z",
+    "note": "Successfully authenticated with correct member email format"
+}

@@ -1,0 +1,38 @@
+{
+    "timestamp": "2025-12-26T10:43:47.000Z",
+    "request": {
+        "method": "POST",
+        "url": "http://localhost:3001/auth/login",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "body": {
+            "email": "victoria.pembroke0@email.com",
+            "password": "Member123!"
+        }
+    },
+    "response": {
+        "status": 401,
+        "statusText": "Unauthorized",
+        "headers": {
+            "x-powered-by": "Express",
+            "content-type": "application/json; charset=utf-8",
+            "content-length": "68",
+            "etag": "W/\"44-azqE+goSbX1dVEGeG9I7ZMbRHZE\"",
+            "date": "Fri, 26 Dec 2025 05:13:47 GMT",
+            "connection": "keep-alive",
+            "keep-alive": "timeout=5"
+        },
+        "body": {
+            "message": "User not found",
+            "error": "Unauthorized",
+            "statusCode": 401
+        }
+    },
+    "credentials": {
+        "email": "victoria.pembroke0@email.com",
+        "password": "Member123!",
+        "role": "MEMBER"
+    },
+    "error": "User not found - Member may not exist or credentials are incorrect"
+}

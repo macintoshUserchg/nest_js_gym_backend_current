@@ -1,5 +1,18 @@
 {
-    "editor.fontFamily": "Fira Code ,Menlo, Monaco, 'Courier New', monospace",
-    "editor.fontSize": 12,
-    "editor.fontLigatures": true
+  "editor.fontFamily": "Fira Code ,Menlo, Monaco, 'Courier New', monospace",
+  "editor.fontSize": 12,
+  "editor.fontLigatures": true,
+  "chat.disableAIFeatures": true,
+  "surround.with.asyncArrowFunction": {
+    "label": "asyncArrowFunction",
+    "description": "const $name = async ($params) => { ... }",
+    "disabled": false,
+    "snippet": "const ${1:fnName} = async (${2:params}) => {\n\t$TM_SELECTED_TEXT\n}$0"
+  },
+  "settingsSync.ignoredExtensions": [
+    "GitHub.copilot",
+    "GitHub.copilot-chat"
+  ],
+  "claudeCode.disableLoginPrompt": true,
+  "workbench.colorCustomizations": {}
 }

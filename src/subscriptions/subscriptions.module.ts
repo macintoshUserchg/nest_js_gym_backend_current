@@ -8,10 +8,16 @@ import {
 import { MemberSubscription } from '../entities/member_subscriptions.entity';
 import { Member } from '../entities/members.entity';
 import { MembershipPlan } from '../entities/membership_plans.entity';
+import { Class } from '../entities/classes.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MemberSubscription, Member, MembershipPlan]),
+    TypeOrmModule.forFeature([
+      MemberSubscription, 
+      Member, 
+      MembershipPlan, 
+      Class
+    ]),
   ],
   controllers: [SubscriptionsController, MemberSubscriptionsController],
   providers: [SubscriptionsService],

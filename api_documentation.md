@@ -1,1017 +1,359 @@
-# Gym Management System - API Documentation
-
-## Overview
-
-This document provides comprehensive API documentation for the Gym Management System built with NestJS. The system offers a complete suite of endpoints for managing gyms, members, trainers, classes, attendance, subscriptions, financial transactions, and lead management.
-
-## Base URL
-
-```
-https://your-domain.com/api
-```
-
-## Authentication
-
-### JWT Authentication
-
-All protected endpoints require JWT authentication. Include the token in the Authorization header:
-
-```
-Authorization: Bearer <your-jwt-token>
-```
-
-### Authentication Endpoints
-
-#### POST /auth/login
-
-Authenticate a user and receive a JWT token.
-
-**Request Body:**
-
-```json
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-
-#### POST /auth/logout
-
-Logout a user (client-side token removal).
-
-## API Endpoints
-
-### User Management
-
-#### POST /users
-
-Create a new user.
-
-**Request Body:**
-
-```json
-{
-  "email": "john@example.com",
-  "password": "password123",
-  "gymId": "gym-uuid",
-  "branchId": "branch-uuid",
-  "roleId": "role-uuid",
-  "memberId": 1,
-  "trainerId": 1
-}
-```
-
-#### GET /users
-
-Get all users (Authenticated).
-
-#### GET /users/profile
-
-Get current user profile (Authenticated).
-
-#### GET /users/:id
-
-Get user by ID (Authenticated).
-
-#### PATCH /users/:id
-
-Update user (Authenticated).
-
-**Request Body:**
-
-```json
-{
-  "email": "newemail@example.com",
-  "gymId": "new-gym-uuid",
-  "branchId": "new-branch-uuid",
-  "roleId": "new-role-uuid"
-}
-```
-
-#### DELETE /users/:id
-
-Delete user (Authenticated).
-
-### Role Management
-
-#### GET /roles
-
-Get all roles.
-
-#### GET /roles/:id
-
-Get role by ID.
-
-#### GET /roles/name/:name
-
-Get role by name.
-
-### Gym Management
-
-#### POST /gyms
-
-Create a new gym.
-
-**Request Body:**
-
-```json
-{
-  "name": "Fitness Center",
-  "ownerId": "owner-uuid",
-  "email": "gym@example.com",
-  "phone": "+1234567890",
-  "address": "123 Gym Street",
-  "location": "City Center"
-}
-```
-
-#### GET /gyms
-
-Get all gyms.
-
-#### GET /gyms/:id
-
-Get gym by ID.
-
-#### PATCH /gyms/:id
-
-Update gym.
-
-**Request Body:**
-
-```json
-{
-  "name": "Updated Gym Name",
-  "email": "updated@example.com",
-  "phone": "+1234567890",
-  "address": "New Address",
-  "location": "New Location"
-}
-```
-
-#### DELETE /gyms/:id
-
-Delete gym.
-
-### Branch Management
-
-#### POST /gyms/:gymId/branches
-
-Create a new branch for a gym.
-
-**Request Body:**
-
-```json
-{
-  "name": "Downtown Branch",
-  "email": "branch@example.com",
-  "phone": "+1234567891",
-  "address": "456 Branch Street",
-  "location": "Downtown",
-  "state": "CA",
-  "mainBranch": true,
-  "latitude": 37.7749,
-  "longitude": -122.4194
-}
-```
-
-#### GET /branches
-
-Get all branches.
-
-#### GET /branches/:id
-
-Get branch by ID.
-
-#### PATCH /branches/:id
-
-Update branch.
-
-**Request Body:**
-
-```json
-{
-  "name": "Updated Branch Name",
-  "email": "updatedbranch@example.com",
-  "phone": "+1234567891",
-  "address": "Updated Address",
-  "mainBranch": false
-}
-```
-
-#### DELETE /branches/:id
-
-Delete branch.
+# Fitness First Elite API Documentation
+
+**Version**: 2.0
+**System**: Multi-Branch Gym Management System
+**Base URL**: `http://localhost:3001`
+**Authentication**: JWT Bearer Token
+**Format**: JSON
+
+---
+
+## 📋 Table of Contents
+
+1. [Authentication](#authentication)
+2. [Available Endpoints](#available-endpoints)
+3. [Platform Architecture](#platform-architecture)
+4. [Test Credentials](#test-credentials)
+5. [Error Handling](#error-handling)
+6. [Quick Start](#quick-start)
+
+---
+
+## 🔐 Authentication
+
+### Platform-Specific Login
+
+The system supports different platforms with role-based access:
+
+#### Admin Web Panel (Superadmin)
+**Platform**: Admin Web Panel
+**Use Case**: Full system management across all branches
+**Endpoint**: `POST /auth/login`
+
+**Credentials:**
+- Email: `superadmin@fitnessfirstelite.com`
+- Password: `SuperAdmin123!`
+
+#### Mobile App - Admin (Branch Level)
+**Platform**: Android Mobile App
+**Use Case**: Branch-specific management
+**Endpoint**: `POST /auth/login`
+
+**Credentials:**
+- Email: `admin@fitnessfirstelite.com`
+- Password: `Admin123!`
+
+#### Mobile App - Trainer
+**Platform**: Android Mobile App
+**Use Case**: Member assignments, workout/diet plans, progress tracking
+**Endpoint**: `POST /auth/login`
+
+**Credentials:**
+- Email: `trainer.marcus.sterling@fitnessfirstelite.com`
+- Password: `Trainer123!`
+- Pattern: `trainer.<firstname>.<lastname>@fitnessfirstelite.com`
+- Available: 20 trainers (5 per branch)
+
+#### Mobile App - Member
+**Platform**: Android Mobile App
+**Use Case**: Own profile, workout plans, diet plans, progress, attendance
+**Endpoint**: `POST /auth/login`
+
+**Credentials:**
+- Email: `victoria.pembroke0@email.com`
+- Password: `Member123!`
+- Pattern: `<firstname>.<lastname><index>@email.com`
+- Available: 100 members (25 per branch)
+
+### Login Response Structure
+
+Successful login returns:
+- `userid`: User ID
+- `access_token`: JWT token for authentication
+
+---
+
+## 📡 Available Endpoints
+
+### Authentication
+- `POST /auth/login` - Authenticate and receive JWT token
+- `POST /auth/logout` - User logout (client-side token discard)
+
+### Gym & Branch Management
+- `POST /gyms` - Create gym
+- `GET /gyms` - List all gyms
+- `GET /gyms/:id` - Get gym details
+- `PATCH /gyms/:id` - Update gym
+- `DELETE /gyms/:id` - Delete gym
+- `POST /gyms/:gymId/branches` - Create branch
+- `GET /gyms/:gymId/branches` - Get gym branches
+- `GET /gyms/:gymId/members` - Get gym members
+- `GET /branches` - List all branches
+- `GET /branches/:id` - Get branch details
+- `PATCH /branches/:id` - Update branch
+- `DELETE /branches/:id` - Delete branch
 
 ### Member Management
-
-#### POST /members
-
-Create a new member.
-
-**Request Body:**
-
-```json
-{
-  "fullName": "John Doe",
-  "email": "john@example.com",
-  "phone": "+1234567890",
-  "gender": "male",
-  "dateOfBirth": "1990-01-01",
-  "addressLine1": "123 Main St",
-  "addressLine2": "Apt 1",
-  "city": "New York",
-  "state": "NY",
-  "postalCode": "10001",
-  "avatarUrl": "https://example.com/avatar.jpg",
-  "emergencyContactName": "Jane Doe",
-  "emergencyContactPhone": "+1234567891",
-  "isActive": true,
-  "branchId": "branch-uuid"
-}
-```
-
-#### GET /members
-
-Get all members.
-
-#### GET /members/:id
-
-Get member by ID.
-
-#### PATCH /members/:id
-
-Update member.
-
-**Request Body:**
-
-```json
-{
-  "fullName": "John Updated Doe",
-  "phone": "+1234567899",
-  "email": "johnupdated@example.com",
-  "isActive": true
-}
-```
-
-#### DELETE /members/:id
-
-Delete member.
-
-#### GET /branches/:branchId/members
-
-Get members by branch.
+- `POST /members` - Create member
+- `GET /members` - List all members
+- `GET /members/:id` - Get member details
+- `PATCH /members/:id` - Update member
+- `DELETE /members/:id` - Delete member
+- `GET /members/:memberId/dashboard` - Member dashboard data
+- `GET /branches/:branchId/members` - Branch-specific members
 
 ### Trainer Management
-
-#### POST /trainers
-
-Create a new trainer.
-
-**Request Body:**
-
-```json
-{
-  "fullName": "Jane Smith",
-  "email": "jane@example.com",
-  "phone": "+1234567892",
-  "specialization": "Personal Training",
-  "avatarUrl": "https://example.com/trainer.jpg",
-  "branchId": "branch-uuid"
-}
-```
-
-#### GET /trainers
-
-Get all trainers.
-
-#### GET /trainers/:id
-
-Get trainer by ID.
-
-#### PATCH /trainers/:id
-
-Update trainer.
-
-**Request Body:**
-
-```json
-{
-  "fullName": "Jane Updated Smith",
-  "specialization": "Yoga Instructor",
-  "phone": "+1234567899"
-}
-```
-
-#### DELETE /trainers/:id
-
-Delete trainer.
-
-#### GET /branches/:branchId/trainers
-
-Get trainers by branch.
+- `POST /trainers` - Create trainer
+- `GET /trainers` - List all trainers
+- `GET /trainers/:id` - Get trainer details
+- `PATCH /trainers/:id` - Update trainer
+- `DELETE /trainers/:id` - Delete trainer
+- `GET /branches/:branchId/trainers` - Branch-specific trainers
 
 ### Membership Plans
-
-#### POST /membership-plans
-
-Create a new membership plan.
-
-**Request Body:**
-
-```json
-{
-  "name": "Premium Plan",
-  "price": 50,
-  "durationInDays": 30,
-  "description": "Premium membership with full access",
-  "branchId": "branch-uuid"
-}
-```
-
-#### GET /membership-plans
-
-Get all membership plans.
-
-#### GET /membership-plans/:id
-
-Get membership plan by ID.
-
-#### PATCH /membership-plans/:id
-
-Update membership plan.
-
-**Request Body:**
-
-```json
-{
-  "name": "Updated Premium Plan",
-  "price": 60,
-  "durationInDays": 30,
-  "description": "Updated description"
-}
-```
-
-#### DELETE /membership-plans/:id
-
-Delete membership plan.
-
-#### GET /branches/:branchId/membership-plans
-
-Get membership plans by branch.
+- `POST /membership-plans` - Create membership plan
+- `GET /membership-plans` - List all plans
+- `GET /membership-plans/:id` - Get plan details
+- `PATCH /membership-plans/:id` - Update plan
+- `DELETE /membership-plans/:id` - Delete plan
+- `GET /branches/:branchId/membership-plans` - Branch-specific plans
 
 ### Subscriptions
-
-#### POST /subscriptions
-
-Create a new subscription for a member.
-
-**Request Body:**
-
-```json
-{
-  "memberId": 1,
-  "planId": 1,
-  "startDate": "2024-01-01",
-  "endDate": "2024-01-31"
-}
-```
-
-#### GET /subscriptions
-
-Get all subscriptions.
-
-#### GET /subscriptions/:id
-
-Get subscription by ID.
-
-#### PATCH /subscriptions/:id
-
-Update subscription.
-
-**Request Body:**
-
-```json
-{
-  "startDate": "2024-02-01",
-  "endDate": "2024-02-28",
-  "isActive": true
-}
-```
-
-#### DELETE /subscriptions/:id
-
-Delete subscription.
-
-#### POST /subscriptions/:id/cancel
-
-Cancel subscription.
-
-#### GET /members/:memberId/subscription
-
-Get member's current subscription.
-
-### Classes
-
-#### POST /classes
-
-Create a new class.
-
-**Request Body:**
-
-```json
-{
-  "branchId": "branch-uuid",
-  "name": "Yoga Class",
-  "description": "Beginner yoga session",
-  "timings": "morning",
-  "recurrenceType": "weekly",
-  "daysOfWeek": [1, 3, 5]
-}
-```
-
-#### GET /classes
-
-Get all classes.
-
-#### GET /classes/:id
-
-Get class by ID.
-
-#### PATCH /classes/:id
-
-Update class.
-
-**Request Body:**
-
-```json
-{
-  "name": "Advanced Yoga Class",
-  "description": "Advanced yoga session",
-  "timings": "evening",
-  "daysOfWeek": [2, 4, 6]
-}
-```
-
-#### DELETE /classes/:id
-
-Delete class.
-
-#### GET /branches/:branchId/classes
-
-Get classes by branch.
-
-### Member-Trainer Assignments
-
-#### POST /assignments
-
-Assign a member to a trainer.
-
-**Request Body:**
-
-```json
-{
-  "memberId": 1,
-  "trainerId": 1,
-  "startDate": "2024-01-01",
-  "endDate": "2024-12-31"
-}
-```
-
-#### GET /assignments
-
-Get all assignments.
-
-#### GET /assignments/:id
-
-Get assignment by ID.
-
-#### DELETE /assignments/:id
-
-Delete assignment.
-
-#### GET /members/:memberId/assignments
-
-Get member's trainers.
-
-#### GET /trainers/:trainerId/members
-
-Get trainer's members.
-
-### Attendance
-
-#### POST /attendance
-
-Mark attendance (check-in).
-
-**Request Body (Member):**
-
-```json
-{
-  "memberId": 1,
-  "branchId": "branch-uuid",
-  "notes": "Regular check-in"
-}
-```
-
-**Request Body (Trainer):**
-
-```json
-{
-  "trainerId": 1,
-  "branchId": "branch-uuid",
-  "notes": "Staff check-in"
-}
-```
-
-#### PATCH /attendance/:id/checkout
-
-Check out.
-
-#### GET /attendance
-
-Get all attendance records.
-
-#### GET /attendance/:id
-
-Get attendance record by ID.
-
-#### GET /members/:memberId/attendance
-
-Get member's attendance history.
-
-#### GET /trainers/:trainerId/attendance
-
-Get trainer's attendance history.
-
-#### GET /branches/:branchId/attendance
-
-Get branch attendance records.
-
-### Audit Logs
-
-#### POST /audit-logs
-
-Create an audit log entry.
-
-**Request Body:**
-
-```json
-{
-  "userId": "user-uuid",
-  "entityType": "Member",
-  "entityId": "1",
-  "action": "CREATE",
-  "previousValues": {},
-  "newValues": {
-    "fullName": "John Doe",
-    "email": "john@example.com"
-  }
-}
-```
-
-#### GET /audit-logs
-
-Get all audit logs.
-
-#### GET /audit-logs/:id
-
-Get audit log by ID.
-
-#### GET /audit-logs/user/:userId
-
-Get logs by user.
-
-#### GET /audit-logs/entity/:entityType/:entityId
-
-Get logs by entity.
-
-#### GET /audit-logs/action/:action
-
-Get logs by action type.
-
-### Invoices
-
-#### POST /invoices
-
-Create a new invoice.
-
-**Request Body:**
-
-```json
-{
-  "memberId": 1,
-  "subscriptionId": 1,
-  "amount": 50.0,
-  "description": "Monthly membership fee",
-  "dueDate": "2024-01-31"
-}
-```
-
-#### GET /invoices
-
-Get all invoices.
-
-#### GET /invoices/:id
-
-Get invoice by ID.
-
-#### PATCH /invoices/:id
-
-Update invoice.
-
-**Request Body:**
-
-```json
-{
-  "amount": 60.0,
-  "description": "Updated membership fee",
-  "dueDate": "2024-02-15"
-}
-```
-
-#### POST /invoices/:id/cancel
-
-Cancel invoice.
-
-#### GET /members/:memberId/invoices
-
-Get member's invoices.
-
-### Payments
-
-#### POST /payments
-
-Record a payment.
-
-**Request Body:**
-
-```json
-{
-  "invoiceId": "invoice-uuid",
-  "amount": 50.0,
-  "paymentMethod": "card",
-  "paymentReference": "PAY-123456",
-  "status": "completed"
-}
-```
-
-#### GET /payments
-
-Get all payments.
-
-#### GET /payments/:id
-
-Get payment by ID.
-
-#### GET /invoices/:invoiceId/payments
-
-Get invoice payments.
-
-#### GET /members/:memberId/payments
-
-Get member's payment history.
-
-### Inquiries (Lead Management)
-
-#### POST /inquiries
-
-Create a new inquiry.
-
-**Request Body:**
-
-```json
-{
-  "fullName": "Alice Johnson",
-  "email": "alice@example.com",
-  "phone": "+1234567893",
-  "dateOfBirth": "1985-05-15",
-  "addressLine1": "789 Prospect Ave",
-  "city": "Los Angeles",
-  "state": "CA",
-  "postalCode": "90210",
-  "occupation": "Software Engineer",
-  "fitnessGoals": "Weight loss and muscle gain",
-  "leadStatus": "new",
-  "leadSource": "website",
-  "preferredMembershipType": "premium",
-  "preferredContactMethod": "email",
-  "preferredContactTime": "afternoon",
-  "gymExperience": "intermediate",
-  "personalTrainingInterest": true,
-  "referralCode": "FRIEND10",
-  "branchId": "branch-uuid"
-}
-```
-
-#### GET /inquiries
-
-Get all inquiries with filtering.
-
-**Query Parameters:**
-
-- `status`: Filter by lead status
-- `source`: Filter by lead source
-- `branchId`: Filter by branch
-- `page`: Page number
-- `limit`: Items per page
-
-#### GET /inquiries/:id
-
-Get inquiry by ID.
-
-#### PATCH /inquiries/:id
-
-Update inquiry.
-
-**Request Body:**
-
-```json
-{
-  "fullName": "Alice Updated Johnson",
-  "phone": "+1234567899",
-  "fitnessGoals": "Muscle gain and endurance",
-  "leadStatus": "contacted"
-}
-```
-
-#### PATCH /inquiries/:id/status
-
-Update inquiry status.
-
-**Request Body:**
-
-```json
-{
-  "status": "contacted",
-  "statusReason": "Initial contact made"
-}
-```
-
-#### POST /inquiries/:id/convert
-
-Convert inquiry to member.
-
-#### DELETE /inquiries/:id
-
-Delete inquiry.
-
-#### GET /inquiries/pending
-
-Get pending inquiries.
-
-#### GET /inquiries/stats
-
-Get inquiry statistics.
-
-#### GET /inquiries/email/:email
-
-Get inquiry by email.
+- `POST /subscriptions` - Create subscription (assign member to plan)
+- `GET /subscriptions` - List all subscriptions
+- `GET /subscriptions/:id` - Get subscription details
+- `PATCH /subscriptions/:id` - Update subscription
+- `DELETE /subscriptions/:id` - Delete subscription
+- `POST /subscriptions/:id/cancel` - Cancel subscription
+- `GET /members/:memberId/subscription` - Member's subscription
+
+### Classes Management
+- `POST /classes` - Create class
+- `GET /classes` - List all classes
+- `GET /classes/:id` - Get class details
+- `PATCH /classes/:id` - Update class
+- `DELETE /classes/:id` - Delete class
+- `GET /branches/:branchId/classes` - Branch-specific classes
+- `GET /gyms/:gymId/classes` - Gym-specific classes
+
+### Attendance Tracking
+- `POST /attendance` - Mark attendance (check-in)
+- `PATCH /attendance/:id/checkout` - Check out
+- `GET /attendance` - List all attendance records
+- `GET /attendance/:id` - Get attendance record
+- `GET /members/:memberId/attendance` - Member attendance history
+- `GET /trainers/:trainerId/attendance` - Trainer attendance history
+- `GET /branches/:branchId/attendance` - Branch attendance records
+
+### Lead Management (Inquiries)
+- `POST /inquiries` - Create inquiry
+- `GET /inquiries` - List inquiries (with filtering & pagination)
+- `GET /inquiries/pending` - Get pending inquiries
+- `GET /inquiries/stats` - Get inquiry statistics
+- `GET /inquiries/:id` - Get inquiry details
+- `GET /inquiries/email/:email` - Get inquiry by email
+- `PATCH /inquiries/:id` - Update inquiry
+- `PATCH /inquiries/:id/status` - Update inquiry status
+- `POST /inquiries/:id/convert` - Convert inquiry to member
+- `DELETE /inquiries/:id` - Delete inquiry
+
+### Invoice Management
+- `POST /invoices` - Create invoice
+- `GET /invoices` - List all invoices
+- `GET /invoices/:id` - Get invoice details
+- `PATCH /invoices/:id` - Update invoice
+- `POST /invoices/:id/cancel` - Cancel invoice
+- `GET /members/:memberId/invoices` - Member invoices
 
 ### Analytics & Reporting
+- `GET /analytics/gym/:gymId/dashboard` - Gym dashboard analytics
+- `GET /analytics/branch/:branchId/dashboard` - Branch dashboard analytics
+- `GET /analytics/gym/:gymId/members` - Gym member analytics
+- `GET /analytics/branch/:branchId/members` - Branch member analytics
+- `GET /analytics/gym/:gymId/attendance` - Gym attendance analytics
+- `GET /analytics/branch/:branchId/attendance` - Branch attendance analytics
+- `GET /analytics/gym/:gymId/payments/recent` - Recent gym payments
+- `GET /analytics/branch/:branchId/payments/recent` - Recent branch payments
 
-#### GET /analytics/gym/:gymId/dashboard
+### Fitness Tracking
+- `POST /diet-plans` - Create diet plan
+- `GET /diet-plans` - List all diet plans
+- `GET /diet-plans/:id` - Get diet plan details
+- `PATCH /diet-plans/:id` - Update diet plan
+- `DELETE /diet-plans/:id` - Delete diet plan
+- `GET /diet-plans/member/:memberId` - Member diet plans
+- `GET /diet-plans/user/my-diet-plans` - User's created diet plans
 
-Get gym dashboard analytics.
+- `POST /workouts` - Create workout plan
+- `GET /workouts` - List all workout plans
+- `GET /workouts/:id` - Get workout plan details
+- `PATCH /workouts/:id` - Update workout plan
+- `DELETE /workouts/:id` - Delete workout plan
+- `GET /workouts/member/:memberId` - Member workout plans
+- `GET /workouts/user/my-workout-plans` - User's created workout plans
 
-#### GET /analytics/branch/:branchId/dashboard
+- `POST /progress-tracking` - Create progress record
+- `GET /progress-tracking` - List all progress records
+- `GET /progress-tracking/:id` - Get progress record details
+- `PATCH /progress-tracking/:id` - Update progress record
+- `DELETE /progress-tracking/:id` - Delete progress record
+- `GET /progress-tracking/member/:memberId` - Member progress records
+- `GET /progress-tracking/user/my-progress-records` - User's created progress records
 
-Get branch dashboard analytics.
+- `POST /goals` - Create fitness goal
+- `GET /goals` - List all goals
+- `GET /goals/:id` - Get goal details
+- `PATCH /goals/:id` - Update goal
+- `DELETE /goals/:id` - Delete goal
+- `GET /goals/member/:memberId` - Member goals
+- `GET /goals/user/my-goals` - User's created goals
 
-#### GET /analytics/gym/:gymId/members
+### User Management
+- `POST /users` - Create user
+- `GET /users` - List all users
+- `GET /users/profile` - Current user profile
+- `GET /users/:id` - Get user details
+- `PATCH /users/:id` - Update user
+- `DELETE /users/:id` - Delete user
 
-Get gym member analytics.
+---
 
-#### GET /analytics/branch/:branchId/members
+## 📱 Platform Architecture
 
-Get branch member analytics.
+### Admin Web Panel
+- **Frontend**: Web Dashboard
+- **User**: Superadmin only
+- **Access**: Full system management
+- **Key Features**:
+  - Cross-branch analytics
+  - Financial oversight
+  - Gym/branch creation
+  - User management
+  - System configuration
 
-#### GET /analytics/gym/:gymId/attendance
+### Android Mobile App
+- **Frontend**: Mobile App
+- **Users**: Admin, Trainer, Member
+- **Access**: Role-based capabilities
 
-Get gym attendance analytics.
+**Admin (Branch Level):**
+- Branch management
+- Member oversight
+- Local reporting
+- Staff management
 
-#### GET /analytics/branch/:branchId/attendance
+**Trainer:**
+- Member assignments
+- Workout plan creation
+- Diet plan creation
+- Progress tracking
+- Goal setting
 
-Get branch attendance analytics.
+**Member:**
+- Profile management
+- View workout plans
+- View diet plans
+- Track progress
+- Check attendance
+- Log workouts
 
-#### GET /analytics/gym/:gymId/payments/recent
+---
 
-Get recent gym payments.
+## 🎯 Test Credentials
 
-#### GET /analytics/branch/:branchId/payments/recent
+### Superadmin (Admin Web Panel)
+```
+Email: superadmin@fitnessfirstelite.com
+Password: SuperAdmin123!
+```
 
-Get recent branch payments.
+### Admin (Mobile App - Branch Level)
+```
+Email: admin@fitnessfirstelite.com
+Password: Admin123!
+```
 
-## Error Responses
+### Trainers (Mobile App - 20 Available)
+```
+Pattern: trainer.<firstname>.<lastname>@fitnessfirstelite.com
+Password: Trainer123!
 
-### Standard Error Format
+Examples:
+- trainer.marcus.sterling@fitnessfirstelite.com
+- trainer.sophia.valentine@fitnessfirstelite.com
+- trainer.alexander.blackwood@fitnessfirstelite.com
+```
 
-All error responses follow this format:
+### Members (Mobile App - 100 Available)
+```
+Pattern: <firstname>.<lastname><index>@email.com
+Password: Member123!
 
+Examples:
+- victoria.pembroke0@email.com
+- sophia.johnson-smith1@email.com
+- marcus.kingsley2@email.com
+```
+
+---
+
+## ⚠️ Error Handling
+
+### Standard Error Response
 ```json
 {
-  "statusCode": 404,
-  "message": "Resource not found",
-  "error": "Not Found"
+  "statusCode": 400,
+  "message": "Validation failed: email must be a valid email",
+  "error": "Bad Request"
 }
 ```
 
 ### Common Error Codes
-
-- **400 Bad Request**: Invalid request parameters
-- **401 Unauthorized**: Authentication required
-- **403 Forbidden**: Insufficient permissions
+- **400 Bad Request**: Invalid request body or parameters
+- **401 Unauthorized**: Missing or invalid authentication token
+- **403 Forbidden**: User lacks required permissions
 - **404 Not Found**: Resource not found
-- **409 Conflict**: Resource already exists
+- **409 Conflict**: Duplicate or constraint violation
+- **422 Unprocessable Entity**: Validation failed
 - **500 Internal Server Error**: Server error
-
-## Data Models
-
-### User
-
-```json
-{
-  "userId": "uuid",
-  "email": "string",
-  "gymId": "uuid",
-  "branchId": "uuid",
-  "roleId": "uuid",
-  "memberId": "number",
-  "trainerId": "number",
-  "createdAt": "datetime",
-  "updatedAt": "datetime"
-}
-```
-
-### Member
-
-```json
-{
-  "id": "number",
-  "fullName": "string",
-  "email": "string",
-  "phone": "string",
-  "gender": "male|female|other",
-  "dateOfBirth": "date",
-  "addressLine1": "string",
-  "addressLine2": "string",
-  "city": "string",
-  "state": "string",
-  "postalCode": "string",
-  "avatarUrl": "string",
-  "emergencyContactName": "string",
-  "emergencyContactPhone": "string",
-  "isActive": "boolean",
-  "branchId": "uuid",
-  "createdAt": "datetime",
-  "updatedAt": "datetime"
-}
-```
-
-### Trainer
-
-```json
-{
-  "id": "number",
-  "fullName": "string",
-  "email": "string",
-  "phone": "string",
-  "specialization": "string",
-  "avatarUrl": "string",
-  "branchId": "uuid"
-}
-```
-
-### Attendance
-
-```json
-{
-  "id": "uuid",
-  "memberId": "number",
-  "trainerId": "number",
-  "branchId": "uuid",
-  "attendanceType": "member|trainer",
-  "checkInTime": "datetime",
-  "checkOutTime": "datetime",
-  "date": "date",
-  "notes": "string"
-}
-```
-
-### Invoice
-
-```json
-{
-  "id": "uuid",
-  "memberId": "number",
-  "subscriptionId": "number",
-  "amount": "decimal",
-  "description": "string",
-  "dueDate": "date",
-  "status": "pending|paid|cancelled",
-  "createdAt": "datetime",
-  "updatedAt": "datetime"
-}
-```
-
-### Payment
-
-```json
-{
-  "id": "uuid",
-  "invoiceId": "uuid",
-  "amount": "decimal",
-  "paymentMethod": "cash|card|online|bank_transfer",
-  "paymentReference": "string",
-  "status": "pending|completed|failed",
-  "createdAt": "datetime"
-}
-```
-
-### Inquiry
-
-```json
-{
-  "id": "number",
-  "fullName": "string",
-  "email": "string",
-  "phone": "string",
-  "dateOfBirth": "date",
-  "addressLine1": "string",
-  "addressLine2": "string",
-  "city": "string",
-  "state": "string",
-  "postalCode": "string",
-  "occupation": "string",
-  "fitnessGoals": "string",
-  "leadStatus": "new|contacted|qualified|converted|closed",
-  "leadSource": "walk_in|referral|social_media|website|ads|other",
-  "preferredMembershipType": "basic|premium|vip|family|couple|student|corporate",
-  "preferredContactMethod": "email|phone|sms|whatsapp",
-  "preferredContactTime": "morning|afternoon|evening|anytime",
-  "gymExperience": "beginner|intermediate|advanced",
-  "personalTrainingInterest": "boolean",
-  "referralCode": "string",
-  "branchId": "uuid",
-  "statusReason": "string",
-  "contactedAt": "datetime",
-  "convertedAt": "datetime",
-  "closedAt": "datetime",
-  "createdAt": "datetime",
-  "updatedAt": "datetime"
-}
-```
-
-## Rate Limiting
-
-The API implements rate limiting to ensure fair usage:
-
-- **General endpoints**: 100 requests per minute
-- **Authentication endpoints**: 10 requests per minute
-- **File upload endpoints**: 20 requests per minute
-
-## CORS
-
-Cross-Origin Resource Sharing (CORS) is configured to allow requests from trusted domains only.
-
-## Versioning
-
-The API uses URL versioning:
-
-```
-https://your-domain.com/api/v1/endpoint
-```
-
-## SDKs and Client Libraries
-
-Official SDKs are available for:
-
-- JavaScript/TypeScript
-- Python
-- Java
-- PHP
-
-## Support
-
-For API support and questions:
-
-- Documentation: [https://your-domain.com/docs](https://your-domain.com/docs)
-- Support Email: api-support@example.com
-- Developer Forum: [https://community.example.com](https://community.example.com)
-
-## Changelog
-
-### v1.0.0 (2024-01-01)
-
-- Initial API release
-- Complete gym management functionality
-- Member and trainer management
-- Attendance tracking
-- Financial management
-- Lead management system
-- Analytics and reporting
 
 ---
 
-**Last Updated**: December 2025
-**API Version**: v1.0.0
+## 🚀 Quick Start
+
+### 1. Login
+```bash
+curl -X POST http://localhost:3001/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"superadmin@fitnessfirstelite.com","password":"SuperAdmin123!"}'
+```
+
+### 2. Use Token
+```bash
+# Store token from response
+TOKEN="your-jwt-token-here"
+
+# Make authenticated request
+curl -X GET http://localhost:3001/members \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### 3. Access Swagger UI
+```
+http://localhost:3001/api
+```
+
+---
+
+## 📚 Additional Resources
+
+- **Swagger UI**: `http://localhost:3001/api`
+- **Health Check**: `GET /health`
+- **Server Status**: Running on port 3001
+
+---
+
+**Document Version**: 2.0
+**Last Updated**: 2024
+**System**: Fitness First Elite Multi-Branch Gym Management
+**Status**: ✅ Ready for Testing

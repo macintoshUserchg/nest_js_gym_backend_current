@@ -1001,6 +1001,7 @@ Notification (N) ──→ (1) User  // @ManyToOne - Required
 - `PATCH /classes/:id` - Update class
 - `DELETE /classes/:id` - Delete class
 - `GET /branches/:branchId/classes` - Get branch classes
+- `GET /gyms/:gymId/classes` - Get all classes for a gym (across all branches)
 
 ### Member-Trainer Assignments
 

@@ -1,0 +1,487 @@
+CREATE SCHEMA "public";
+CREATE TYPE "classes_timings_enum" AS ENUM('morning', 'evening', 'both', 'either');
+CREATE TYPE "classes_recurrence_type_enum" AS ENUM('daily', 'weekly', 'monthly');
+CREATE TYPE "members_gender_enum" AS ENUM('male', 'female', 'other');
+CREATE TYPE "inquiries_status_enum" AS ENUM('new', 'contacted', 'qualified', 'converted', 'closed');
+CREATE TYPE "inquiries_source_enum" AS ENUM('walk_in', 'referral', 'social_media', 'website', 'google_ads', 'facebook_ads', 'print_ad', 'billboard', 'radio', 'television', 'other');
+CREATE TYPE "inquiries_preferredmembershiptype_enum" AS ENUM('basic', 'premium', 'vip', 'family', 'corporate', 'student', 'senior');
+CREATE TYPE "attendance_attendancetype_enum" AS ENUM('member', 'trainer');
+CREATE TYPE "member_trainer_assignments_status_enum" AS ENUM('active', 'ended');
+CREATE TYPE "payment_transactions_method_enum" AS ENUM('cash', 'card', 'online', 'bank_transfer');
+CREATE TYPE "payment_transactions_status_enum" AS ENUM('pending', 'completed', 'failed');
+CREATE TYPE "invoices_status_enum" AS ENUM('pending', 'paid', 'cancelled');
+CREATE TYPE "attendance_goals_goal_type_enum" AS ENUM('daily', 'weekly', 'monthly');
+CREATE TYPE "workout_plan_exercises_exercise_type_enum" AS ENUM('sets_reps', 'time', 'distance');
+CREATE TYPE "workout_plans_difficulty_level_enum" AS ENUM('beginner', 'intermediate', 'advanced');
+CREATE TYPE "workout_plans_plan_type_enum" AS ENUM('strength', 'cardio', 'flexibility', 'endurance', 'general');
+CREATE TYPE "diet_plan_meals_meal_type_enum" AS ENUM('breakfast', 'lunch', 'dinner', 'snack', 'pre_workout', 'post_workout');
+CREATE TYPE "diet_plans_goal_type_enum" AS ENUM('weight_loss', 'muscle_gain', 'maintenance', 'cutting', 'bulking');
+CREATE TYPE "exercise_library_body_part_enum" AS ENUM('upper_body', 'lower_body', 'core', 'cardio', 'full_body');
+CREATE TYPE "exercise_library_exercise_type_enum" AS ENUM('strength', 'cardio', 'flexibility', 'endurance', 'general');
+CREATE TYPE "exercise_library_difficulty_level_enum" AS ENUM('beginner', 'intermediate', 'advanced');
+CREATE TABLE "attendance" (
+	"id" uuid DEFAULT uuid_generate_v4(),
+	"attendanceType" attendance_attendancetype_enum NOT NULL,
+	"checkInTime" timestamp NOT NULL,
+	"checkOutTime" timestamp,
+	"date" date NOT NULL,
+	"notes" text,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"memberId" integer,
+	"trainerId" integer,
+	"branchBranchId" uuid,
+	CONSTRAINT "PK_ee0ffe42c1f1a01e72b725c0cb2" PRIMARY KEY("id")
+);
+CREATE TABLE "attendance_goals" (
+	"goal_id" uuid DEFAULT uuid_generate_v4(),
+	"goal_type" attendance_goals_goal_type_enum NOT NULL,
+	"target_count" integer NOT NULL,
+	"current_count" integer DEFAULT 0 NOT NULL,
+	"start_date" date NOT NULL,
+	"end_date" date NOT NULL,
+	"current_streak" integer DEFAULT 0 NOT NULL,
+	"longest_streak" integer DEFAULT 0 NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"memberId" integer,
+	"branchBranchId" uuid,
+	CONSTRAINT "PK_dd5aeb6aaea12512f95606c7788" PRIMARY KEY("goal_id")
+);
+CREATE TABLE "audit_logs" (
+	"log_id" uuid DEFAULT uuid_generate_v4(),
+	"action" varchar NOT NULL,
+	"entity_type" varchar NOT NULL,
+	"entity_id" varchar NOT NULL,
+	"previous_values" jsonb,
+	"new_values" jsonb,
+	"timestamp" timestamp DEFAULT now() NOT NULL,
+	"userUserId" uuid,
+	CONSTRAINT "PK_cf5aa90f5cf01b22aacd6d5a997" PRIMARY KEY("log_id")
+);
+CREATE TABLE "body_progress" (
+	"id" serial,
+	"weight" numeric(10, 2),
+	"body_fat" numeric(5, 2),
+	"bmi" numeric(5, 2),
+	"measurements" jsonb,
+	"progress_photos" jsonb,
+	"date" date NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"memberId" integer NOT NULL,
+	"trainerId" integer,
+	CONSTRAINT "PK_e4666d7b8e4b271c16d2dd9d805" PRIMARY KEY("id")
+);
+CREATE TABLE "branches" (
+	"branchId" uuid DEFAULT uuid_generate_v4(),
+	"name" varchar(100) NOT NULL,
+	"email" varchar,
+	"phone" varchar,
+	"address" text,
+	"location" varchar,
+	"state" varchar,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
+	"gymGymId" uuid,
+	"mainBranch" boolean DEFAULT false NOT NULL,
+	"latitude" numeric(10, 8),
+	"longitude" numeric(11, 8),
+	CONSTRAINT "PK_3166ff642c447e50ec06c553e21" PRIMARY KEY("branchId")
+);
+CREATE TABLE "classes" (
+	"class_id" uuid DEFAULT uuid_generate_v4(),
+	"name" varchar(100) NOT NULL,
+	"description" text,
+	"timings" classes_timings_enum,
+	"recurrence_type" classes_recurrence_type_enum,
+	"days_of_week" integer[],
+	"branchBranchId" uuid,
+	CONSTRAINT "PK_1c29abc497051d41c2d6e276a05" PRIMARY KEY("class_id")
+);
+CREATE TABLE "diet_plan_meals" (
+	"meal_id" uuid DEFAULT uuid_generate_v4(),
+	"meal_type" diet_plan_meals_meal_type_enum NOT NULL,
+	"meal_name" varchar(100) NOT NULL,
+	"description" text,
+	"ingredients" text,
+	"preparation" text,
+	"calories" integer,
+	"protein_g" numeric(5, 2),
+	"carbs_g" numeric(5, 2),
+	"fat_g" numeric(5, 2),
+	"day_of_week" integer DEFAULT 1 NOT NULL,
+	"notes" text,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"dietPlanPlanId" uuid,
+	CONSTRAINT "PK_da98a2a223d9fda6b60499dc92d" PRIMARY KEY("meal_id")
+);
+CREATE TABLE "diet_plans" (
+	"plan_id" uuid DEFAULT uuid_generate_v4(),
+	"title" varchar(100) NOT NULL,
+	"description" text,
+	"goal_type" diet_plans_goal_type_enum NOT NULL,
+	"target_calories" integer DEFAULT 0 NOT NULL,
+	"start_date" date NOT NULL,
+	"end_date" date NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"is_completed" boolean DEFAULT false NOT NULL,
+	"notes" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"memberId" integer,
+	"assignedByTrainerId" integer,
+	"branchBranchId" uuid,
+	CONSTRAINT "PK_e92f17f11a4d4d38c3b5cbf7a12" PRIMARY KEY("plan_id")
+);
+CREATE TABLE "diets" (
+	"id" serial,
+	"calories" numeric(10, 2),
+	"protein" numeric(10, 2),
+	"carbs" numeric(10, 2),
+	"fat" numeric(10, 2),
+	"meals" jsonb,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"memberId" integer NOT NULL,
+	"assignedByUserId" uuid,
+	CONSTRAINT "PK_c085586cdf7916cadcad4c619d3" PRIMARY KEY("id")
+);
+CREATE TABLE "exercise_library" (
+	"exercise_id" uuid DEFAULT uuid_generate_v4(),
+	"exercise_name" varchar(100) NOT NULL,
+	"body_part" exercise_library_body_part_enum NOT NULL,
+	"exercise_type" exercise_library_exercise_type_enum NOT NULL,
+	"difficulty_level" exercise_library_difficulty_level_enum NOT NULL,
+	"description" text,
+	"instructions" text,
+	"benefits" text,
+	"precautions" text,
+	"video_url" text,
+	"image_url" text,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "PK_0992ee689140c1d46517bb00818" PRIMARY KEY("exercise_id")
+);
+CREATE TABLE "goals" (
+	"id" serial,
+	"goal_type" varchar(100) NOT NULL,
+	"target_value" numeric(10, 2),
+	"target_timeline" date,
+	"milestone" jsonb,
+	"status" varchar(50) DEFAULT 'active' NOT NULL,
+	"completion_percent" numeric(5, 2) DEFAULT '0' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"memberId" integer NOT NULL,
+	"trainerId" integer,
+	CONSTRAINT "PK_26e17b251afab35580dff769223" PRIMARY KEY("id")
+);
+CREATE TABLE "gyms" (
+	"gymId" uuid DEFAULT uuid_generate_v4(),
+	"name" varchar(100) NOT NULL,
+	"email" varchar(100) CONSTRAINT "UQ_f47837bea3ea1fb53f44c96ea0c" UNIQUE,
+	"phone" varchar(15),
+	"address" text,
+	"location" varchar,
+	"state" varchar,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
+	"latitude" numeric(10, 8),
+	"longitude" numeric(11, 8),
+	CONSTRAINT "PK_b03cdd9aeb3a68275628907cb4d" PRIMARY KEY("gymId")
+);
+CREATE TABLE "inquiries" (
+	"id" serial,
+	"fullName" varchar NOT NULL,
+	"email" varchar NOT NULL CONSTRAINT "UQ_77a4506f1ea2dac7305605b6f9a" UNIQUE,
+	"phone" varchar,
+	"alternatePhone" varchar,
+	"status" inquiries_status_enum DEFAULT 'new' NOT NULL,
+	"source" inquiries_source_enum NOT NULL,
+	"preferredMembershipType" inquiries_preferredmembershiptype_enum,
+	"preferredContactMethod" varchar,
+	"notes" varchar,
+	"addressLine1" varchar,
+	"addressLine2" varchar,
+	"city" varchar,
+	"state" varchar,
+	"postalCode" varchar,
+	"dateOfBirth" timestamp,
+	"occupation" varchar,
+	"fitnessGoals" varchar,
+	"hasPreviousGymExperience" boolean DEFAULT false NOT NULL,
+	"preferredContactTime" varchar,
+	"wantsPersonalTraining" boolean DEFAULT false NOT NULL,
+	"referralCode" varchar,
+	"branchId" varchar,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
+	"contactedAt" timestamp,
+	"convertedAt" timestamp,
+	"closedAt" timestamp,
+	"branchBranchId" uuid,
+	CONSTRAINT "PK_ceacaa439988b25eb9459e694d9" PRIMARY KEY("id")
+);
+CREATE TABLE "invoices" (
+	"invoice_id" uuid DEFAULT uuid_generate_v4(),
+	"total_amount" numeric(10, 2) NOT NULL,
+	"description" text,
+	"due_date" date,
+	"status" invoices_status_enum DEFAULT 'pending' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"memberId" integer,
+	"subscriptionId" integer,
+	CONSTRAINT "PK_a62eb88a23934fb83945c3e58af" PRIMARY KEY("invoice_id")
+);
+CREATE TABLE "member_subscriptions" (
+	"id" serial,
+	"startDate" timestamp NOT NULL,
+	"endDate" timestamp NOT NULL,
+	"isActive" boolean DEFAULT true NOT NULL,
+	"planId" integer,
+	CONSTRAINT "PK_1005be70ffb408596ed3a34fe3b" PRIMARY KEY("id")
+);
+CREATE TABLE "member_trainer_assignments" (
+	"assignment_id" uuid DEFAULT uuid_generate_v4(),
+	"start_date" date NOT NULL,
+	"end_date" date,
+	"status" member_trainer_assignments_status_enum DEFAULT 'active' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"member_id" integer,
+	"trainer_id" integer,
+	CONSTRAINT "PK_94ff3a080258a94c2d1185b6918" PRIMARY KEY("assignment_id")
+);
+CREATE TABLE "members" (
+	"id" serial,
+	"fullName" varchar NOT NULL,
+	"email" varchar NOT NULL CONSTRAINT "UQ_2714af51e3f7dd42cf66eeb08d6" UNIQUE,
+	"phone" varchar,
+	"gender" members_gender_enum,
+	"dateOfBirth" date,
+	"addressLine1" varchar,
+	"addressLine2" varchar,
+	"city" varchar,
+	"state" varchar,
+	"postalCode" varchar,
+	"avatarUrl" varchar,
+	"emergencyContactName" varchar,
+	"emergencyContactPhone" varchar,
+	"isActive" boolean DEFAULT true NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
+	"subscriptionId" integer CONSTRAINT "REL_45100ae4dbfbdc283e19b1cf72" UNIQUE,
+	"branchBranchId" uuid,
+	"is_managed_by_member" boolean DEFAULT true NOT NULL,
+	CONSTRAINT "PK_28b53062261b996d9c99fa12404" PRIMARY KEY("id")
+);
+CREATE TABLE "membership_plans" (
+	"id" serial,
+	"name" varchar NOT NULL,
+	"price" integer NOT NULL,
+	"durationInDays" integer NOT NULL,
+	"description" varchar,
+	"branchBranchId" uuid,
+	CONSTRAINT "PK_85ca9d6f4262a6bbff2a540c640" PRIMARY KEY("id")
+);
+CREATE TABLE "notifications" (
+	"notification_id" uuid DEFAULT uuid_generate_v4(),
+	"title" varchar(200) NOT NULL,
+	"message" text NOT NULL,
+	"is_read" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"userUserId" uuid,
+	CONSTRAINT "PK_eaedfe19f0f765d26afafa85956" PRIMARY KEY("notification_id")
+);
+CREATE TABLE "payment_transactions" (
+	"transaction_id" uuid DEFAULT uuid_generate_v4(),
+	"amount" numeric(10, 2) NOT NULL,
+	"method" payment_transactions_method_enum NOT NULL,
+	"reference_number" varchar,
+	"notes" text,
+	"status" payment_transactions_status_enum DEFAULT 'completed' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"invoiceInvoiceId" uuid,
+	CONSTRAINT "PK_b3b7ab417ec54003f231dc75b75" PRIMARY KEY("transaction_id")
+);
+CREATE TABLE "progress_tracking" (
+	"progress_id" uuid DEFAULT uuid_generate_v4(),
+	"record_date" date NOT NULL,
+	"weight_kg" numeric(5, 2),
+	"height_cm" numeric(5, 2),
+	"body_fat_percentage" numeric(5, 2),
+	"muscle_mass_kg" numeric(5, 2),
+	"bmi" numeric(5, 2),
+	"chest_cm" numeric(5, 2),
+	"waist_cm" numeric(5, 2),
+	"arms_cm" numeric(5, 2),
+	"thighs_cm" numeric(5, 2),
+	"notes" text,
+	"achievements" text,
+	"photo_url" text,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"memberId" integer,
+	"recordedByTrainerId" integer,
+	CONSTRAINT "PK_1fe1f55f8788df6e8b06befdd8a" PRIMARY KEY("progress_id")
+);
+CREATE TABLE "roles" (
+	"id" uuid DEFAULT uuid_generate_v4(),
+	"name" varchar NOT NULL CONSTRAINT "UQ_648e3f5447f725579d7d4ffdfb7" UNIQUE,
+	"description" varchar,
+	CONSTRAINT "PK_c1433d71a4838793a49dcad46ab" PRIMARY KEY("id")
+);
+CREATE TABLE "trainers" (
+	"id" serial,
+	"fullName" varchar NOT NULL,
+	"email" varchar NOT NULL CONSTRAINT "UQ_f8ac7db7ae932e9e2bb7de0e466" UNIQUE,
+	"phone" varchar,
+	"specialization" varchar,
+	"avatarUrl" varchar,
+	"branchBranchId" uuid,
+	CONSTRAINT "PK_198da56395c269936d351ab774b" PRIMARY KEY("id")
+);
+CREATE TABLE "users" (
+	"userId" uuid DEFAULT uuid_generate_v4(),
+	"email" varchar NOT NULL CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE,
+	"passwordHash" varchar NOT NULL,
+	"memberId" varchar,
+	"trainerId" varchar,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
+	"gymGymId" uuid,
+	"branchBranchId" uuid,
+	"roleId" uuid NOT NULL,
+	CONSTRAINT "PK_8bf09ba754322ab9c22a215c919" PRIMARY KEY("userId")
+);
+CREATE TABLE "workout_logs" (
+	"id" serial,
+	"exercise_name" varchar(200) NOT NULL,
+	"sets" integer,
+	"reps" integer,
+	"weight" numeric(10, 2),
+	"duration" integer,
+	"notes" text,
+	"date" date NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"memberId" integer NOT NULL,
+	"trainerId" integer,
+	CONSTRAINT "PK_53a1e174f32d705c6471f3ae7fe" PRIMARY KEY("id")
+);
+CREATE TABLE "workout_plan_exercises" (
+	"exercise_id" uuid DEFAULT uuid_generate_v4(),
+	"exercise_name" varchar(100) NOT NULL,
+	"description" text,
+	"exercise_type" workout_plan_exercises_exercise_type_enum NOT NULL,
+	"sets" integer,
+	"reps" integer,
+	"weight_kg" integer,
+	"duration_minutes" integer,
+	"distance_km" numeric(5, 2),
+	"day_of_week" integer DEFAULT 1 NOT NULL,
+	"instructions" text,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"workoutPlanPlanId" uuid,
+	CONSTRAINT "PK_53c4e4c7513a53bdf6733afc0d9" PRIMARY KEY("exercise_id")
+);
+CREATE TABLE "workout_plans" (
+	"plan_id" uuid DEFAULT uuid_generate_v4(),
+	"title" varchar(100) NOT NULL,
+	"description" text,
+	"difficulty_level" workout_plans_difficulty_level_enum NOT NULL,
+	"plan_type" workout_plans_plan_type_enum NOT NULL,
+	"duration_days" integer DEFAULT 0 NOT NULL,
+	"start_date" date NOT NULL,
+	"end_date" date NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"is_completed" boolean DEFAULT false NOT NULL,
+	"notes" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"memberId" integer,
+	"assignedByTrainerId" integer,
+	"branchBranchId" uuid,
+	CONSTRAINT "PK_e805e1f8f682769fe56949216c6" PRIMARY KEY("plan_id")
+);
+ALTER TABLE "attendance" ADD CONSTRAINT "FK_24f01ca59f0e454daa2de25acbd" FOREIGN KEY ("memberId") REFERENCES "members"("id");
+ALTER TABLE "attendance" ADD CONSTRAINT "FK_45612314b2a5846981a8146b04f" FOREIGN KEY ("branchBranchId") REFERENCES "branches"("branchId");
+ALTER TABLE "attendance" ADD CONSTRAINT "FK_ef20d0aba71c7d265aab9b2abf4" FOREIGN KEY ("trainerId") REFERENCES "trainers"("id");
+ALTER TABLE "attendance_goals" ADD CONSTRAINT "FK_43b236e6f9caa736cc2b2e49484" FOREIGN KEY ("branchBranchId") REFERENCES "branches"("branchId");
+ALTER TABLE "attendance_goals" ADD CONSTRAINT "FK_d53fc1f28edefc868d8ba277105" FOREIGN KEY ("memberId") REFERENCES "members"("id");
+ALTER TABLE "audit_logs" ADD CONSTRAINT "FK_f862a581763cefe7357732827c3" FOREIGN KEY ("userUserId") REFERENCES "users"("userId");
+ALTER TABLE "body_progress" ADD CONSTRAINT "FK_e3003ef6357b09ad139da5a0944" FOREIGN KEY ("memberId") REFERENCES "members"("id");
+ALTER TABLE "body_progress" ADD CONSTRAINT "FK_f5f3b42e159e6798f841a1bc5b1" FOREIGN KEY ("trainerId") REFERENCES "trainers"("id");
+ALTER TABLE "branches" ADD CONSTRAINT "FK_37fffb5a10721350de40f39da3c" FOREIGN KEY ("gymGymId") REFERENCES "gyms"("gymId") ON DELETE CASCADE;
+ALTER TABLE "classes" ADD CONSTRAINT "FK_39ced879f97cc11c5c95aa8797d" FOREIGN KEY ("branchBranchId") REFERENCES "branches"("branchId");
+ALTER TABLE "diet_plan_meals" ADD CONSTRAINT "FK_646946503e8938700394f917d3f" FOREIGN KEY ("dietPlanPlanId") REFERENCES "diet_plans"("plan_id");
+ALTER TABLE "diet_plans" ADD CONSTRAINT "FK_3ab5502939ee2c8371f61669b10" FOREIGN KEY ("assignedByTrainerId") REFERENCES "trainers"("id");
+ALTER TABLE "diet_plans" ADD CONSTRAINT "FK_83438f8fbc58d9b859b281928d7" FOREIGN KEY ("memberId") REFERENCES "members"("id");
+ALTER TABLE "diet_plans" ADD CONSTRAINT "FK_d96d4b31c6739cdf7f178c68ae6" FOREIGN KEY ("branchBranchId") REFERENCES "branches"("branchId");
+ALTER TABLE "diets" ADD CONSTRAINT "FK_23aa9e916f6c50e0a1aa0f965c2" FOREIGN KEY ("memberId") REFERENCES "members"("id");
+ALTER TABLE "diets" ADD CONSTRAINT "FK_388ab66b19a86d5dff0c1f21d85" FOREIGN KEY ("assignedByUserId") REFERENCES "users"("userId");
+ALTER TABLE "goals" ADD CONSTRAINT "FK_1a1c98e74518e26580f9f31f64c" FOREIGN KEY ("memberId") REFERENCES "members"("id");
+ALTER TABLE "goals" ADD CONSTRAINT "FK_46a0e4a93412c6faea7daf34b3a" FOREIGN KEY ("trainerId") REFERENCES "trainers"("id");
+ALTER TABLE "inquiries" ADD CONSTRAINT "FK_06104f2dd24a593749e85bcddc7" FOREIGN KEY ("branchBranchId") REFERENCES "branches"("branchId");
+ALTER TABLE "invoices" ADD CONSTRAINT "FK_2c09534a63cf2e612ab2ca3a252" FOREIGN KEY ("subscriptionId") REFERENCES "member_subscriptions"("id");
+ALTER TABLE "invoices" ADD CONSTRAINT "FK_868e5c599793133d24ec3508ee3" FOREIGN KEY ("memberId") REFERENCES "members"("id");
+ALTER TABLE "member_subscriptions" ADD CONSTRAINT "FK_f3a76557bb4618c80d75de56943" FOREIGN KEY ("planId") REFERENCES "membership_plans"("id");
+ALTER TABLE "member_trainer_assignments" ADD CONSTRAINT "FK_3f428567e962087b7921b628dae" FOREIGN KEY ("trainer_id") REFERENCES "trainers"("id");
+ALTER TABLE "member_trainer_assignments" ADD CONSTRAINT "FK_cc9805c16ab083ea58fa5fdbb56" FOREIGN KEY ("member_id") REFERENCES "members"("id");
+ALTER TABLE "members" ADD CONSTRAINT "FK_45100ae4dbfbdc283e19b1cf725" FOREIGN KEY ("subscriptionId") REFERENCES "member_subscriptions"("id");
+ALTER TABLE "members" ADD CONSTRAINT "FK_8a5194e732cd3a8ec8264c7535a" FOREIGN KEY ("branchBranchId") REFERENCES "branches"("branchId");
+ALTER TABLE "membership_plans" ADD CONSTRAINT "FK_a652ff5657203c342368375fe8e" FOREIGN KEY ("branchBranchId") REFERENCES "branches"("branchId");
+ALTER TABLE "notifications" ADD CONSTRAINT "FK_c5cc52b42fde832d730c437e40f" FOREIGN KEY ("userUserId") REFERENCES "users"("userId");
+ALTER TABLE "payment_transactions" ADD CONSTRAINT "FK_d9ca884a436017d47bd896e146f" FOREIGN KEY ("invoiceInvoiceId") REFERENCES "invoices"("invoice_id");
+ALTER TABLE "progress_tracking" ADD CONSTRAINT "FK_0a649dd6b531239b3e02778bf49" FOREIGN KEY ("memberId") REFERENCES "members"("id");
+ALTER TABLE "progress_tracking" ADD CONSTRAINT "FK_af7c79c6eb54ed7c42199c6e0dd" FOREIGN KEY ("recordedByTrainerId") REFERENCES "trainers"("id");
+ALTER TABLE "trainers" ADD CONSTRAINT "FK_671c4835e667eb6dd8e0fa2e91d" FOREIGN KEY ("branchBranchId") REFERENCES "branches"("branchId");
+ALTER TABLE "users" ADD CONSTRAINT "FK_368e146b785b574f42ae9e53d5e" FOREIGN KEY ("roleId") REFERENCES "roles"("id");
+ALTER TABLE "users" ADD CONSTRAINT "FK_510992fcdb10d777765aeb45189" FOREIGN KEY ("branchBranchId") REFERENCES "branches"("branchId");
+ALTER TABLE "users" ADD CONSTRAINT "FK_e3692244b1f5e77f3d91341d908" FOREIGN KEY ("gymGymId") REFERENCES "gyms"("gymId");
+ALTER TABLE "workout_logs" ADD CONSTRAINT "FK_6957f3d60058b4c933b89d63e44" FOREIGN KEY ("trainerId") REFERENCES "trainers"("id");
+ALTER TABLE "workout_logs" ADD CONSTRAINT "FK_f5f1d533226bcd13e642264f2cc" FOREIGN KEY ("memberId") REFERENCES "members"("id");
+ALTER TABLE "workout_plan_exercises" ADD CONSTRAINT "FK_ead751fafc66ef9c44c6e95429c" FOREIGN KEY ("workoutPlanPlanId") REFERENCES "workout_plans"("plan_id");
+ALTER TABLE "workout_plans" ADD CONSTRAINT "FK_24599015531764540f5fec70d4a" FOREIGN KEY ("memberId") REFERENCES "members"("id");
+ALTER TABLE "workout_plans" ADD CONSTRAINT "FK_b0c0b0a1f35147d587d48eee524" FOREIGN KEY ("assignedByTrainerId") REFERENCES "trainers"("id");
+ALTER TABLE "workout_plans" ADD CONSTRAINT "FK_d095960d04b844b40d5ee29359f" FOREIGN KEY ("branchBranchId") REFERENCES "branches"("branchId");
+CREATE UNIQUE INDEX "PK_ee0ffe42c1f1a01e72b725c0cb2" ON "attendance" ("id");
+CREATE UNIQUE INDEX "PK_dd5aeb6aaea12512f95606c7788" ON "attendance_goals" ("goal_id");
+CREATE UNIQUE INDEX "PK_cf5aa90f5cf01b22aacd6d5a997" ON "audit_logs" ("log_id");
+CREATE UNIQUE INDEX "PK_e4666d7b8e4b271c16d2dd9d805" ON "body_progress" ("id");
+CREATE UNIQUE INDEX "PK_3166ff642c447e50ec06c553e21" ON "branches" ("branchId");
+CREATE UNIQUE INDEX "PK_1c29abc497051d41c2d6e276a05" ON "classes" ("class_id");
+CREATE UNIQUE INDEX "PK_da98a2a223d9fda6b60499dc92d" ON "diet_plan_meals" ("meal_id");
+CREATE UNIQUE INDEX "PK_e92f17f11a4d4d38c3b5cbf7a12" ON "diet_plans" ("plan_id");
+CREATE UNIQUE INDEX "PK_c085586cdf7916cadcad4c619d3" ON "diets" ("id");
+CREATE UNIQUE INDEX "PK_0992ee689140c1d46517bb00818" ON "exercise_library" ("exercise_id");
+CREATE UNIQUE INDEX "PK_26e17b251afab35580dff769223" ON "goals" ("id");
+CREATE UNIQUE INDEX "PK_b03cdd9aeb3a68275628907cb4d" ON "gyms" ("gymId");
+CREATE UNIQUE INDEX "UQ_f47837bea3ea1fb53f44c96ea0c" ON "gyms" ("email");
+CREATE UNIQUE INDEX "PK_ceacaa439988b25eb9459e694d9" ON "inquiries" ("id");
+CREATE UNIQUE INDEX "UQ_77a4506f1ea2dac7305605b6f9a" ON "inquiries" ("email");
+CREATE UNIQUE INDEX "PK_a62eb88a23934fb83945c3e58af" ON "invoices" ("invoice_id");
+CREATE UNIQUE INDEX "PK_1005be70ffb408596ed3a34fe3b" ON "member_subscriptions" ("id");
+CREATE UNIQUE INDEX "PK_94ff3a080258a94c2d1185b6918" ON "member_trainer_assignments" ("assignment_id");
+CREATE UNIQUE INDEX "PK_28b53062261b996d9c99fa12404" ON "members" ("id");
+CREATE UNIQUE INDEX "REL_45100ae4dbfbdc283e19b1cf72" ON "members" ("subscriptionId");
+CREATE UNIQUE INDEX "UQ_2714af51e3f7dd42cf66eeb08d6" ON "members" ("email");
+CREATE UNIQUE INDEX "PK_85ca9d6f4262a6bbff2a540c640" ON "membership_plans" ("id");
+CREATE UNIQUE INDEX "PK_eaedfe19f0f765d26afafa85956" ON "notifications" ("notification_id");
+CREATE UNIQUE INDEX "PK_b3b7ab417ec54003f231dc75b75" ON "payment_transactions" ("transaction_id");
+CREATE UNIQUE INDEX "PK_1fe1f55f8788df6e8b06befdd8a" ON "progress_tracking" ("progress_id");
+CREATE UNIQUE INDEX "PK_c1433d71a4838793a49dcad46ab" ON "roles" ("id");
+CREATE UNIQUE INDEX "UQ_648e3f5447f725579d7d4ffdfb7" ON "roles" ("name");
+CREATE UNIQUE INDEX "PK_198da56395c269936d351ab774b" ON "trainers" ("id");
+CREATE UNIQUE INDEX "UQ_f8ac7db7ae932e9e2bb7de0e466" ON "trainers" ("email");
+CREATE UNIQUE INDEX "PK_8bf09ba754322ab9c22a215c919" ON "users" ("userId");
+CREATE UNIQUE INDEX "UQ_97672ac88f789774dd47f7c8be3" ON "users" ("email");
+CREATE UNIQUE INDEX "PK_53a1e174f32d705c6471f3ae7fe" ON "workout_logs" ("id");
+CREATE UNIQUE INDEX "PK_53c4e4c7513a53bdf6733afc0d9" ON "workout_plan_exercises" ("exercise_id");
+CREATE UNIQUE INDEX "PK_e805e1f8f682769fe56949216c6" ON "workout_plans" ("plan_id");

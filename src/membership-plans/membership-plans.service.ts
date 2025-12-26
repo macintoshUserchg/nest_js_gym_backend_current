@@ -39,10 +39,23 @@ export class MembershipPlansService {
     return this.plansRepo.save(plan);
   }
 
-  async findAll() {
-    return this.plansRepo.find({
-      relations: ['branch'],
-    });
+  async findAll(branchId?: string, minPrice?: number, maxPrice?: number) {
+    const queryBuilder = this.plansRepo.createQueryBuilder('plan')
+      .leftJoinAndSelect('plan.branch', 'branch');
+    
+    if (branchId) {
+      queryBuilder.andWhere('branch.branchId = :branchId', { branchId });
+    }
+    
+    if (minPrice) {
+      queryBuilder.andWhere('plan.price >= :minPrice', { minPrice });
+    }
+    
+    if (maxPrice) {
+      queryBuilder.andWhere('plan.price <= :maxPrice', { maxPrice });
+    }
+    
+    return queryBuilder.getMany();
   }
 
   async findOne(id: number) {

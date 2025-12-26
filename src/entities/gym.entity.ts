@@ -23,6 +23,9 @@ export class Gym {
   @Column({ length: 15, nullable: true })
   phone?: string;
 
+  @Column({ nullable: true })
+  logoUrl?: string;
+
   @Column({ type: 'text', nullable: true })
   address?: string;
 

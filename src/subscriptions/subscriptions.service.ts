@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { MemberSubscription } from '../entities/member_subscriptions.entity';
 import { Member } from '../entities/members.entity';
 import { MembershipPlan } from '../entities/membership_plans.entity';
+import { Class } from '../entities/classes.entity';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 
@@ -20,6 +21,8 @@ export class SubscriptionsService {
     private membersRepo: Repository<Member>,
     @InjectRepository(MembershipPlan)
     private plansRepo: Repository<MembershipPlan>,
+    @InjectRepository(Class)
+    private classesRepo: Repository<Class>,
   ) {}
 
   async create(createDto: CreateSubscriptionDto) {
@@ -49,18 +52,39 @@ export class SubscriptionsService {
       );
     }
 
+    // Check if selected class exists (if provided)
+    let selectedClass: Class | undefined;
+    if (createDto.selectedClassId) {
+      const classEntity = await this.classesRepo.findOne({
+        where: { class_id: createDto.selectedClassId },
+      });
+      if (!classEntity) {
+        throw new NotFoundException(
+          `Class with ID ${createDto.selectedClassId} not found`,
+        );
+      }
+      selectedClass = classEntity;
+    }
+
     // Calculate end date based on plan duration
     const startDate = new Date(createDto.startDate);
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + plan.durationInDays);
 
-    const subscription = this.subscriptionsRepo.create({
+    const subscriptionData: Partial<MemberSubscription> = {
       member,
       plan,
       startDate,
       endDate,
       isActive: true,
-    });
+    };
+
+    // Only add selectedClass if it's provided
+    if (selectedClass) {
+      subscriptionData.selectedClass = selectedClass;
+    }
+
+    const subscription = this.subscriptionsRepo.create(subscriptionData);
 
     return this.subscriptionsRepo.save(subscription);
   }
@@ -119,6 +143,25 @@ export class SubscriptionsService {
 
     if (updateDto.isActive !== undefined) {
       subscription.isActive = updateDto.isActive;
+    }
+
+    // Handle selectedClassId update
+    if (updateDto.selectedClassId !== undefined) {
+      if (updateDto.selectedClassId === null) {
+        // Remove selected class
+        (subscription as any).selectedClass = null;
+      } else {
+        // Update selected class
+        const classEntity = await this.classesRepo.findOne({
+          where: { class_id: updateDto.selectedClassId },
+        });
+        if (!classEntity) {
+          throw new NotFoundException(
+            `Class with ID ${updateDto.selectedClassId} not found`,
+          );
+        }
+        subscription.selectedClass = classEntity;
+      }
     }
 
     return this.subscriptionsRepo.save(subscription);
