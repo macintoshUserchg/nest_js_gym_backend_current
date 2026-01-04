@@ -11,6 +11,8 @@ import { User } from '../entities/users.entity';
 import { Role } from '../entities/roles.entity';
 import { Attendance } from '../entities/attendance.entity';
 import { PaymentTransaction } from '../entities/payment_transactions.entity';
+import { MemberSubscription } from '../entities/member_subscriptions.entity';
+import { MembershipPlan } from '../entities/membership_plans.entity';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import * as bcrypt from 'bcrypt';
@@ -30,6 +32,10 @@ export class MembersService {
     private attendanceRepo: Repository<Attendance>,
     @InjectRepository(PaymentTransaction)
     private paymentsRepo: Repository<PaymentTransaction>,
+    @InjectRepository(MemberSubscription)
+    private subscriptionsRepo: Repository<MemberSubscription>,
+    @InjectRepository(MembershipPlan)
+    private membershipPlansRepo: Repository<MembershipPlan>,
   ) {}
 
   async create(createMemberDto: CreateMemberDto) {
@@ -49,19 +55,25 @@ export class MembersService {
       throw new ConflictException('User with this email already exists');
     }
 
-    // Get branch if branchId is provided
-    let branch: Branch | undefined = undefined;
-    if (createMemberDto.branchId) {
-      const foundBranch = await this.branchesRepo.findOne({
-        where: { branchId: createMemberDto.branchId },
-        relations: ['gym'],
-      });
-      if (!foundBranch) {
-        throw new NotFoundException(
-          `Branch with ID ${createMemberDto.branchId} not found`,
-        );
-      }
-      branch = foundBranch;
+    // Get branch (required)
+    const branch = await this.branchesRepo.findOne({
+      where: { branchId: createMemberDto.branchId },
+      relations: ['gym'],
+    });
+    if (!branch) {
+      throw new NotFoundException(
+        `Branch with ID ${createMemberDto.branchId} not found`,
+      );
+    }
+
+    // Get membership plan (required)
+    const membershipPlan = await this.membershipPlansRepo.findOne({
+      where: { id: createMemberDto.membershipPlanId },
+    });
+    if (!membershipPlan) {
+      throw new NotFoundException(
+        `Membership plan with ID ${createMemberDto.membershipPlanId} not found`,
+      );
     }
 
     // Create member
@@ -82,7 +94,10 @@ export class MembersService {
       emergencyContactName: createMemberDto.emergencyContactName,
       emergencyContactPhone: createMemberDto.emergencyContactPhone,
       isActive: createMemberDto.isActive ?? true,
+      attachmentUrl: createMemberDto.attachmentUrl,
+      freezMember: createMemberDto.freezMember ?? false,
       branch,
+      branchBranchId: branch?.branchId,
     });
 
     const savedMember = await this.membersRepo.save(member);
@@ -110,29 +125,51 @@ export class MembersService {
 
     await this.usersRepo.save(user);
 
+    // Create membership subscription
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + membershipPlan.durationInDays);
+
+    const subscription = this.subscriptionsRepo.create({
+      member: savedMember,
+      plan: membershipPlan,
+      startDate,
+      endDate,
+      isActive: true,
+    });
+
+    await this.subscriptionsRepo.save(subscription);
+
+    // Update member with subscription ID
+    savedMember.subscriptionId = subscription.id;
+    await this.membersRepo.save(savedMember);
+
     return savedMember;
   }
 
   async findAll(branchId?: string, status?: string, search?: string) {
-    const queryBuilder = this.membersRepo.createQueryBuilder('member')
+    const queryBuilder = this.membersRepo
+      .createQueryBuilder('member')
       .leftJoinAndSelect('member.branch', 'branch')
       .leftJoinAndSelect('member.subscription', 'subscription');
-    
+
     if (branchId) {
       queryBuilder.andWhere('branch.branchId = :branchId', { branchId });
     }
-    
+
     if (status) {
-      queryBuilder.andWhere('member.isActive = :status', { status: status === 'active' });
+      queryBuilder.andWhere('member.isActive = :status', {
+        status: status === 'active',
+      });
     }
-    
+
     if (search) {
       queryBuilder.andWhere(
         '(member.fullName ILIKE :search OR member.email ILIKE :search)',
-        { search: `%${search}%` }
+        { search: `%${search}%` },
       );
     }
-    
+
     return queryBuilder.getMany();
   }
 
@@ -171,6 +208,7 @@ export class MembersService {
         );
       }
       member.branch = branch;
+      member.branchBranchId = branch.branchId;
     }
 
     Object.assign(member, updateMemberDto);
@@ -239,6 +277,8 @@ export class MembersService {
         email: member.email,
         phone: member.phone,
         isActive: member.isActive,
+        attachmentUrl: member.attachmentUrl,
+        freezMember: member.freezMember,
         branch: member.branch
           ? {
               branchId: member.branch.branchId,

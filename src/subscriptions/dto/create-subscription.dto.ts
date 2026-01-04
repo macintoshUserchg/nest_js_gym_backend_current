@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsInt, IsDateString, IsOptional, IsString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsInt,
+  IsDateString,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateSubscriptionDto {

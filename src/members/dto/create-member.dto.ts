@@ -7,6 +7,7 @@ import {
   IsBoolean,
   IsEnum,
   IsDateString,
+  IsNumber,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Gender } from '../../common/enums/gender.enum';
@@ -99,13 +100,21 @@ export class CreateMemberDto {
   @IsOptional()
   emergencyContactPhone?: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Branch ID',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsUUID()
-  @IsOptional()
-  branchId?: string;
+  @IsNotEmpty()
+  branchId: string;
+
+  @ApiProperty({
+    description: 'Membership plan ID',
+    example: 1,
+  })
+  @IsNumber()
+  @IsNotEmpty()
+  membershipPlanId: number;
 
   @ApiPropertyOptional({
     description: 'Member active status',
@@ -115,4 +124,21 @@ export class CreateMemberDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Member attachment URL',
+    example: 'https://example.com/attachment.pdf',
+  })
+  @IsString()
+  @IsOptional()
+  attachmentUrl?: string;
+
+  @ApiPropertyOptional({
+    description: 'Member freeze status',
+    example: false,
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  freezMember?: boolean;
 }

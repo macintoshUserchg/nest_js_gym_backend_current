@@ -97,17 +97,20 @@ export class TrainersService {
   }
 
   async findAll(branchId?: string, specialization?: string) {
-    const queryBuilder = this.trainersRepo.createQueryBuilder('trainer')
+    const queryBuilder = this.trainersRepo
+      .createQueryBuilder('trainer')
       .leftJoinAndSelect('trainer.branch', 'branch');
-    
+
     if (branchId) {
       queryBuilder.andWhere('branch.branchId = :branchId', { branchId });
     }
-    
+
     if (specialization) {
-      queryBuilder.andWhere('trainer.specialization ILIKE :specialization', { specialization: `%${specialization}%` });
+      queryBuilder.andWhere('trainer.specialization ILIKE :specialization', {
+        specialization: `%${specialization}%`,
+      });
     }
-    
+
     return queryBuilder.getMany();
   }
 

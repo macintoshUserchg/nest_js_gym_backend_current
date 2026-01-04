@@ -8,6 +8,7 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  Unique,
 } from 'typeorm';
 import { MemberSubscription } from './member_subscriptions.entity';
 import { Branch } from './branch.entity';
@@ -19,8 +20,10 @@ import { ProgressTracking } from './progress_tracking.entity';
 import { Gender } from '../common/enums/gender.enum';
 
 @Entity('members')
+@Unique(['email'])
+@Unique(['subscriptionId'])
 export class Member {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('increment')
   id: number;
 
   @Column()
@@ -57,6 +60,9 @@ export class Member {
   avatarUrl?: string;
 
   @Column({ nullable: true })
+  attachmentUrl?: string;
+
+  @Column({ nullable: true })
   emergencyContactName?: string;
 
   @Column({ nullable: true })
@@ -65,16 +71,32 @@ export class Member {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ default: false })
+  freezMember: boolean;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  updatedAt: Date;
+
+  @Column({ nullable: true, unique: true })
+  subscriptionId?: number;
+
+  @Column({ nullable: true })
+  branchBranchId?: string;
+
   @Column({ default: true })
   is_managed_by_member: boolean;
 
   @OneToOne(() => MemberSubscription, (subscription) => subscription.member, {
     cascade: true,
   })
-  @JoinColumn()
-  subscription: MemberSubscription;
+  @JoinColumn({ name: 'subscriptionId' })
+  subscription?: MemberSubscription;
 
   @ManyToOne(() => Branch, (branch) => branch.members, { nullable: true })
+  @JoinColumn({ name: 'branchBranchId' })
   branch?: Branch;
 
   @OneToMany(() => Attendance, (attendance) => attendance.member)
@@ -91,10 +113,4 @@ export class Member {
 
   @OneToMany(() => ProgressTracking, (progress) => progress.member)
   progressRecords: ProgressTracking[];
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

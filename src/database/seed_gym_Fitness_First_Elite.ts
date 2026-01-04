@@ -62,7 +62,9 @@ class FitnessFirstEliteSeeder {
       }
 
       if (process.env.NODE_ENV === 'production') {
-        throw new Error('Cannot seed data in production environment. Use migrations instead.');
+        throw new Error(
+          'Cannot seed data in production environment. Use migrations instead.',
+        );
       }
 
       await this.dataSource.initialize();
@@ -87,7 +89,7 @@ class FitnessFirstEliteSeeder {
         members,
         trainers,
       );
-      
+
       const inquiries = await this.seedInquiries(branches);
       const invoices = await this.seedInvoices(members, memberSubscriptions);
       const paymentTransactions = await this.seedPaymentTransactions(invoices);
@@ -166,7 +168,9 @@ class FitnessFirstEliteSeeder {
       if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
         console.error('\n🔧 Troubleshooting:');
         console.error('  1. Check if PostgreSQL is running');
-        console.error('  2. Verify DATABASE_URL format: postgresql://user:pass@host:5432/dbname');
+        console.error(
+          '  2. Verify DATABASE_URL format: postgresql://user:pass@host:5432/dbname',
+        );
         console.error('  3. Ensure database exists and user has permissions');
       } else if (error.code === '42P01') {
         console.error('\n🔧 Database tables missing - run migrations first');
@@ -192,7 +196,9 @@ class FitnessFirstEliteSeeder {
       .findOne({ where: { name: 'Fitness First Elite' } });
 
     if (!fitnessFirstGym) {
-      console.log('No existing Fitness First Elite data found. Starting fresh.');
+      console.log(
+        'No existing Fitness First Elite data found. Starting fresh.',
+      );
       return;
     }
 
@@ -209,28 +215,30 @@ class FitnessFirstEliteSeeder {
       return;
     }
 
-    const branchIds = branches.map(b => b.branchId);
+    const branchIds = branches.map((b) => b.branchId);
     console.log('  Branch IDs:', branchIds);
 
     // Get all members for this gym
     const members = await this.dataSource
       .getRepository(Member)
       .find({ where: { branch: { branchId: In(branchIds) } } });
-    const memberIds = members.map(m => m.id);
+    const memberIds = members.map((m) => m.id);
 
     // Get all trainers for this gym
     const trainers = await this.dataSource
       .getRepository(Trainer)
       .find({ where: { branch: { branchId: In(branchIds) } } });
-    const trainerIds = trainers.map(t => t.id);
+    const trainerIds = trainers.map((t) => t.id);
 
     // Get all users for this gym
     const users = await this.dataSource
       .getRepository(User)
       .find({ where: { gym: { gymId: fitnessFirstGym.gymId } } });
-    const userIds = users.map(u => u.userId);
+    const userIds = users.map((u) => u.userId);
 
-    console.log(`Found ${members.length} members, ${trainers.length} trainers, ${users.length} users to clear`);
+    console.log(
+      `Found ${members.length} members, ${trainers.length} trainers, ${users.length} users to clear`,
+    );
 
     // Helper to safely delete
     const safeDelete = async (query: string, errorMsg: string) => {
@@ -243,10 +251,10 @@ class FitnessFirstEliteSeeder {
       }
     };
 
-    const branchIdsStr = branchIds.map(id => `'${id}'`).join(', ');
-    const memberIdsStr = memberIds.map(id => `'${id}'`).join(', ');
-    const trainerIdsStr = trainerIds.map(id => `'${id}'`).join(', ');
-    const userIdsStr = userIds.map(id => `'${id}'`).join(', ');
+    const branchIdsStr = branchIds.map((id) => `'${id}'`).join(', ');
+    const memberIdsStr = memberIds.map((id) => `'${id}'`).join(', ');
+    const trainerIdsStr = trainerIds.map((id) => `'${id}'`).join(', ');
+    const userIdsStr = userIds.map((id) => `'${id}'`).join(', ');
 
     console.log('\n--- Deleting in dependency order ---\n');
     console.log('NOTE: Roles table data will be preserved (not cleared)\n');
@@ -254,60 +262,129 @@ class FitnessFirstEliteSeeder {
     // Level 1: Deep children that depend on members/trainers/users
     // These must be deleted BEFORE members/trainers/users
     if (memberIds.length > 0) {
-      await safeDelete(`DELETE FROM "payment_transactions" WHERE "invoiceInvoiceId" IN (SELECT "invoice_id" FROM invoices WHERE "memberId" IN (${memberIdsStr}))`, 'payment_transactions');
-      await safeDelete(`DELETE FROM "invoices" WHERE "memberId" IN (${memberIdsStr})`, 'invoices');
-      await safeDelete(`DELETE FROM "diet_plan_meals" WHERE "dietPlanPlanId" IN (SELECT "plan_id" FROM diet_plans WHERE "memberId" IN (${memberIdsStr}))`, 'diet_plan_meals');
-      await safeDelete(`DELETE FROM "workout_plan_exercises" WHERE "workoutPlanPlanId" IN (SELECT "plan_id" FROM workout_plans WHERE "memberId" IN (${memberIdsStr}))`, 'workout_plan_exercises');
-      await safeDelete(`DELETE FROM "diet_plans" WHERE "memberId" IN (${memberIdsStr})`, 'diet_plans');
-      await safeDelete(`DELETE FROM "workout_plans" WHERE "memberId" IN (${memberIdsStr})`, 'workout_plans');
-      await safeDelete(`DELETE FROM "member_trainer_assignments" WHERE "member_id" IN (${memberIdsStr}) OR "trainer_id" IN (${trainerIdsStr})`, 'member_trainer_assignments');
-      await safeDelete(`DELETE FROM "attendance" WHERE "memberId" IN (${memberIdsStr}) OR "trainerId" IN (${trainerIdsStr})`, 'attendance');
-      await safeDelete(`DELETE FROM "workout_logs" WHERE "memberId" IN (${memberIdsStr}) OR "trainerId" IN (${trainerIdsStr})`, 'workout_logs');
-      await safeDelete(`DELETE FROM "goals" WHERE "memberId" IN (${memberIdsStr}) OR "trainerId" IN (${trainerIdsStr})`, 'goals');
-      await safeDelete(`DELETE FROM "progress_tracking" WHERE "memberId" IN (${memberIdsStr}) OR "recordedByTrainerId" IN (${trainerIdsStr})`, 'progress_tracking');
-      await safeDelete(`DELETE FROM "attendance_goals" WHERE "memberId" IN (${memberIdsStr})`, 'attendance_goals');
+      await safeDelete(
+        `DELETE FROM "payment_transactions" WHERE "invoiceInvoiceId" IN (SELECT "invoice_id" FROM invoices WHERE "memberId" IN (${memberIdsStr}))`,
+        'payment_transactions',
+      );
+      await safeDelete(
+        `DELETE FROM "invoices" WHERE "memberId" IN (${memberIdsStr})`,
+        'invoices',
+      );
+      await safeDelete(
+        `DELETE FROM "diet_plan_meals" WHERE "dietPlanPlanId" IN (SELECT "plan_id" FROM diet_plans WHERE "memberId" IN (${memberIdsStr}))`,
+        'diet_plan_meals',
+      );
+      await safeDelete(
+        `DELETE FROM "workout_plan_exercises" WHERE "workoutPlanPlanId" IN (SELECT "plan_id" FROM workout_plans WHERE "memberId" IN (${memberIdsStr}))`,
+        'workout_plan_exercises',
+      );
+      await safeDelete(
+        `DELETE FROM "diet_plans" WHERE "memberId" IN (${memberIdsStr})`,
+        'diet_plans',
+      );
+      await safeDelete(
+        `DELETE FROM "workout_plans" WHERE "memberId" IN (${memberIdsStr})`,
+        'workout_plans',
+      );
+      await safeDelete(
+        `DELETE FROM "member_trainer_assignments" WHERE "member_id" IN (${memberIdsStr}) OR "trainer_id" IN (${trainerIdsStr})`,
+        'member_trainer_assignments',
+      );
+      await safeDelete(
+        `DELETE FROM "attendance" WHERE "memberId" IN (${memberIdsStr}) OR "trainerId" IN (${trainerIdsStr})`,
+        'attendance',
+      );
+      await safeDelete(
+        `DELETE FROM "workout_logs" WHERE "memberId" IN (${memberIdsStr}) OR "trainerId" IN (${trainerIdsStr})`,
+        'workout_logs',
+      );
+      await safeDelete(
+        `DELETE FROM "goals" WHERE "memberId" IN (${memberIdsStr}) OR "trainerId" IN (${trainerIdsStr})`,
+        'goals',
+      );
+      await safeDelete(
+        `DELETE FROM "progress_tracking" WHERE "memberId" IN (${memberIdsStr}) OR "recordedByTrainerId" IN (${trainerIdsStr})`,
+        'progress_tracking',
+      );
+      await safeDelete(
+        `DELETE FROM "attendance_goals" WHERE "memberId" IN (${memberIdsStr})`,
+        'attendance_goals',
+      );
     }
 
     // Level 2: Direct children of users
     if (userIds.length > 0) {
-      await safeDelete(`DELETE FROM "audit_logs" WHERE "userUserId" IN (${userIdsStr})`, 'audit_logs');
-      await safeDelete(`DELETE FROM "notifications" WHERE "userUserId" IN (${userIdsStr})`, 'notifications');
+      await safeDelete(
+        `DELETE FROM "audit_logs" WHERE "userUserId" IN (${userIdsStr})`,
+        'audit_logs',
+      );
+      await safeDelete(
+        `DELETE FROM "notifications" WHERE "userUserId" IN (${userIdsStr})`,
+        'notifications',
+      );
     }
 
     // Level 3: Classes and inquiries (depend on branches)
     if (branchIds.length > 0) {
-      await safeDelete(`DELETE FROM "classes" WHERE "branchBranchId" IN (${branchIdsStr})`, 'classes');
-      await safeDelete(`DELETE FROM "inquiries" WHERE "branchBranchId" IN (${branchIdsStr})`, 'inquiries');
+      await safeDelete(
+        `DELETE FROM "classes" WHERE "branchBranchId" IN (${branchIdsStr})`,
+        'classes',
+      );
+      await safeDelete(
+        `DELETE FROM "inquiries" WHERE "branchBranchId" IN (${branchIdsStr})`,
+        'inquiries',
+      );
     }
 
     // Level 4: Member subscriptions (will be cascade deleted by members, but delete explicitly just in case)
     if (memberIds.length > 0) {
-      await safeDelete(`DELETE FROM "member_subscriptions" WHERE "memberId" IN (${memberIdsStr})`, 'member_subscriptions');
+      await safeDelete(
+        `DELETE FROM "member_subscriptions" WHERE "memberId" IN (${memberIdsStr})`,
+        'member_subscriptions',
+      );
     }
 
     // Level 5: Members (cascade deletes subscriptions)
     if (branchIds.length > 0) {
-      await safeDelete(`DELETE FROM "members" WHERE "branchBranchId" IN (${branchIdsStr})`, 'members');
+      await safeDelete(
+        `DELETE FROM "members" WHERE "branchBranchId" IN (${branchIdsStr})`,
+        'members',
+      );
     }
 
     // Level 6: Trainers
     if (branchIds.length > 0) {
-      await safeDelete(`DELETE FROM "trainers" WHERE "branchBranchId" IN (${branchIdsStr})`, 'trainers');
+      await safeDelete(
+        `DELETE FROM "trainers" WHERE "branchBranchId" IN (${branchIdsStr})`,
+        'trainers',
+      );
     }
 
     // Level 7: Users
-    await safeDelete(`DELETE FROM "users" WHERE "gymGymId" = '${fitnessFirstGym.gymId}'`, 'users');
+    await safeDelete(
+      `DELETE FROM "users" WHERE "gymGymId" = '${fitnessFirstGym.gymId}'`,
+      'users',
+    );
 
     // Level 8: Membership plans (must delete before branches)
     if (branchIds.length > 0) {
-      await safeDelete(`DELETE FROM "membership_plans" WHERE "branchBranchId" IN (${branchIdsStr})`, 'membership_plans');
+      await safeDelete(
+        `DELETE FROM "membership_plans" WHERE "branchBranchId" IN (${branchIdsStr})`,
+        'membership_plans',
+      );
     }
 
     // Level 9: Branches (must delete before gym)
-    await safeDelete(`DELETE FROM "branches" WHERE "gymGymId" = '${fitnessFirstGym.gymId}'`, 'branches');
+    await safeDelete(
+      `DELETE FROM "branches" WHERE "gymGymId" = '${fitnessFirstGym.gymId}'`,
+      'branches',
+    );
 
     // Level 10: Gym
-    await safeDelete(`DELETE FROM "gyms" WHERE "gymId" = '${fitnessFirstGym.gymId}'`, 'gym');
+    await safeDelete(
+      `DELETE FROM "gyms" WHERE "gymId" = '${fitnessFirstGym.gymId}'`,
+      'gym',
+    );
 
     // IMPORTANT: Roles table is intentionally NOT cleared to preserve existing role definitions
     console.log('✅ Roles table data preserved (not cleared)');
@@ -316,11 +393,13 @@ class FitnessFirstEliteSeeder {
 
     // Verify deletion
     const checkGym = await this.dataSource.getRepository(Gym).findOne({
-      where: { gymId: fitnessFirstGym.gymId }
+      where: { gymId: fitnessFirstGym.gymId },
     });
-    console.log('  Verification - Gym still exists?', checkGym ? 'YES (PROBLEM!)' : 'NO (GOOD!)');
+    console.log(
+      '  Verification - Gym still exists?',
+      checkGym ? 'YES (PROBLEM!)' : 'NO (GOOD!)',
+    );
   }
-
 
   private async seedRoles(): Promise<Role[]> {
     console.log('Seeding roles...');
@@ -462,13 +541,15 @@ class FitnessFirstEliteSeeder {
         name: 'Elite Premium',
         durationInDays: 90,
         price: 23999,
-        description: 'Full access plus personal training and nutrition consultation',
+        description:
+          'Full access plus personal training and nutrition consultation',
       },
       {
         name: 'Elite VIP',
         durationInDays: 180,
         price: 42999,
-        description: 'Premium access with unlimited personal training and VIP amenities',
+        description:
+          'Premium access with unlimited personal training and VIP amenities',
       },
       {
         name: 'Elite Annual',
@@ -484,7 +565,7 @@ class FitnessFirstEliteSeeder {
       },
     ];
 
-    let membershipPlans: any[] = [];
+    const membershipPlans: any[] = [];
 
     for (let branchIndex = 0; branchIndex < branches.length; branchIndex++) {
       const branch = branches[branchIndex];
@@ -533,20 +614,51 @@ class FitnessFirstEliteSeeder {
     ];
 
     const firstNames = [
-      'Marcus', 'Sophia', 'Alexander', 'Isabella', 'David', 'Aria',
-      'James', 'Maya', 'Ethan', 'Zoe', 'Oliver', 'Lily',
-      'Lucas', 'Chloe', 'Henry', 'Grace', 'Jack', 'Victoria',
-      'Sebastian', 'Penelope', // Added for 20 trainers
+      'Marcus',
+      'Sophia',
+      'Alexander',
+      'Isabella',
+      'David',
+      'Aria',
+      'James',
+      'Maya',
+      'Ethan',
+      'Zoe',
+      'Oliver',
+      'Lily',
+      'Lucas',
+      'Chloe',
+      'Henry',
+      'Grace',
+      'Jack',
+      'Victoria',
+      'Sebastian',
+      'Penelope', // Added for 20 trainers
     ];
     const lastNames = [
-      'Sterling', 'Valentine', 'Blackwood', 'Montgomery',
-      'Harrington', 'Ashworth', 'Kingsley', 'Wellington',
-      'Rutherford', 'Chamberlain', 'Fairfax', 'Pembroke',
-      'Sinclair', 'Armstrong', 'Winchester', 'Marlowe',
-      'Cavendish', 'Beaumont', 'Harrington', 'Ashworth', // Added for 20 trainers
+      'Sterling',
+      'Valentine',
+      'Blackwood',
+      'Montgomery',
+      'Harrington',
+      'Ashworth',
+      'Kingsley',
+      'Wellington',
+      'Rutherford',
+      'Chamberlain',
+      'Fairfax',
+      'Pembroke',
+      'Sinclair',
+      'Armstrong',
+      'Winchester',
+      'Marlowe',
+      'Cavendish',
+      'Beaumont',
+      'Harrington',
+      'Ashworth', // Added for 20 trainers
     ];
 
-    let trainers: any[] = [];
+    const trainers: any[] = [];
     let trainerIndex = 0;
 
     for (let branchIndex = 0; branchIndex < branches.length; branchIndex++) {
@@ -584,25 +696,81 @@ class FitnessFirstEliteSeeder {
     const memberRepository = this.dataSource.getRepository(Member);
 
     const firstNames = [
-      'Sophia', 'Liam', 'Emma', 'Noah', 'Olivia', 'Elijah', 'Ava', 'Lucas',
-      'Isabella', 'Mason', 'Mia', 'Ethan', 'Amelia', 'Logan', 'Harper',
-      'James', 'Evelyn', 'Benjamin', 'Abigail', 'Jacob', 'Emily', 'Michael',
-      'Elizabeth', 'Alexander', 'Mila', 'Henry', 'Ella', 'Sebastian', 'Avery',
-      'Jack', 'Sofia', 'Owen', 'Camila', 'Samuel', 'Aria',
+      'Sophia',
+      'Liam',
+      'Emma',
+      'Noah',
+      'Olivia',
+      'Elijah',
+      'Ava',
+      'Lucas',
+      'Isabella',
+      'Mason',
+      'Mia',
+      'Ethan',
+      'Amelia',
+      'Logan',
+      'Harper',
+      'James',
+      'Evelyn',
+      'Benjamin',
+      'Abigail',
+      'Jacob',
+      'Emily',
+      'Michael',
+      'Elizabeth',
+      'Alexander',
+      'Mila',
+      'Henry',
+      'Ella',
+      'Sebastian',
+      'Avery',
+      'Jack',
+      'Sofia',
+      'Owen',
+      'Camila',
+      'Samuel',
+      'Aria',
     ];
     const lastNames = [
-      'Johnson-Smith', 'Williams-Brown', 'Davis-Jones', 'Miller-Wilson',
-      'Moore-Taylor', 'Anderson-Thomas', 'Jackson-White', 'Harris-Martin',
-      'Thompson-Garcia', 'Martinez-Robinson', 'Clark-Rodriguez', 'Lewis-Lee',
-      'Walker-Hall', 'Allen-Young', 'King-Wright', 'Scott-Green',
-      'Baker-Adams', 'Nelson-Hill', 'Ramirez-Campbell', 'Mitchell-Roberts',
-      'Carter-Phillips', 'Evans-Turner', 'Parker-Collins', 'Edwards-Stewart',
-      'Flores-Morris', 'Nguyen-Rogers', 'Reed-Cook', 'Morgan-Bell',
-      'Murphy-Bailey', 'Rivera-Cooper', 'Richardson-Cox', 'Howard-Ward',
-      'Torres-Peterson', 'Gray-Ramirez', 'James-Watson',
+      'Johnson-Smith',
+      'Williams-Brown',
+      'Davis-Jones',
+      'Miller-Wilson',
+      'Moore-Taylor',
+      'Anderson-Thomas',
+      'Jackson-White',
+      'Harris-Martin',
+      'Thompson-Garcia',
+      'Martinez-Robinson',
+      'Clark-Rodriguez',
+      'Lewis-Lee',
+      'Walker-Hall',
+      'Allen-Young',
+      'King-Wright',
+      'Scott-Green',
+      'Baker-Adams',
+      'Nelson-Hill',
+      'Ramirez-Campbell',
+      'Mitchell-Roberts',
+      'Carter-Phillips',
+      'Evans-Turner',
+      'Parker-Collins',
+      'Edwards-Stewart',
+      'Flores-Morris',
+      'Nguyen-Rogers',
+      'Reed-Cook',
+      'Morgan-Bell',
+      'Murphy-Bailey',
+      'Rivera-Cooper',
+      'Richardson-Cox',
+      'Howard-Ward',
+      'Torres-Peterson',
+      'Gray-Ramirez',
+      'James-Watson',
     ];
 
-    let members: any[] = [];
+    const members: any[] = [];
     let memberIndex = 0;
 
     for (let branchIndex = 0; branchIndex < branches.length; branchIndex++) {
@@ -652,7 +820,6 @@ class FitnessFirstEliteSeeder {
     return savedMembers;
   }
 
-
   private async seedMemberTrainerAssignments(
     members: Member[],
     trainers: Trainer[],
@@ -662,7 +829,7 @@ class FitnessFirstEliteSeeder {
       MemberTrainerAssignment,
     );
 
-    let assignments: any[] = [];
+    const assignments: any[] = [];
 
     for (let trainerIndex = 0; trainerIndex < trainers.length; trainerIndex++) {
       const trainer = trainers[trainerIndex];
@@ -711,7 +878,7 @@ class FitnessFirstEliteSeeder {
   private async seedAttendance(
     members: Member[],
     trainers: Trainer[],
-    branches: Branch[]
+    branches: Branch[],
   ): Promise<Attendance[]> {
     console.log('Seeding attendance records...');
     const attendanceRepository = this.dataSource.getRepository(Attendance);
@@ -731,7 +898,13 @@ class FitnessFirstEliteSeeder {
         const workoutDuration = 60 + Math.floor(Math.random() * 60);
 
         // Calculate checkout time (checkIn + duration)
-        const checkOutDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), checkInHour, checkInMinute);
+        const checkOutDate = new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate(),
+          checkInHour,
+          checkInMinute,
+        );
         checkOutDate.setMinutes(checkOutDate.getMinutes() + workoutDuration);
 
         const memberAttendance = await attendanceRepository.save({
@@ -790,7 +963,8 @@ class FitnessFirstEliteSeeder {
     const classTemplates = [
       {
         name: 'Elite Morning Yoga',
-        description: 'Premium yoga session to start your day with mindfulness and strength',
+        description:
+          'Premium yoga session to start your day with mindfulness and strength',
         timings: 'morning',
         recurrence_type: 'weekly',
         days_of_week: [1, 3, 5],
@@ -846,7 +1020,7 @@ class FitnessFirstEliteSeeder {
       },
     ];
 
-    let classes: any[] = [];
+    const classes: any[] = [];
 
     for (let branchIndex = 0; branchIndex < branches.length; branchIndex++) {
       const branch = branches[branchIndex];
@@ -874,30 +1048,81 @@ class FitnessFirstEliteSeeder {
     const inquiryRepository = this.dataSource.getRepository(Inquiry);
 
     const firstNames = [
-      'Victoria', 'Adrian', 'Sophia', 'Marcus', 'Isabella', 'Alexander',
-      'Emma', 'David', 'Olivia', 'James', 'Ava', 'Michael', 'Charlotte',
-      'William', 'Amelia', 'Benjamin', 'Harper', 'Lucas', 'Evelyn', 'Henry',
+      'Victoria',
+      'Adrian',
+      'Sophia',
+      'Marcus',
+      'Isabella',
+      'Alexander',
+      'Emma',
+      'David',
+      'Olivia',
+      'James',
+      'Ava',
+      'Michael',
+      'Charlotte',
+      'William',
+      'Amelia',
+      'Benjamin',
+      'Harper',
+      'Lucas',
+      'Evelyn',
+      'Henry',
     ];
     const lastNames = [
-      'Pembroke', 'Kingsley', 'Wellington', 'Rutherford', 'Chamberlain',
-      'Fairfax', 'Sinclair', 'Armstrong', 'Winchester', 'Marlowe',
-      'Cavendish', 'Beaumont', 'Sterling', 'Valentine', 'Blackwood',
-      'Montgomery', 'Harrington', 'Ashworth', 'Sterling', 'Valentine',
+      'Pembroke',
+      'Kingsley',
+      'Wellington',
+      'Rutherford',
+      'Chamberlain',
+      'Fairfax',
+      'Sinclair',
+      'Armstrong',
+      'Winchester',
+      'Marlowe',
+      'Cavendish',
+      'Beaumont',
+      'Sterling',
+      'Valentine',
+      'Blackwood',
+      'Montgomery',
+      'Harrington',
+      'Ashworth',
+      'Sterling',
+      'Valentine',
     ];
 
     const occupations = [
-      'Investment Banker', 'Tech Executive', 'Real Estate Developer',
-      'Entertainment Producer', 'Fashion Designer', 'Business Consultant',
-      'Architect', 'Interior Designer', 'Software Engineer', 'Marketing Director',
-      'Attorney', 'Doctor', 'Surgeon', 'Psychologist', 'Financial Advisor',
-      'Entrepreneur', 'Artist', 'Chef',
+      'Investment Banker',
+      'Tech Executive',
+      'Real Estate Developer',
+      'Entertainment Producer',
+      'Fashion Designer',
+      'Business Consultant',
+      'Architect',
+      'Interior Designer',
+      'Software Engineer',
+      'Marketing Director',
+      'Attorney',
+      'Doctor',
+      'Surgeon',
+      'Psychologist',
+      'Financial Advisor',
+      'Entrepreneur',
+      'Artist',
+      'Chef',
     ];
     const fitnessGoals = [
-      'Elite athletic performance', 'Muscle building and definition',
-      'Weight management and toning', 'Cardiovascular health optimization',
-      'Strength and power development', 'Flexibility and mobility improvement',
-      'Endurance training for competitions', 'Overall wellness and stress relief',
-      'Posture correction and injury prevention', 'Functional fitness for daily activities',
+      'Elite athletic performance',
+      'Muscle building and definition',
+      'Weight management and toning',
+      'Cardiovascular health optimization',
+      'Strength and power development',
+      'Flexibility and mobility improvement',
+      'Endurance training for competitions',
+      'Overall wellness and stress relief',
+      'Posture correction and injury prevention',
+      'Functional fitness for daily activities',
     ];
 
     const inquiries: any[] = [];
@@ -913,23 +1138,38 @@ class FitnessFirstEliteSeeder {
         const phone = `+1-555-${String(10000 + inquiryIndex).padStart(4, '0')}`;
 
         const statuses = [
-          InquiryStatus.NEW, InquiryStatus.NEW, InquiryStatus.NEW, InquiryStatus.NEW,
-          InquiryStatus.CONTACTED, InquiryStatus.CONTACTED, InquiryStatus.CONTACTED, InquiryStatus.CONTACTED,
-          InquiryStatus.QUALIFIED, InquiryStatus.QUALIFIED, InquiryStatus.QUALIFIED,
-          InquiryStatus.CONVERTED, InquiryStatus.CONVERTED,
+          InquiryStatus.NEW,
+          InquiryStatus.NEW,
+          InquiryStatus.NEW,
+          InquiryStatus.NEW,
+          InquiryStatus.CONTACTED,
+          InquiryStatus.CONTACTED,
+          InquiryStatus.CONTACTED,
+          InquiryStatus.CONTACTED,
+          InquiryStatus.QUALIFIED,
+          InquiryStatus.QUALIFIED,
+          InquiryStatus.QUALIFIED,
+          InquiryStatus.CONVERTED,
+          InquiryStatus.CONVERTED,
         ];
         const status = statuses[i % statuses.length];
 
         const sources = [
-          InquirySource.WALK_IN, InquirySource.REFERRAL, InquirySource.SOCIAL_MEDIA,
-          InquirySource.WEBSITE, InquirySource.GOOGLE_ADS,
+          InquirySource.WALK_IN,
+          InquirySource.REFERRAL,
+          InquirySource.SOCIAL_MEDIA,
+          InquirySource.WEBSITE,
+          InquirySource.GOOGLE_ADS,
         ];
         const source = sources[Math.floor(Math.random() * sources.length)];
 
         const membershipTypes = [
-          PreferredMembershipType.PREMIUM, PreferredMembershipType.VIP,
-          PreferredMembershipType.PREMIUM, PreferredMembershipType.VIP,
-          PreferredMembershipType.VIP, PreferredMembershipType.BASIC,
+          PreferredMembershipType.PREMIUM,
+          PreferredMembershipType.VIP,
+          PreferredMembershipType.PREMIUM,
+          PreferredMembershipType.VIP,
+          PreferredMembershipType.VIP,
+          PreferredMembershipType.BASIC,
           PreferredMembershipType.CORPORATE,
         ];
         const preferredMembershipType =
@@ -981,20 +1221,30 @@ class FitnessFirstEliteSeeder {
           status === InquiryStatus.CONVERTED
         ) {
           const contactedDate = new Date(baseDate);
-          contactedDate.setDate(contactedDate.getDate() + Math.floor(Math.random() * 7) + 1); // 1-7 days after base
+          contactedDate.setDate(
+            contactedDate.getDate() + Math.floor(Math.random() * 7) + 1,
+          ); // 1-7 days after base
           inquiry.contactedAt = contactedDate;
         }
         if (
           status === InquiryStatus.QUALIFIED ||
           status === InquiryStatus.CONVERTED
         ) {
-          const qualifiedDate = inquiry.contactedAt ? new Date(inquiry.contactedAt) : new Date(baseDate);
-          qualifiedDate.setDate(qualifiedDate.getDate() + Math.floor(Math.random() * 7) + 1); // 1-7 days after contact
+          const qualifiedDate = inquiry.contactedAt
+            ? new Date(inquiry.contactedAt)
+            : new Date(baseDate);
+          qualifiedDate.setDate(
+            qualifiedDate.getDate() + Math.floor(Math.random() * 7) + 1,
+          ); // 1-7 days after contact
           inquiry.qualifiedAt = qualifiedDate;
         }
         if (status === InquiryStatus.CONVERTED) {
-          const convertedDate = inquiry.qualifiedAt ? new Date(inquiry.qualifiedAt) : new Date(baseDate);
-          convertedDate.setDate(convertedDate.getDate() + Math.floor(Math.random() * 7) + 1); // 1-7 days after qualified
+          const convertedDate = inquiry.qualifiedAt
+            ? new Date(inquiry.qualifiedAt)
+            : new Date(baseDate);
+          convertedDate.setDate(
+            convertedDate.getDate() + Math.floor(Math.random() * 7) + 1,
+          ); // 1-7 days after qualified
           inquiry.convertedAt = convertedDate;
         }
 
@@ -1019,17 +1269,19 @@ class FitnessFirstEliteSeeder {
 
     // Generate invoices for all active subscriptions with realistic data
     const invoices: any[] = [];
-    
+
     for (const subscription of memberSubscriptions) {
       if (subscription.isActive) {
         const billingCycle = this.determineBillingCycle(subscription);
         const dueDate = this.calculateDueDate(subscription);
         const status = this.determineInitialStatus();
-        
+
         // Add realistic variation (±5%) to base amount while keeping it aligned with plan pricing
         const baseAmount = subscription.plan.price / 100; // Convert from cents
         const variationPercent = faker.number.float({ min: -0.05, max: 0.05 }); // ±5%
-        const finalAmount = parseFloat((baseAmount * (1 + variationPercent)).toFixed(2));
+        const finalAmount = parseFloat(
+          (baseAmount * (1 + variationPercent)).toFixed(2),
+        );
 
         invoices.push({
           member: subscription.member,
@@ -1106,13 +1358,13 @@ class FitnessFirstEliteSeeder {
   private async seedMemberSubscriptions(
     members: Member[],
     membershipPlans: MembershipPlan[],
-    classes: Class[]
+    classes: Class[],
   ): Promise<MemberSubscription[]> {
     console.log('Seeding member subscriptions...');
     const memberSubscriptionRepository =
       this.dataSource.getRepository(MemberSubscription);
 
-    let subscriptions: any[] = [];
+    const subscriptions: any[] = [];
 
     for (let memberIndex = 0; memberIndex < members.length; memberIndex++) {
       const member = members[memberIndex];
@@ -1131,14 +1383,15 @@ class FitnessFirstEliteSeeder {
 
         // Assign a class from the same branch
         const branchClasses = classes.filter(
-          (cls) => 
-            cls.branch && 
-            member.branch && 
-            cls.branch.branchId === member.branch.branchId
+          (cls) =>
+            cls.branch &&
+            member.branch &&
+            cls.branch.branchId === member.branch.branchId,
         );
-        const selectedClass = branchClasses.length > 0 
-          ? branchClasses[Math.floor(Math.random() * branchClasses.length)]
-          : null;
+        const selectedClass =
+          branchClasses.length > 0
+            ? branchClasses[Math.floor(Math.random() * branchClasses.length)]
+            : null;
 
         subscriptions.push({
           member: member,
@@ -1169,9 +1422,9 @@ class FitnessFirstEliteSeeder {
 
     // First, check for existing users and create a set of existing emails
     const existingUsers = await userRepository.find({
-      where: { gym: { gymId: gyms[0].gymId } }
+      where: { gym: { gymId: gyms[0].gymId } },
     });
-    const existingEmails = new Set(existingUsers.map(u => u.email));
+    const existingEmails = new Set(existingUsers.map((u) => u.email));
 
     const createUserWithPassword = async (
       email: string,
@@ -1209,7 +1462,7 @@ class FitnessFirstEliteSeeder {
       });
     };
 
-    let users: any[] = [];
+    const users: any[] = [];
 
     // Create superadmin
     const superadmin = await createUserWithPassword(
@@ -1277,25 +1530,29 @@ class FitnessFirstEliteSeeder {
       {
         user: users.find((u) => u.role.name === 'SUPERADMIN'),
         title: 'Elite System Upgrade',
-        message: 'Fitness First Elite system has been upgraded with new premium features.',
+        message:
+          'Fitness First Elite system has been upgraded with new premium features.',
         is_read: false,
       },
       {
         user: users.find((u) => u.role.name === 'ADMIN'),
         title: 'New Elite Member Registration',
-        message: 'A new premium member has registered and is pending your approval.',
+        message:
+          'A new premium member has registered and is pending your approval.',
         is_read: true,
       },
       {
         user: users.find((u) => u.role.name === 'TRAINER'),
         title: 'Elite Class Schedule Update',
-        message: 'Your premium yoga class schedule has been updated for next week.',
+        message:
+          'Your premium yoga class schedule has been updated for next week.',
         is_read: false,
       },
       {
         user: users.find((u) => u.role.name === 'MEMBER'),
         title: 'Elite Membership Renewal',
-        message: 'Your Elite membership expires in 5 days. Renew now for continued access to premium facilities.',
+        message:
+          'Your Elite membership expires in 5 days. Renew now for continued access to premium facilities.',
         is_read: false,
       },
     ].filter(Boolean);
@@ -1434,13 +1691,26 @@ class FitnessFirstEliteSeeder {
       this.dataSource.getRepository(WorkoutPlanExercise);
 
     const exerciseNames = [
-      'Elite Bench Press', 'Advanced Squats', 'Power Lunges',
-      'Plank Variations', 'Elite Burpees', 'Mountain Climbers Pro',
-      'Deadlift Elite', 'Shoulder Press Advanced', 'Pull-ups Mastery',
-      'Dips Progression', 'Leg Press Elite', 'Bicep Curls Premium',
-      'Russian Twists Advanced', 'Leg Raises Pro', 'Elite Calf Raises',
-      'Jump Rope Intervals', 'High Knees Elite', 'Box Jumps Advanced',
-      'Kettlebell Swings Elite', 'Battle Ropes Pro',
+      'Elite Bench Press',
+      'Advanced Squats',
+      'Power Lunges',
+      'Plank Variations',
+      'Elite Burpees',
+      'Mountain Climbers Pro',
+      'Deadlift Elite',
+      'Shoulder Press Advanced',
+      'Pull-ups Mastery',
+      'Dips Progression',
+      'Leg Press Elite',
+      'Bicep Curls Premium',
+      'Russian Twists Advanced',
+      'Leg Raises Pro',
+      'Elite Calf Raises',
+      'Jump Rope Intervals',
+      'High Knees Elite',
+      'Box Jumps Advanced',
+      'Kettlebell Swings Elite',
+      'Battle Ropes Pro',
     ];
 
     const exercises: WorkoutPlanExercise[] = [];
@@ -1560,16 +1830,25 @@ class FitnessFirstEliteSeeder {
     const mealRepository = this.dataSource.getRepository(DietPlanMeal);
 
     const breakfastNames = [
-      'Elite Protein Smoothie Bowl', 'Premium Greek Yogurt Parfait',
-      'Quinoa Power Breakfast', 'Avocado Elite Toast', 'Protein Pancakes Premium',
+      'Elite Protein Smoothie Bowl',
+      'Premium Greek Yogurt Parfait',
+      'Quinoa Power Breakfast',
+      'Avocado Elite Toast',
+      'Protein Pancakes Premium',
     ];
     const lunchNames = [
-      'Grilled Salmon Elite Bowl', 'Turkey Avocado Wrap Premium',
-      'Quinoa Power Salad', 'Elite Chicken Stir Fry', 'Premium Buddha Bowl',
+      'Grilled Salmon Elite Bowl',
+      'Turkey Avocado Wrap Premium',
+      'Quinoa Power Salad',
+      'Elite Chicken Stir Fry',
+      'Premium Buddha Bowl',
     ];
     const dinnerNames = [
-      'Elite Grilled Fish', 'Premium Lean Steak', 'Organic Chicken Breast',
-      'Elite Tofu Curry', 'Premium Turkey Meatballs',
+      'Elite Grilled Fish',
+      'Premium Lean Steak',
+      'Organic Chicken Breast',
+      'Elite Tofu Curry',
+      'Premium Turkey Meatballs',
     ];
 
     const meals: DietPlanMeal[] = [];
@@ -1625,7 +1904,10 @@ class FitnessFirstEliteSeeder {
       console.log(`Seeded ${savedMeals.length} diet plan meals`);
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      console.error('Failed to seed diet plan meals, rolled back:', error.message);
+      console.error(
+        'Failed to seed diet plan meals, rolled back:',
+        error.message,
+      );
       throw error;
     } finally {
       await queryRunner.release();
@@ -1648,7 +1930,8 @@ class FitnessFirstEliteSeeder {
         instructions:
           'Elite form: Lie on bench, grip bar wider than shoulder width, lower to chest with control, press up explosively',
         benefits: 'Elite chest, shoulders, triceps development',
-        precautions: 'Maintain perfect form, spotter required for heavy weights',
+        precautions:
+          'Maintain perfect form, spotter required for heavy weights',
       },
       {
         name: 'Mastery Pull-ups',
@@ -1678,7 +1961,8 @@ class FitnessFirstEliteSeeder {
         type: 'strength',
         level: 'advanced',
         desc: 'Advanced overhead press with dumbbells',
-        instructions: 'Elite press: Full overhead extension, controlled descent',
+        instructions:
+          'Elite press: Full overhead extension, controlled descent',
         benefits: 'Elite shoulder development and stability',
         precautions: 'Core stability essential, avoid lower back arch',
       },
@@ -1688,7 +1972,8 @@ class FitnessFirstEliteSeeder {
         type: 'strength',
         level: 'intermediate',
         desc: 'Advanced arm flexion with progressive overload',
-        instructions: 'Elite curl technique: Full contraction, controlled negative',
+        instructions:
+          'Elite curl technique: Full contraction, controlled negative',
         benefits: 'Elite bicep development and arm strength',
         precautions: 'Perfect form over heavy weight, avoid momentum',
       },
@@ -1708,7 +1993,8 @@ class FitnessFirstEliteSeeder {
         type: 'strength',
         level: 'advanced',
         desc: 'Advanced single leg exercise with variations',
-        instructions: 'Elite lunge: Full range, perfect balance, controlled movement',
+        instructions:
+          'Elite lunge: Full range, perfect balance, controlled movement',
         benefits: 'Elite leg development and balance',
         precautions: 'Front knee tracking, maintain upright torso',
       },
@@ -1718,7 +2004,8 @@ class FitnessFirstEliteSeeder {
         type: 'strength',
         level: 'advanced',
         desc: 'Advanced hip hinge with barbell for elite athletes',
-        instructions: 'Elite deadlift: Perfect hip hinge, bar path, explosive finish',
+        instructions:
+          'Elite deadlift: Perfect hip hinge, bar path, explosive finish',
         benefits: 'Elite posterior chain development',
         precautions: 'Critical form - protect back, master technique first',
       },
@@ -1728,7 +2015,8 @@ class FitnessFirstEliteSeeder {
         type: 'strength',
         level: 'advanced',
         desc: 'Advanced core stability hold with variations',
-        instructions: 'Elite plank: Perfect alignment, controlled breathing, time under tension',
+        instructions:
+          'Elite plank: Perfect alignment, controlled breathing, time under tension',
         benefits: 'Elite core strength and stability',
         precautions: 'Neutral spine, proper breathing pattern',
       },
@@ -1738,7 +2026,8 @@ class FitnessFirstEliteSeeder {
         type: 'cardio',
         level: 'advanced',
         desc: 'Advanced dynamic core cardio for elite conditioning',
-        instructions: 'Elite climbers: Explosive knee drive, perfect plank position',
+        instructions:
+          'Elite climbers: Explosive knee drive, perfect plank position',
         benefits: 'Elite core and cardiovascular conditioning',
         precautions: 'Maintain plank form, control explosive movement',
       },
@@ -1748,7 +2037,8 @@ class FitnessFirstEliteSeeder {
         type: 'cardio',
         level: 'advanced',
         desc: 'Advanced steady state cardio for elite endurance',
-        instructions: 'Elite running: Perfect form, controlled breathing, progressive intensity',
+        instructions:
+          'Elite running: Perfect form, controlled breathing, progressive intensity',
         benefits: 'Elite cardiovascular health and endurance',
         precautions: 'Proper footwear, gradual progression essential',
       },
@@ -1758,7 +2048,8 @@ class FitnessFirstEliteSeeder {
         type: 'cardio',
         level: 'advanced',
         desc: 'Advanced full body cardio for elite conditioning',
-        instructions: 'Elite burpees: Perfect squat form, controlled push-up, explosive jump',
+        instructions:
+          'Elite burpees: Perfect squat form, controlled push-up, explosive jump',
         benefits: 'Elite full body conditioning and mental toughness',
         precautions: 'High intensity - master individual components first',
       },
@@ -1819,7 +2110,9 @@ class FitnessFirstEliteSeeder {
           body_fat_percentage: parseFloat(
             (baseBodyFat + monthOffset * -0.8).toFixed(2),
           ),
-          muscle_mass_kg: parseFloat((baseMuscle + monthOffset * 1.2).toFixed(2)),
+          muscle_mass_kg: parseFloat(
+            (baseMuscle + monthOffset * 1.2).toFixed(2),
+          ),
           bmi: parseFloat(
             (baseWeight / Math.pow(baseHeight / 100, 2)).toFixed(2),
           ),
@@ -1906,7 +2199,10 @@ class FitnessFirstEliteSeeder {
               { percent: 75, achieved: completion >= 75 },
               { percent: 100, achieved: completion >= 100 },
             ],
-            notes: status === 'completed' ? 'Elite goal achieved!' : 'Elite progress ongoing',
+            notes:
+              status === 'completed'
+                ? 'Elite goal achieved!'
+                : 'Elite progress ongoing',
           },
           status: status,
           completion_percent: completion,
@@ -1973,9 +2269,15 @@ class FitnessFirstEliteSeeder {
     const workoutLogRepository = this.dataSource.getRepository(WorkoutLog);
 
     const exerciseNames = [
-      'Elite Bench Press', 'Advanced Squats', 'Mastery Deadlifts',
-      'Elite Pull-ups', 'Advanced Push-ups', 'Power Lunges',
-      'Elite Plank', 'Mastery Shoulder Press', 'Elite Bicep Curls',
+      'Elite Bench Press',
+      'Advanced Squats',
+      'Mastery Deadlifts',
+      'Elite Pull-ups',
+      'Advanced Push-ups',
+      'Power Lunges',
+      'Elite Plank',
+      'Mastery Shoulder Press',
+      'Elite Bicep Curls',
       'Advanced Leg Press',
     ];
     const logs: WorkoutLog[] = [];

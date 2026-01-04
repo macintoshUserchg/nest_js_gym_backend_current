@@ -54,21 +54,26 @@ export class ClassesService {
   }
 
   async findAll(branchId?: string, timing?: string, day?: number) {
-    const queryBuilder = this.classesRepo.createQueryBuilder('class')
+    const queryBuilder = this.classesRepo
+      .createQueryBuilder('class')
       .leftJoinAndSelect('class.branch', 'branch');
-    
+
     if (branchId) {
       queryBuilder.andWhere('branch.branchId = :branchId', { branchId });
     }
-    
+
     if (timing) {
-      queryBuilder.andWhere('class.timings ILIKE :timing', { timing: `%${timing}%` });
+      queryBuilder.andWhere('class.timings ILIKE :timing', {
+        timing: `%${timing}%`,
+      });
     }
-    
+
     if (day !== undefined) {
-      queryBuilder.andWhere('class.days_of_week::int[] && :day', { day: [day] });
+      queryBuilder.andWhere('class.days_of_week::int[] && :day', {
+        day: [day],
+      });
     }
-    
+
     return queryBuilder.getMany();
   }
 

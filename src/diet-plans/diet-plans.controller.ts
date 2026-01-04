@@ -35,32 +35,33 @@ export class DietPlansController {
   @Post()
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create a new diet plan',
-    description: 'Creates a new personalized diet plan for a member. Diet plans can include macronutrient targets, meal schedules, and specific dietary restrictions. Plans are typically created by nutritionists or trainers.'
+    description:
+      'Creates a new personalized diet plan for a member. Diet plans can include macronutrient targets, meal schedules, and specific dietary restrictions. Plans are typically created by nutritionists or trainers.',
   })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Diet plan created successfully.',
-    type: DietPlan
+    type: DietPlan,
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Invalid diet plan data or member ID.' 
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid diet plan data or member ID.',
   })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'Unauthorized - Invalid or missing JWT token.' 
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
   })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'Forbidden - Insufficient permissions to create diet plans.' 
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions to create diet plans.',
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Member not found.' 
+  @ApiResponse({
+    status: 404,
+    description: 'Member not found.',
   })
-  @ApiBody({ 
+  @ApiBody({
     type: CreateDietDto,
     examples: {
       weightLossPlan: {
@@ -76,16 +77,16 @@ export class DietPlansController {
               type: 'breakfast',
               time: '07:00',
               foods: ['Oatmeal with berries', 'Greek yogurt', 'Almonds'],
-              calories: 450
+              calories: 450,
             },
             {
               type: 'lunch',
               time: '12:30',
               foods: ['Grilled chicken salad', 'Quinoa', 'Olive oil dressing'],
-              calories: 550
-            }
-          ]
-        }
+              calories: 550,
+            },
+          ],
+        },
       },
       muscleGainPlan: {
         summary: 'Muscle gain diet plan',
@@ -100,12 +101,12 @@ export class DietPlansController {
               type: 'breakfast',
               time: '07:00',
               foods: ['Scrambled eggs', 'Whole grain toast', 'Avocado'],
-              calories: 650
-            }
-          ]
-        }
-      }
-    }
+              calories: 650,
+            },
+          ],
+        },
+      },
+    },
   })
   create(
     @Body() createDietDto: CreateDietDto,
@@ -117,16 +118,17 @@ export class DietPlansController {
   @Get()
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all diet plans',
-    description: 'Retrieves all diet plans in the system with optional filtering by status, member, trainer, or goal type. This endpoint is typically restricted to nutritionists, trainers, and administrators.'
+    description:
+      'Retrieves all diet plans in the system with optional filtering by status, member, trainer, or goal type. This endpoint is typically restricted to nutritionists, trainers, and administrators.',
   })
   @ApiQuery({
     name: 'isActive',
     required: false,
     type: Boolean,
     description: 'Filter by active status',
-    example: true
+    example: true,
   })
   @ApiQuery({
     name: 'goalType',
@@ -134,27 +136,27 @@ export class DietPlansController {
     type: String,
     description: 'Filter by goal type',
     example: 'weight_loss',
-    enum: ['weight_loss', 'muscle_gain', 'maintenance', 'cutting', 'bulking']
+    enum: ['weight_loss', 'muscle_gain', 'maintenance', 'cutting', 'bulking'],
   })
   @ApiQuery({
     name: 'memberId',
     required: false,
     type: Number,
     description: 'Filter by member ID',
-    example: 123
+    example: 123,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Return all diet plans.',
-    type: [DietPlan]
+    type: [DietPlan],
   })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'Unauthorized - Invalid or missing JWT token.' 
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
   })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'Forbidden - Insufficient permissions to access diet plans.' 
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions to access diet plans.',
   })
   findAll() {
     return this.dietPlansService.findAll();

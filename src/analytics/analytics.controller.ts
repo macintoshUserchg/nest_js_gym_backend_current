@@ -42,50 +42,51 @@ export class AnalyticsController {
         },
         members: {
           total: 60,
-          active: 59,
-          inactive: 1,
-          expiring: {
-            today: {
-              count: 3,
-              members: [850, 852, 855],
-            },
-            next3Days: {
-              count: 5,
-              members: [860, 862, 865, 870, 872],
+          active: {
+            current_active: 59,
+            lastMonth_active: 55,
+            change: {
+              percent: 7.27,
+              type: 'increase',
             },
           },
+          inactive: 1,
+          expiring: {
+            today: 3,
+            next10Days: 5,
+            member_id: [850, 852, 855, 860, 862, 865, 870, 872],
+          },
           birthdays: {
-            today: {
-              count: 2,
-              members: [840, 847],
-            },
+            today: 2,
+            member_id: [840, 847],
           },
           dues: {
             count: 2,
             totalAmount: 249.98,
-            members: [
-              {
-                id: 838,
-                amount: 124.99,
-              },
-              {
-                id: 845,
-                amount: 124.99,
-              },
-            ],
+            members_id: [838, 845],
           },
         },
         resources: {
-          trainers: 12,
-          classes: 12,
+          trainers: {
+            count: 12,
+            trainers_id: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+          },
+          classes: {
+            count: 12,
+            classes_id: [
+              'class-123',
+              'class-124',
+              'class-125',
+              'class-126',
+              'class-127',
+              'class-128',
+            ],
+          },
         },
         revenue: {
           current: 339.96,
           lastMonth: 0,
-          change: {
-            percent: 100,
-            type: 'increase',
-          },
+          change: 100,
         },
         memberGrowth: {
           current: 59,
@@ -166,50 +167,44 @@ export class AnalyticsController {
         },
         members: {
           total: 75,
-          active: 60,
-          inactive: 15,
-          expiring: {
-            today: {
-              count: 2,
-              members: [850, 852],
-            },
-            next3Days: {
-              count: 6,
-              members: [860, 862, 865, 870, 872, 874],
+          active: {
+            current_active: 60,
+            lastMonth_active: 58,
+            change: {
+              percent: 3.45,
+              type: 'increase',
             },
           },
+          inactive: 15,
+          expiring: {
+            today: 2,
+            next10Days: 6,
+            member_id: [850, 852, 860, 862, 865, 870, 872, 874],
+          },
           birthdays: {
-            today: {
-              count: 1,
-              members: [840],
-            },
+            today: 1,
+            member_id: [840],
           },
           dues: {
             count: 4,
             totalAmount: 499.96,
-            members: [
-              {
-                id: 838,
-                amount: 124.99,
-              },
-              {
-                id: 845,
-                amount: 124.99,
-              },
-            ],
+            members_id: [838, 845, 850, 852],
           },
         },
         resources: {
-          trainers: 6,
-          classes: 4,
+          trainers: {
+            count: 6,
+            trainers_id: [1, 2, 3, 4, 5, 6],
+          },
+          classes: {
+            count: 4,
+            classes_id: ['class-123', 'class-124', 'class-125', 'class-126'],
+          },
         },
         revenue: {
           current: 1899.96,
           lastMonth: 1500.0,
-          change: {
-            percent: 26.66,
-            type: 'increase',
-          },
+          change: 26.66,
         },
         memberGrowth: {
           current: 30,
@@ -276,9 +271,14 @@ export class AnalyticsController {
           inactive: 30,
           expiringToday: 5,
           amount_due_members: 8,
+          amount_due_members_id: [840, 842, 845, 848, 850, 852, 855, 860],
           total_amount_due: 2500.0,
           expiring3days: 12,
+          expiring3days_members_id: [
+            830, 832, 835, 838, 840, 842, 845, 848, 850, 852, 855, 860,
+          ],
           birthday_today: 2,
+          birthday_today_members_id: [840, 847],
         },
       },
     },
@@ -321,9 +321,13 @@ export class AnalyticsController {
           active: 60,
           inactive: 15,
           expiringToday: 2,
+          expiringToday_members_id: [850, 852],
           amount_due_members: 4,
+          amount_due_members_id: [840, 842, 845, 848],
           expiring3days: 6,
+          expiring3days_members_id: [830, 832, 835, 838, 840, 842],
           birthday_today: 1,
+          birthday_today_members_id: [840],
         },
       },
     },
@@ -529,5 +533,63 @@ export class AnalyticsController {
   })
   getBranchRecentPayments(@Param('branchId') branchId: string) {
     return this.analyticsService.getBranchRecentPayments(branchId);
+  }
+
+  @Get('trainer/:trainerId/dashboard')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get trainer dashboard analytics' })
+  @ApiParam({ name: 'trainerId', description: 'Trainer ID', example: '1' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return trainer dashboard analytics.',
+    schema: {
+      example: {
+        trainer: {
+          id: 1,
+          fullName: 'John Doe',
+          email: 'john@example.com',
+          phone: '+1234567890',
+          specialization: 'Weight Training',
+          avatarUrl: 'https://example.com/avatar.jpg',
+        },
+        classes: [
+          {
+            class_id: 'class-123',
+            name: 'Morning Yoga',
+            description: 'Relaxing yoga session',
+            timings: 'morning',
+            recurrence_type: 'daily',
+            days_of_week: [1, 2, 3, 4, 5],
+          },
+        ],
+        stats: {
+          totalClasses: 1,
+          totalMembers: 25,
+        },
+        assignedMembers: [
+          {
+            id: 838,
+            fullName: 'Alice Cooper',
+            email: 'alice.cooper0@email.com',
+            phone: '+1234567890',
+          },
+        ],
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Trainer not found.',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Trainer with ID 999 not found',
+        error: 'Not Found',
+      },
+    },
+  })
+  getTrainerDashboard(@Param('trainerId') trainerId: string) {
+    return this.analyticsService.getTrainerDashboard(trainerId);
   }
 }

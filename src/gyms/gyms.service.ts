@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Gym } from '../entities/gym.entity';
 import { Branch } from '../entities/branch.entity';
 import { Member } from '../entities/members.entity';
+import { Trainer } from '../entities/trainers.entity';
 import { CreateGymDto } from './dto/create-gym.dto';
 import { UpdateGymDto } from './dto/update-gym.dto';
 import { CreateBranchDto } from './dto/create-branch.dto';
@@ -18,6 +19,8 @@ export class GymsService {
     private branchesRepo: Repository<Branch>,
     @InjectRepository(Member)
     private membersRepo: Repository<Member>,
+    @InjectRepository(Trainer)
+    private trainersRepo: Repository<Trainer>,
   ) {}
 
   // ========== GYM OPERATIONS ==========
@@ -50,25 +53,37 @@ export class GymsService {
   }
 
   async findAll(location?: string, search?: string) {
-    const queryBuilder = this.gymsRepo.createQueryBuilder('gym')
+    const queryBuilder = this.gymsRepo
+      .createQueryBuilder('gym')
       .leftJoinAndSelect('gym.branches', 'branches');
-    
+
     if (location) {
-      queryBuilder.andWhere('gym.location ILIKE :location', { location: `%${location}%` });
+      queryBuilder.andWhere('gym.location ILIKE :location', {
+        location: `%${location}%`,
+      });
     }
-    
+
     if (search) {
-      queryBuilder.andWhere('gym.name ILIKE :search', { search: `%${search}%` });
+      queryBuilder.andWhere('gym.name ILIKE :search', {
+        search: `%${search}%`,
+      });
     }
-    
+
     return queryBuilder.getMany();
   }
 
   async findOne(id: string) {
-    const gym = await this.gymsRepo.findOne({
-      where: { gymId: id },
-      relations: ['branches', 'users'],
-    });
+    if (!id || id === ':id') {
+      throw new NotFoundException('Invalid gym ID provided');
+    }
+
+    const gym = await this.gymsRepo
+      .createQueryBuilder('gym')
+      .leftJoinAndSelect('gym.branches', 'branches')
+      .leftJoinAndSelect('gym.users', 'users')
+      .where('gym.gymId = :gymId', { gymId: id })
+      .getOne();
+
     if (!gym) {
       throw new NotFoundException(`Gym with ID ${id} not found`);
     }
@@ -143,10 +158,17 @@ export class GymsService {
   }
 
   async findBranchesByGym(gymId: string) {
+    if (!gymId || gymId === ':id') {
+      throw new NotFoundException('Invalid gym ID provided');
+    }
+
     await this.findOne(gymId); // Verify gym exists
-    const branches = await this.branchesRepo.find({
-      where: { gym: { gymId } },
-    });
+
+    const branches = await this.branchesRepo
+      .createQueryBuilder('branch')
+      .leftJoin('branch.gym', 'gym')
+      .where('gym.gymId = :gymId', { gymId })
+      .getMany();
 
     return branches.map((branch) => ({
       branchId: branch.branchId,
@@ -165,14 +187,34 @@ export class GymsService {
   }
 
   async findOneBranch(id: string) {
-    const branch = await this.branchesRepo.findOne({
-      where: { branchId: id },
-      relations: ['gym'],
-    });
-    if (!branch) {
-      throw new NotFoundException(`Branch with ID ${id} not found`);
+    if (!id || id === ':id') {
+      throw new NotFoundException('Invalid branch ID provided');
     }
-    return branch;
+
+    // Basic UUID validation (format: 8-4-4-4-12 characters)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      throw new NotFoundException(`Invalid branch ID format. Branch ID must be a valid UUID.`);
+    }
+
+    try {
+      const branch = await this.branchesRepo
+        .createQueryBuilder('branch')
+        .leftJoinAndSelect('branch.gym', 'gym')
+        .where('branch.branchId = :branchId', { branchId: id })
+        .getOne();
+
+      if (!branch) {
+        throw new NotFoundException(`Branch with ID ${id} not found`);
+      }
+      return branch;
+    } catch (error) {
+      // Handle database-specific errors (e.g., invalid UUID syntax)
+      if (error.code === '22P02' || error.message?.includes('invalid input syntax for type uuid')) {
+        throw new NotFoundException(`Invalid branch ID format. Branch ID must be a valid UUID.`);
+      }
+      throw error;
+    }
   }
 
   async updateBranch(id: string, updateBranchDto: UpdateBranchDto) {
@@ -193,14 +235,13 @@ export class GymsService {
     await this.findOne(gymId);
 
     // Get all members from all branches of this gym
-    const members = await this.membersRepo.find({
-      where: {
-        branch: {
-          gym: { gymId },
-        },
-      },
-      relations: ['branch', 'subscription'],
-    });
+    const members = await this.membersRepo
+      .createQueryBuilder('member')
+      .leftJoinAndSelect('member.branch', 'branch')
+      .leftJoinAndSelect('member.subscription', 'subscription')
+      .leftJoin('branch.gym', 'gym')
+      .where('gym.gymId = :gymId', { gymId })
+      .getMany();
 
     return members.map((member) => ({
       id: member.id,
@@ -218,6 +259,8 @@ export class GymsService {
       emergencyContactName: member.emergencyContactName,
       emergencyContactPhone: member.emergencyContactPhone,
       isActive: member.isActive,
+      attachmentUrl: member.attachmentUrl,
+      freezMember: member.freezMember,
       branch: member.branch
         ? {
             branchId: member.branch.branchId,
@@ -235,6 +278,119 @@ export class GymsService {
         : null,
       createdAt: member.createdAt,
       updatedAt: member.updatedAt,
+    }));
+  }
+
+  // ========== TRAINER OPERATIONS BY GYM ==========
+
+  async findTrainersByGym(gymId: string) {
+    // Verify gym exists
+    await this.findOne(gymId);
+
+    // Get all trainers from all branches of this gym
+    const trainers = await this.trainersRepo
+      .createQueryBuilder('trainer')
+      .leftJoinAndSelect('trainer.branch', 'branch')
+      .leftJoin('branch.gym', 'gym')
+      .where('gym.gymId = :gymId', { gymId })
+      .getMany();
+
+    return trainers.map((trainer) => ({
+      id: trainer.id,
+      fullName: trainer.fullName,
+      email: trainer.email,
+      phone: trainer.phone,
+      specialization: trainer.specialization,
+      avatarUrl: trainer.avatarUrl,
+      branch: trainer.branch
+        ? {
+            branchId: trainer.branch.branchId,
+            name: trainer.branch.name,
+            location: trainer.branch.location,
+          }
+        : null,
+    }));
+  }
+
+  // ========== MEMBER OPERATIONS BY BRANCH ==========
+
+  async findMembersByBranch(branchId: string) {
+    // Verify branch exists
+    await this.findOneBranch(branchId);
+
+    // Get all members for this specific branch
+    const members = await this.membersRepo
+      .createQueryBuilder('member')
+      .leftJoinAndSelect('member.branch', 'branch')
+      .leftJoinAndSelect('member.subscription', 'subscription')
+      .where('branch.branchId = :branchId', { branchId })
+      .getMany();
+
+    return members.map((member) => ({
+      id: member.id,
+      fullName: member.fullName,
+      email: member.email,
+      phone: member.phone,
+      gender: member.gender,
+      dateOfBirth: member.dateOfBirth,
+      addressLine1: member.addressLine1,
+      addressLine2: member.addressLine2,
+      city: member.city,
+      state: member.state,
+      postalCode: member.postalCode,
+      avatarUrl: member.avatarUrl,
+      emergencyContactName: member.emergencyContactName,
+      emergencyContactPhone: member.emergencyContactPhone,
+      isActive: member.isActive,
+      attachmentUrl: member.attachmentUrl,
+      freezMember: member.freezMember,
+      branch: member.branch
+        ? {
+            branchId: member.branch.branchId,
+            name: member.branch.name,
+            location: member.branch.location,
+          }
+        : null,
+      subscription: member.subscription
+        ? {
+            id: member.subscription.id,
+            isActive: member.subscription.isActive,
+            startDate: member.subscription.startDate,
+            endDate: member.subscription.endDate,
+          }
+        : null,
+      createdAt: member.createdAt,
+      updatedAt: member.updatedAt,
+    }));
+  }
+
+  // ========== TRAINER OPERATIONS BY BRANCH ==========
+
+  async findTrainersByBranch(branchId: string) {
+    // Verify branch exists
+    await this.findOneBranch(branchId);
+
+    // Get all trainers for this specific branch
+    const trainers = await this.trainersRepo
+      .createQueryBuilder('trainer')
+      .leftJoinAndSelect('trainer.branch', 'branch')
+      .where('branch.branchId = :branchId', { branchId })
+      .getMany();
+
+    return trainers.map((trainer) => ({
+      id: trainer.id,
+      fullName: trainer.fullName,
+      email: trainer.email,
+      phone: trainer.phone,
+      specialization: trainer.specialization,
+      avatarUrl: trainer.avatarUrl,
+      branch: trainer.branch
+        ? {
+            branchId: trainer.branch.branchId,
+            name: trainer.branch.name,
+            location: trainer.branch.location,
+          }
+        : null,
     }));
   }
 }

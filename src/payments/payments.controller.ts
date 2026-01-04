@@ -28,17 +28,18 @@ export class PaymentsController {
   @Post()
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Record payment',
-    description: 'Records a new payment transaction for an invoice. This endpoint handles various payment methods including cash, card, online payments, and bank transfers. The payment amount is validated against the invoice total.'
+    description:
+      'Records a new payment transaction for an invoice. This endpoint handles various payment methods including cash, card, online payments, and bank transfers. The payment amount is validated against the invoice total.',
   })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Payment recorded successfully.',
-    type: PaymentTransaction
+    type: PaymentTransaction,
   })
-  @ApiResponse({ 
-    status: 400, 
+  @ApiResponse({
+    status: 400,
     description: 'Invalid payment data or amount exceeds invoice total.',
     examples: {
       invalidAmount: {
@@ -46,42 +47,44 @@ export class PaymentsController {
         value: {
           statusCode: 400,
           message: 'Payment amount (150.00) exceeds invoice total (99.99)',
-          error: 'Bad Request'
-        }
+          error: 'Bad Request',
+        },
       },
       invalidMethod: {
         summary: 'Invalid payment method',
         value: {
           statusCode: 400,
-          message: 'Payment method must be one of: cash, card, online, bank_transfer',
-          error: 'Bad Request'
-        }
-      }
-    }
+          message:
+            'Payment method must be one of: cash, card, online, bank_transfer',
+          error: 'Bad Request',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'Unauthorized - Invalid or missing JWT token.' 
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
   })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'Forbidden - Insufficient permissions to record payments.' 
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions to record payments.',
   })
-  @ApiResponse({ 
-    status: 404, 
+  @ApiResponse({
+    status: 404,
     description: 'Invoice not found.',
     examples: {
       invoiceNotFound: {
         summary: 'Invoice not found',
         value: {
           statusCode: 404,
-          message: 'Invoice with ID 123e4567-e89b-12d3-a456-426614174000 not found',
-          error: 'Not Found'
-        }
-      }
-    }
+          message:
+            'Invoice with ID 123e4567-e89b-12d3-a456-426614174000 not found',
+          error: 'Not Found',
+        },
+      },
+    },
   })
-  @ApiBody({ 
+  @ApiBody({
     type: CreatePaymentDto,
     examples: {
       cardPayment: {
@@ -91,17 +94,17 @@ export class PaymentsController {
           amount: 99.99,
           method: 'card',
           referenceNumber: 'TXN123456789',
-          notes: 'Paid via Visa ending in 1234'
-        }
+          notes: 'Paid via Visa ending in 1234',
+        },
       },
       cashPayment: {
         summary: 'Cash payment at reception',
         value: {
           invoiceId: '123e4567-e89b-12d3-a456-426614174000',
-          amount: 75.00,
+          amount: 75.0,
           method: 'cash',
-          notes: 'Cash payment received at front desk'
-        }
+          notes: 'Cash payment received at front desk',
+        },
       },
       bankTransfer: {
         summary: 'Bank transfer payment',
@@ -110,10 +113,10 @@ export class PaymentsController {
           amount: 199.99,
           method: 'bank_transfer',
           referenceNumber: 'UTR789012345',
-          notes: 'Bank transfer from member account'
-        }
-      }
-    }
+          notes: 'Bank transfer from member account',
+        },
+      },
+    },
   })
   create(@Body() createDto: CreatePaymentDto) {
     return this.paymentsService.create(createDto);
@@ -122,22 +125,24 @@ export class PaymentsController {
   @Get()
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all payments',
-    description: 'Retrieves all payment transactions in the system with optional filtering by payment method, status, or date range. This endpoint is typically restricted to finance staff and administrators.'
+    description:
+      'Retrieves all payment transactions in the system with optional filtering by payment method, status, or date range. This endpoint is typically restricted to finance staff and administrators.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Return all payments.',
-    type: [PaymentTransaction]
+    type: [PaymentTransaction],
   })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'Unauthorized - Invalid or missing JWT token.' 
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
   })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'Forbidden - Insufficient permissions to access payment records.' 
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Insufficient permissions to access payment records.',
   })
   findAll() {
     return this.paymentsService.findAll();
@@ -146,17 +151,18 @@ export class PaymentsController {
   @Get(':id')
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get payment by ID',
-    description: 'Retrieves detailed information about a specific payment transaction including the associated invoice, payment method, and transaction details. This is useful for payment inquiries and financial reconciliation.'
+    description:
+      'Retrieves detailed information about a specific payment transaction including the associated invoice, payment method, and transaction details. This is useful for payment inquiries and financial reconciliation.',
   })
-  @ApiParam({ 
-    name: 'id', 
+  @ApiParam({
+    name: 'id',
     description: 'Payment ID (UUID format)',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Return the payment.',
     examples: {
       success: {
@@ -169,41 +175,43 @@ export class PaymentsController {
               id: 123,
               firstName: 'John',
               lastName: 'Doe',
-              email: 'john.doe@example.com'
+              email: 'john.doe@example.com',
             },
-            total_amount: 99.99
+            total_amount: 99.99,
           },
           amount: 99.99,
           method: 'card',
           reference_number: 'TXN123456789',
           notes: 'Paid via Visa ending in 1234',
           status: 'completed',
-          created_at: '2024-12-01T10:30:00Z'
-        }
-      }
-    }
+          created_at: '2024-12-01T10:30:00Z',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 404, 
+  @ApiResponse({
+    status: 404,
     description: 'Payment not found.',
     examples: {
       notFound: {
         summary: 'Payment ID not found',
         value: {
           statusCode: 404,
-          message: 'Payment with ID 123e4567-e89b-12d3-a456-426614174000 not found',
-          error: 'Not Found'
-        }
-      }
-    }
+          message:
+            'Payment with ID 123e4567-e89b-12d3-a456-426614174000 not found',
+          error: 'Not Found',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'Unauthorized - Invalid or missing JWT token.' 
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
   })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'Forbidden - Insufficient permissions to access payment details.' 
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Insufficient permissions to access payment details.',
   })
   findOne(@Param('id') id: string) {
     return this.paymentsService.findOne(id);
@@ -218,17 +226,18 @@ export class InvoicePaymentsController {
   @Get(':invoiceId/payments')
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get invoice payments',
-    description: 'Retrieves all payment transactions associated with a specific invoice. This is useful for tracking partial payments, payment history, and invoice reconciliation.'
+    description:
+      'Retrieves all payment transactions associated with a specific invoice. This is useful for tracking partial payments, payment history, and invoice reconciliation.',
   })
-  @ApiParam({ 
-    name: 'invoiceId', 
+  @ApiParam({
+    name: 'invoiceId',
     description: 'Invoice ID (UUID format)',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Return invoice payments.',
     examples: {
       success: {
@@ -236,12 +245,12 @@ export class InvoicePaymentsController {
         value: [
           {
             transaction_id: '123e4567-e89b-12d3-a456-426614174000',
-            amount: 50.00,
+            amount: 50.0,
             method: 'card',
             reference_number: 'TXN123456789',
             notes: 'Partial payment via credit card',
             status: 'completed',
-            created_at: '2024-12-01T10:30:00Z'
+            created_at: '2024-12-01T10:30:00Z',
           },
           {
             transaction_id: '456e7890-e89b-12d3-a456-426614174001',
@@ -249,33 +258,35 @@ export class InvoicePaymentsController {
             method: 'cash',
             notes: 'Remaining balance paid in cash',
             status: 'completed',
-            created_at: '2024-12-02T14:15:00Z'
-          }
-        ]
-      }
-    }
+            created_at: '2024-12-02T14:15:00Z',
+          },
+        ],
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 404, 
+  @ApiResponse({
+    status: 404,
     description: 'Invoice not found.',
     examples: {
       notFound: {
         summary: 'Invoice ID not found',
         value: {
           statusCode: 404,
-          message: 'Invoice with ID 123e4567-e89b-12d3-a456-426614174000 not found',
-          error: 'Not Found'
-        }
-      }
-    }
+          message:
+            'Invoice with ID 123e4567-e89b-12d3-a456-426614174000 not found',
+          error: 'Not Found',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'Unauthorized - Invalid or missing JWT token.' 
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
   })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'Forbidden - Insufficient permissions to access invoice payments.' 
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Insufficient permissions to access invoice payments.',
   })
   findByInvoice(@Param('invoiceId') invoiceId: string) {
     return this.paymentsService.findByInvoice(invoiceId);
@@ -290,17 +301,18 @@ export class MemberPaymentsController {
   @Get(':memberId/payments')
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get member payment history',
-    description: 'Retrieves complete payment history for a specific member including all transactions across different invoices. This is useful for financial reporting and member account management.'
+    description:
+      'Retrieves complete payment history for a specific member including all transactions across different invoices. This is useful for financial reporting and member account management.',
   })
-  @ApiParam({ 
-    name: 'memberId', 
+  @ApiParam({
+    name: 'memberId',
     description: 'Member ID (numeric)',
-    example: 123
+    example: 123,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Return member payment history.',
     examples: {
       success: {
@@ -311,33 +323,33 @@ export class MemberPaymentsController {
             invoice: {
               invoice_id: '456e7890-e89b-12d3-a456-426614174001',
               description: 'Monthly membership fee - December 2024',
-              total_amount: 99.99
+              total_amount: 99.99,
             },
             amount: 99.99,
             method: 'card',
             reference_number: 'TXN123456789',
             notes: 'Paid via Visa ending in 1234',
             status: 'completed',
-            created_at: '2024-12-01T10:30:00Z'
+            created_at: '2024-12-01T10:30:00Z',
           },
           {
             transaction_id: '789e0123-e89b-12d3-a456-426614174002',
             invoice: {
               invoice_id: '890e1234-e89b-12d3-a456-426614174003',
               description: 'Personal training session',
-              total_amount: 75.00
+              total_amount: 75.0,
             },
-            amount: 75.00,
+            amount: 75.0,
             method: 'cash',
             status: 'completed',
-            created_at: '2024-11-28T15:45:00Z'
-          }
-        ]
-      }
-    }
+            created_at: '2024-11-28T15:45:00Z',
+          },
+        ],
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 404, 
+  @ApiResponse({
+    status: 404,
     description: 'Member not found.',
     examples: {
       notFound: {
@@ -345,18 +357,19 @@ export class MemberPaymentsController {
         value: {
           statusCode: 404,
           message: 'Member with ID 123 not found',
-          error: 'Not Found'
-        }
-      }
-    }
+          error: 'Not Found',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'Unauthorized - Invalid or missing JWT token.' 
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
   })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'Forbidden - Insufficient permissions to access member payment history.' 
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Insufficient permissions to access member payment history.',
   })
   findByMember(@Param('memberId', ParseIntPipe) memberId: number) {
     return this.paymentsService.findByMember(memberId);

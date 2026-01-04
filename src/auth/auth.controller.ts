@@ -6,7 +6,13 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginUserDto } from './dto/login-user.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
@@ -19,9 +25,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
   @Post('login')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'User login',
-    description: 'Authenticate user with email and password. Returns JWT token for subsequent API calls.'
+    description:
+      'Authenticate user with email and password. Returns JWT token for subsequent API calls.',
   })
   @ApiResponse({
     status: 200,
@@ -32,13 +39,14 @@ export class AuthController {
         summary: 'Successful login response',
         value: {
           userid: 'usr_1234567890abcdef',
-          access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ1c3JfMTIzNDU2Nzg5MCIsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSIsInJvbGUiOiJNRU1CRVIiLCJpYXQiOjE2MzM4MzA2MDAsImV4cCI6MTYzMzgzNDIwMH0.example_signature'
-        }
-      }
-    }
+          access_token:
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ1c3JfMTIzNDU2Nzg5MCIsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSIsInJvbGUiOiJNRU1CRVIiLCJpYXQiOjE2MzM4MzA2MDAsImV4cCI6MTYzMzgzNDIwMH0.example_signature',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Invalid credentials.',
     examples: {
       invalidCredentials: {
@@ -46,21 +54,21 @@ export class AuthController {
         value: {
           statusCode: 401,
           message: 'Invalid email or password',
-          error: 'Unauthorized'
-        }
-      }
-    }
+          error: 'Unauthorized',
+        },
+      },
+    },
   })
-  @ApiBody({ 
+  @ApiBody({
     type: LoginUserDto,
     examples: {
       valid: {
         value: {
           email: 'member@example.com',
-          password: 'SecurePassword123!'
-        }
-      }
-    }
+          password: 'SecurePassword123!',
+        },
+      },
+    },
   })
   async login(@Body() loginDto: LoginUserDto): Promise<LoginResponseDto> {
     const user = await this.authService.validateUser(
@@ -80,21 +88,22 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
   @Post('logout')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'User logout',
-    description: 'Logout user and invalidate JWT token. Client should discard the token after successful logout.'
+    description:
+      'Logout user and invalidate JWT token. Client should discard the token after successful logout.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'User logged out successfully.',
     examples: {
       success: {
         summary: 'Successful logout',
         value: {
-          message: 'Logged out successfully. Please discard your token.'
-        }
-      }
-    }
+          message: 'Logged out successfully. Please discard your token.',
+        },
+      },
+    },
   })
   async logout() {
     // For JWT, logout is typically client-side by discarding the token.

@@ -11,6 +11,8 @@ import { User } from '../entities/users.entity';
 import { Role } from '../entities/roles.entity';
 import { Attendance } from '../entities/attendance.entity';
 import { PaymentTransaction } from '../entities/payment_transactions.entity';
+import { MemberSubscription } from '../entities/member_subscriptions.entity';
+import { MembershipPlan } from '../entities/membership_plans.entity';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { PaymentTransaction } from '../entities/payment_transactions.entity';
       Role,
       Attendance,
       PaymentTransaction,
+      MemberSubscription,
+      MembershipPlan,
     ]),
   ],
   controllers: [MembersController, BranchMembersController],

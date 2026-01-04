@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MembershipPlan } from '../entities/membership_plans.entity';
 import { Branch } from '../entities/branch.entity';
+import { Gym } from '../entities/gym.entity';
 import { CreateMembershipPlanDto } from './dto/create-membership-plan.dto';
 import { UpdateMembershipPlanDto } from './dto/update-membership-plan.dto';
 
@@ -13,6 +14,8 @@ export class MembershipPlansService {
     private plansRepo: Repository<MembershipPlan>,
     @InjectRepository(Branch)
     private branchesRepo: Repository<Branch>,
+    @InjectRepository(Gym)
+    private gymsRepo: Repository<Gym>,
   ) {}
 
   async create(createDto: CreateMembershipPlanDto) {
@@ -40,21 +43,22 @@ export class MembershipPlansService {
   }
 
   async findAll(branchId?: string, minPrice?: number, maxPrice?: number) {
-    const queryBuilder = this.plansRepo.createQueryBuilder('plan')
+    const queryBuilder = this.plansRepo
+      .createQueryBuilder('plan')
       .leftJoinAndSelect('plan.branch', 'branch');
-    
+
     if (branchId) {
       queryBuilder.andWhere('branch.branchId = :branchId', { branchId });
     }
-    
+
     if (minPrice) {
       queryBuilder.andWhere('plan.price >= :minPrice', { minPrice });
     }
-    
+
     if (maxPrice) {
       queryBuilder.andWhere('plan.price <= :maxPrice', { maxPrice });
     }
-    
+
     return queryBuilder.getMany();
   }
 
@@ -113,6 +117,20 @@ export class MembershipPlansService {
 
     return this.plansRepo.find({
       where: { branch: { branchId } },
+      relations: ['branch'],
+    });
+  }
+
+  async findByGym(gymId: string) {
+    const gym = await this.gymsRepo.findOne({
+      where: { gymId },
+    });
+    if (!gym) {
+      throw new NotFoundException(`Gym with ID ${gymId} not found`);
+    }
+
+    return this.plansRepo.find({
+      where: { branch: { gym: { gymId } } },
       relations: ['branch'],
     });
   }

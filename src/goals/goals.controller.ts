@@ -35,39 +35,42 @@ export class GoalsController {
   @Post()
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create a new goal',
-    description: 'Creates a new fitness goal for a member. Goals can be set by trainers or by members themselves (if allowed). Common goal types include weight loss, muscle gain, strength improvement, and endurance building.'
+    description:
+      'Creates a new fitness goal for a member. Goals can be set by trainers or by members themselves (if allowed). Common goal types include weight loss, muscle gain, strength improvement, and endurance building.',
   })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Goal created successfully.',
-    type: Goal
+    type: Goal,
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Invalid goal data or member ID.' 
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid goal data or member ID.',
   })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'Unauthorized - Invalid or missing JWT token.' 
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
   })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'Forbidden - Insufficient permissions to create goals for this member.',
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Insufficient permissions to create goals for this member.',
     examples: {
       insufficientPermissions: {
         summary: 'Cannot create goals for other members',
         value: {
           statusCode: 403,
-          message: 'You can only create goals for yourself or your assigned members',
-          error: 'Forbidden'
-        }
-      }
-    }
+          message:
+            'You can only create goals for yourself or your assigned members',
+          error: 'Forbidden',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 404, 
+  @ApiResponse({
+    status: 404,
     description: 'Member not found.',
     examples: {
       memberNotFound: {
@@ -75,12 +78,12 @@ export class GoalsController {
         value: {
           statusCode: 404,
           message: 'Member with ID 123 not found',
-          error: 'Not Found'
-        }
-      }
-    }
+          error: 'Not Found',
+        },
+      },
+    },
   })
-  @ApiBody({ 
+  @ApiBody({
     type: CreateGoalDto,
     examples: {
       weightLossGoal: {
@@ -96,12 +99,12 @@ export class GoalsController {
             month2: 'Lose 4 kg',
             month3: 'Lose 6 kg',
             month4: 'Lose 8 kg',
-            month5: 'Lose 10 kg'
+            month5: 'Lose 10 kg',
           },
           status: 'active',
           completion_percent: 0,
-          is_managed_by_member: false
-        }
+          is_managed_by_member: false,
+        },
       },
       muscleGainGoal: {
         summary: 'Muscle gain goal',
@@ -113,12 +116,12 @@ export class GoalsController {
           milestone: {
             month1: 'Gain 1 kg muscle',
             month2: 'Gain 2 kg muscle',
-            month3: 'Gain 3 kg muscle'
+            month3: 'Gain 3 kg muscle',
           },
           status: 'active',
           completion_percent: 0,
-          is_managed_by_member: true
-        }
+          is_managed_by_member: true,
+        },
       },
       strengthGoal: {
         summary: 'Strength improvement goal',
@@ -132,14 +135,14 @@ export class GoalsController {
             week1: 'Increase bench press by 5kg',
             week4: 'Increase squat by 10kg',
             week8: 'Increase deadlift by 15kg',
-            week12: 'Achieve 20kg total increase'
+            week12: 'Achieve 20kg total increase',
           },
           status: 'active',
           completion_percent: 0,
-          is_managed_by_member: false
-        }
-      }
-    }
+          is_managed_by_member: false,
+        },
+      },
+    },
   })
   create(
     @Body() createGoalDto: CreateGoalDto,
@@ -151,9 +154,10 @@ export class GoalsController {
   @Get()
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all goals',
-    description: 'Retrieves all fitness goals in the system with optional filtering by status, member, trainer, or goal type. This endpoint is typically restricted to trainers and administrators.'
+    description:
+      'Retrieves all fitness goals in the system with optional filtering by status, member, trainer, or goal type. This endpoint is typically restricted to trainers and administrators.',
   })
   @ApiQuery({
     name: 'status',
@@ -161,21 +165,21 @@ export class GoalsController {
     type: String,
     description: 'Filter goals by status',
     example: 'active',
-    enum: ['active', 'in_progress', 'completed', 'on_hold', 'cancelled']
+    enum: ['active', 'in_progress', 'completed', 'on_hold', 'cancelled'],
   })
   @ApiQuery({
     name: 'memberId',
     required: false,
     type: Number,
     description: 'Filter goals by member ID',
-    example: 123
+    example: 123,
   })
   @ApiQuery({
     name: 'trainerId',
     required: false,
     type: Number,
     description: 'Filter goals by trainer ID',
-    example: 456
+    example: 456,
   })
   @ApiQuery({
     name: 'goalType',
@@ -183,20 +187,26 @@ export class GoalsController {
     type: String,
     description: 'Filter goals by type',
     example: 'Weight Loss',
-    enum: ['Weight Loss', 'Muscle Gain', 'Strength Improvement', 'Endurance', 'Flexibility']
+    enum: [
+      'Weight Loss',
+      'Muscle Gain',
+      'Strength Improvement',
+      'Endurance',
+      'Flexibility',
+    ],
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Return all goals.',
-    type: [Goal]
+    type: [Goal],
   })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'Unauthorized - Invalid or missing JWT token.' 
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
   })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'Forbidden - Insufficient permissions to access goals.' 
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions to access goals.',
   })
   findAll() {
     return this.goalsService.findAll();

@@ -34,49 +34,77 @@ export class MembersController {
   @Post()
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create a new member',
-    description: 'Creates a new member profile with branch assignment and default user account'
+    description:
+      'Creates a new member profile with branch assignment and default user account',
   })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Member created successfully.',
-    type: Member
+    type: Member,
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Invalid input data. Check validation errors.' 
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input data. Check validation errors.',
   })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'Unauthorized - Invalid or missing JWT token.' 
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
   })
   @ApiResponse({
     status: 409,
     description: 'Member with this email already exists.',
   })
-  @ApiBody({ 
+  @ApiBody({
     type: CreateMemberDto,
     examples: {
-      newMember: {
-        summary: 'Create a new member',
+      minimalMember: {
+        summary: 'Create a member with minimal required information',
         value: {
-          firstName: 'John',
-          lastName: 'Doe',
+          fullName: 'John Doe',
           email: 'john.doe@example.com',
           phone: '+1234567890',
-          dateOfBirth: '1990-01-01',
-          address: '123 Main St, City, State',
-          emergencyContact: {
-            name: 'Jane Doe',
-            phone: '+0987654321',
-            relationship: 'Spouse'
-          },
+          branchId: '123e4567-e89b-12d3-a456-426614174000',
           membershipPlanId: 1,
-          branchId: 'branch_123'
-        }
-      }
-    }
+        },
+      },
+      completeMember: {
+        summary: 'Create a member with complete information',
+        value: {
+          fullName: 'Alice Johnson',
+          email: 'alice.johnson@example.com',
+          phone: '+1987654321',
+          gender: 'FEMALE',
+          dateOfBirth: '1992-05-15',
+          addressLine1: '456 Oak Avenue',
+          addressLine2: 'Apt 3B',
+          city: 'Los Angeles',
+          state: 'CA',
+          postalCode: '90210',
+          avatarUrl: 'https://example.com/avatars/alice.jpg',
+          emergencyContactName: 'Robert Johnson',
+          emergencyContactPhone: '+1122334455',
+          branchId: '456e7890-e89b-12d3-a456-426614174001',
+          membershipPlanId: 2,
+          isActive: true,
+        },
+      },
+      basicMember: {
+        summary: 'Create a member with basic information',
+        value: {
+          fullName: 'Michael Smith',
+          email: 'michael.smith@example.com',
+          phone: '+1555123456',
+          gender: 'MALE',
+          dateOfBirth: '1985-12-10',
+          city: 'Chicago',
+          state: 'IL',
+          branchId: '789e0123-e89b-12d3-a456-426614174002',
+          membershipPlanId: 3,
+        },
+      },
+    },
   })
   create(@Body() createMemberDto: CreateMemberDto) {
     return this.membersService.create(createMemberDto);
@@ -85,16 +113,17 @@ export class MembersController {
   @Get()
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all members',
-    description: 'Retrieve all members with optional filtering by branch, status, or search'
+    description:
+      'Retrieve all members with optional filtering by branch, status, or search',
   })
   @ApiQuery({
     name: 'branchId',
     required: false,
     type: String,
     description: 'Filter members by branch ID',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiQuery({
     name: 'status',
@@ -102,28 +131,28 @@ export class MembersController {
     type: String,
     description: 'Filter by membership status',
     example: 'active',
-    enum: ['active', 'inactive']
+    enum: ['active', 'inactive'],
   })
   @ApiQuery({
     name: 'search',
     required: false,
     type: String,
     description: 'Search members by name or email',
-    example: 'john'
+    example: 'john',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Return all members.',
-    type: [Member]
+    type: [Member],
   })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'Unauthorized - Invalid or missing JWT token.' 
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
   })
   findAll(
     @Query('branchId') branchId?: string,
     @Query('status') status?: string,
-    @Query('search') search?: string
+    @Query('search') search?: string,
   ) {
     return this.membersService.findAll(branchId, status, search);
   }
@@ -131,17 +160,18 @@ export class MembersController {
   @Get(':id')
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get a member by ID',
-    description: 'Retrieves detailed information about a specific member including membership status and recent activity.'
+    description:
+      'Retrieves detailed information about a specific member including membership status and recent activity.',
   })
-  @ApiParam({ 
-    name: 'id', 
+  @ApiParam({
+    name: 'id',
     description: 'Member ID',
-    example: 123
+    example: 123,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Return the member.',
     examples: {
       success: {
@@ -157,18 +187,18 @@ export class MembersController {
           emergencyContact: {
             name: 'Jane Doe',
             phone: '+0987654321',
-            relationship: 'Spouse'
+            relationship: 'Spouse',
           },
           membershipPlanId: 1,
           branchId: 'branch_123',
           isActive: true,
-          createdAt: '2024-01-01T00:00:00Z'
-        }
-      }
-    }
+          createdAt: '2024-01-01T00:00:00Z',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 404, 
+  @ApiResponse({
+    status: 404,
     description: 'Member not found.',
     examples: {
       notFound: {
@@ -176,10 +206,10 @@ export class MembersController {
         value: {
           statusCode: 404,
           message: 'Member with ID 123 not found',
-          error: 'Not Found'
-        }
-      }
-    }
+          error: 'Not Found',
+        },
+      },
+    },
   })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.membersService.findOne(id);
@@ -188,17 +218,18 @@ export class MembersController {
   @Patch(':id')
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Update a member',
-    description: 'Updates member information such as personal details, contact information, or membership status.'
+    description:
+      'Updates member information such as personal details, contact information, or membership status.',
   })
-  @ApiParam({ 
-    name: 'id', 
+  @ApiParam({
+    name: 'id',
     description: 'Member ID',
-    example: 123
+    example: 123,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Member updated successfully.',
     examples: {
       success: {
@@ -214,18 +245,18 @@ export class MembersController {
           emergencyContact: {
             name: 'Jane Doe',
             phone: '+0987654321',
-            relationship: 'Spouse'
+            relationship: 'Spouse',
           },
           membershipPlanId: 1,
           branchId: 'branch_123',
           isActive: true,
-          updatedAt: '2024-01-02T00:00:00Z'
-        }
-      }
-    }
+          updatedAt: '2024-01-02T00:00:00Z',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 404, 
+  @ApiResponse({
+    status: 404,
     description: 'Member not found.',
     examples: {
       notFound: {
@@ -233,10 +264,10 @@ export class MembersController {
         value: {
           statusCode: 404,
           message: 'Member with ID 123 not found',
-          error: 'Not Found'
-        }
-      }
-    }
+          error: 'Not Found',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 409,
@@ -247,22 +278,22 @@ export class MembersController {
         value: {
           statusCode: 409,
           message: 'Member with this email already exists',
-          error: 'Conflict'
-        }
-      }
-    }
+          error: 'Conflict',
+        },
+      },
+    },
   })
-  @ApiBody({ 
+  @ApiBody({
     type: UpdateMemberDto,
     examples: {
       updateContact: {
         summary: 'Update member contact information',
         value: {
           phone: '+1234567891',
-          address: '456 New St, City, State'
-        }
-      }
-    }
+          address: '456 New St, City, State',
+        },
+      },
+    },
   })
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -274,30 +305,31 @@ export class MembersController {
   @Delete(':id')
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Delete a member',
-    description: 'Permanently deletes a member account and all associated data. Requires admin privileges. This action cannot be undone.'
+    description:
+      'Permanently deletes a member account and all associated data. Requires admin privileges. This action cannot be undone.',
   })
-  @ApiParam({ 
-    name: 'id', 
+  @ApiParam({
+    name: 'id',
     description: 'Member ID',
-    example: 123
+    example: 123,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Member deleted successfully.',
     examples: {
       success: {
         summary: 'Member deleted successfully',
         value: {
           message: 'Member has been successfully deleted',
-          deletedMemberId: 123
-        }
-      }
-    }
+          deletedMemberId: 123,
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 404, 
+  @ApiResponse({
+    status: 404,
     description: 'Member not found.',
     examples: {
       notFound: {
@@ -305,10 +337,10 @@ export class MembersController {
         value: {
           statusCode: 404,
           message: 'Member with ID 123 not found',
-          error: 'Not Found'
-        }
-      }
-    }
+          error: 'Not Found',
+        },
+      },
+    },
   })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.membersService.remove(id);
@@ -317,23 +349,25 @@ export class MembersController {
   @Get(':memberId/dashboard')
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get member dashboard data',
-    description: 'Retrieves comprehensive dashboard data including subscriptions, attendance, and goals'
+    description:
+      'Retrieves comprehensive dashboard data including subscriptions, attendance, and goals',
   })
-  @ApiParam({ 
-    name: 'memberId', 
+  @ApiParam({
+    name: 'memberId',
     description: 'Member ID (numeric)',
-    example: 123
+    example: 123,
   })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Return member dashboard data with subscriptions, attendance, and goals.',
-    type: MemberDashboardDto
+  @ApiResponse({
+    status: 200,
+    description:
+      'Return member dashboard data with subscriptions, attendance, and goals.',
+    type: MemberDashboardDto,
   })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'Unauthorized - Invalid or missing JWT token.' 
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
   })
   @ApiResponse({ status: 404, description: 'Member not found.' })
   getMemberDashboard(@Param('memberId', ParseIntPipe) memberId: number) {
@@ -349,13 +383,76 @@ export class BranchMembersController {
   @Get(':branchId/members')
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get all members for a branch' })
-  @ApiParam({ name: 'branchId', description: 'Branch ID' })
+  @ApiOperation({
+    summary: 'Get all members for a branch',
+    description:
+      'Retrieves all members assigned to a specific branch with their profiles, subscription status, and branch details.',
+  })
+  @ApiParam({
+    name: 'branchId',
+    description: 'Branch ID (UUID format)',
+    example: 'dc33cf0d-763b-44af-bdd8-21427357df1b',
+  })
   @ApiResponse({
     status: 200,
     description: 'Return all members for the branch.',
+    examples: {
+      success: {
+        summary: 'List of branch members',
+        value: [
+          {
+            id: 1,
+            fullName: 'Sophia Johnson-Smith',
+            email: 'sophia.johnson-smith0@email.com',
+            phone: '+1-555-8000',
+            gender: 'female',
+            dateOfBirth: '1985-01-01',
+            addressLine1: '100 Elite Avenue',
+            addressLine2: null,
+            city: 'Downtown',
+            state: 'California',
+            postalCode: '90000',
+            avatarUrl: null,
+            emergencyContactName: 'Emergency Johnson-Smith',
+            emergencyContactPhone: '+1-555-9000',
+            isActive: true,
+            branch: {
+              branchId: 'dc33cf0d-763b-44af-bdd8-21427357df1b',
+              name: 'Fitness First Elite - Downtown',
+              location: 'Downtown',
+            },
+            subscription: {
+              id: 1,
+              isActive: true,
+              startDate: '2024-02-29T18:30:00.000Z',
+              endDate: '2025-02-28T18:30:00.000Z',
+            },
+            createdAt: '2025-12-25T08:21:51.773Z',
+            updatedAt: '2025-12-25T08:21:52.296Z',
+          },
+        ],
+      },
+    },
   })
-  @ApiResponse({ status: 404, description: 'Branch not found.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Branch not found.',
+    examples: {
+      notFound: {
+        summary: 'Branch ID not found',
+        value: {
+          statusCode: 404,
+          message:
+            'Branch with ID dc33cf0d-763b-44af-bdd8-21427357df1b not found',
+          error: 'Not Found',
+        },
+      },
+    },
+  })
   findByBranch(@Param('branchId') branchId: string) {
     return this.membersService.findByBranch(branchId);
   }

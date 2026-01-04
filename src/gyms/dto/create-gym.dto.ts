@@ -24,28 +24,29 @@ export class CreateGymDto {
   phone?: string;
 
   @ApiPropertyOptional({
-    description: 'Gym logo URL or file path. Supports multiple formats: local file paths, relative paths, full URLs (HTTP/HTTPS), and CDN URLs. Recommended image formats: PNG, JPG, JPEG, SVG. Maximum recommended size: 2MB.',
+    description:
+      'Gym logo URL or file path. Supports multiple formats: local file paths, relative paths, full URLs (HTTP/HTTPS), and CDN URLs. Recommended image formats: PNG, JPG, JPEG, SVG. Maximum recommended size: 2MB.',
     examples: {
       localPath: {
         value: '/uploads/gym-logos/fitzone-logo.png',
-        description: 'Local server file path'
+        description: 'Local server file path',
       },
       relativePath: {
         value: 'assets/logos/fitzone-logo.jpg',
-        description: 'Relative path from application root'
+        description: 'Relative path from application root',
       },
       fullUrl: {
         value: 'https://example.com/logos/fitzone-logo.png',
-        description: 'Full HTTPS URL to logo image'
+        description: 'Full HTTPS URL to logo image',
       },
       cdnUrl: {
         value: 'https://cdn.example.com/gym-assets/logos/fitzone-logo.svg',
-        description: 'CDN URL for optimized delivery'
+        description: 'CDN URL for optimized delivery',
       },
       httpUrl: {
         value: 'http://assets.fitzone.com/logo.png',
-        description: 'HTTP URL (not recommended for production)'
-      }
+        description: 'HTTP URL (not recommended for production)',
+      },
     },
     format: 'uri',
   })

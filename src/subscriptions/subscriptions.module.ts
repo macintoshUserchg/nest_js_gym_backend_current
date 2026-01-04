@@ -13,10 +13,10 @@ import { Class } from '../entities/classes.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      MemberSubscription, 
-      Member, 
-      MembershipPlan, 
-      Class
+      MemberSubscription,
+      Member,
+      MembershipPlan,
+      Class,
     ]),
   ],
   controllers: [SubscriptionsController, MemberSubscriptionsController],

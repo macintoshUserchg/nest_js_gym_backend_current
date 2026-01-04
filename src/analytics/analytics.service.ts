@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual, Between, In, LessThan } from 'typeorm';
+import { Repository, Between, In } from 'typeorm';
 import { Gym } from '../entities/gym.entity';
 import { Branch } from '../entities/branch.entity';
 import { Member } from '../entities/members.entity';
@@ -37,7 +37,22 @@ export class AnalyticsService {
     private paymentsRepo: Repository<PaymentTransaction>,
   ) {}
 
-  async getGymDashboard(gymId: string) {
+  /**
+   * OPTIMIZED: Get gym dashboard analytics with minimal response
+   * Use query parameters to control response size:
+   * - includeDetails=false (default) for minimal response
+   * - maxTrainers=5, maxClasses=5 (default limits)
+   * - maxRecentPayments=3 (default)
+   */
+  async getGymDashboard(
+    gymId: string,
+    options?: {
+      includeDetails?: boolean;
+      maxTrainers?: number;
+      maxClasses?: number;
+      maxRecentPayments?: number;
+    },
+  ) {
     const gym = await this.gymsRepo.findOne({
       where: { gymId },
       relations: ['branches'],
@@ -55,19 +70,38 @@ export class AnalyticsService {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const threeDaysFromNow = new Date(today);
     threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
+    const tenDaysFromNow = new Date(today);
+    tenDaysFromNow.setDate(tenDaysFromNow.getDate() + 10);
 
-    // Member Analytics
-    const totalMembers = await this.membersRepo.count({
-      where: { branch: { branchId: In(branchIds) } },
-    });
+    // Options with defaults for performance
+    const {
+      includeDetails = false,
+      maxTrainers = 3,
+      maxClasses = 3,
+      maxRecentPayments = 5,
+    } = options || {};
 
-    const activeMembers = await this.membersRepo.count({
-      where: { isActive: true, branch: { branchId: In(branchIds) } },
-    });
-
-    const expiringToday =
+    // Core Analytics - Fast queries only
+    const [
+      totalMembers,
+      activeMembers,
+      expiringToday,
+      expiring10Days,
+      membersWithBirthdayToday,
+      amountDueMembers,
+      totalAmountDue,
+      attendanceToday,
+      totalTrainers,
+      totalClasses,
+    ] = await Promise.all([
+      this.membersRepo.count({
+        where: { branch: { branchId: In(branchIds) } },
+      }),
+      this.membersRepo.count({
+        where: { isActive: true, branch: { branchId: In(branchIds) } },
+      }),
       branchIds.length > 0
-        ? await this.subscriptionsRepo
+        ? this.subscriptionsRepo
             .createQueryBuilder('subscription')
             .innerJoin('subscription.member', 'member')
             .where('subscription.endDate >= :today', { today })
@@ -75,11 +109,9 @@ export class AnalyticsService {
             .andWhere('subscription.isActive = :isActive', { isActive: true })
             .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
             .getCount()
-        : 0;
-
-    const expiring3Days =
+        : 0,
       branchIds.length > 0
-        ? await this.subscriptionsRepo
+        ? this.subscriptionsRepo
             .createQueryBuilder('subscription')
             .innerJoin('subscription.member', 'member')
             .where('subscription.endDate >= :today', { today })
@@ -89,9 +121,67 @@ export class AnalyticsService {
             .andWhere('subscription.isActive = :isActive', { isActive: true })
             .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
             .getCount()
-        : 0;
+        : 0,
+      branchIds.length > 0
+        ? this.membersRepo
+            .createQueryBuilder('member')
+            .where('member.branchBranchId IN (:...branchIds)', { branchIds })
+            .andWhere('EXTRACT(MONTH FROM member.dateOfBirth) = :month', {
+              month: today.getMonth() + 1,
+            })
+            .andWhere('EXTRACT(DAY FROM member.dateOfBirth) = :day', {
+              day: today.getDate(),
+            })
+            .getCount()
+        : 0,
+      branchIds.length > 0
+        ? this.invoicesRepo
+            .createQueryBuilder('invoice')
+            .innerJoin('invoice.member', 'member')
+            .where('member.branchBranchId IN (:...branchIds)', { branchIds })
+            .andWhere('invoice.status = :status', { status: 'pending' })
+            .getCount()
+        : 0,
+      branchIds.length > 0
+        ? this.invoicesRepo
+            .createQueryBuilder('invoice')
+            .innerJoin('invoice.member', 'member')
+            .select('SUM(invoice.total_amount)', 'total')
+            .where('member.branchBranchId IN (:...branchIds)', { branchIds })
+            .andWhere('invoice.status = :status', { status: 'pending' })
+            .getRawOne()
+        : { total: 0 },
+      branchIds.length > 0
+        ? this.attendanceRepo.count({
+            where: {
+              date: Between(today, tomorrow),
+              branch: { branchId: In(branchIds) },
+            },
+          })
+        : 0,
+      this.trainersRepo.count({
+        where: { branch: { branchId: In(branchIds) } },
+      }),
+      this.classesRepo.count({
+        where: { branch: { branchId: In(branchIds) } },
+      }),
+    ]);
 
-    const membersWithBirthdayToday =
+    // Get member IDs with pending dues separately
+    const duesMemberIds =
+      branchIds.length > 0
+        ? await this.invoicesRepo
+            .createQueryBuilder('invoice')
+            .innerJoin('invoice.member', 'member')
+            .where('member.branchBranchId IN (:...branchIds)', { branchIds })
+            .andWhere('invoice.status = :status', { status: 'pending' })
+            .select('DISTINCT member.id', 'id')
+            .getRawMany()
+            .then((results) => results.map((result) => result.id))
+        : [];
+
+    // Get member IDs for birthdays today
+    const birthdayMemberIds =
       branchIds.length > 0
         ? await this.membersRepo
             .createQueryBuilder('member')
@@ -102,56 +192,63 @@ export class AnalyticsService {
             .andWhere('EXTRACT(DAY FROM member.dateOfBirth) = :day', {
               day: today.getDate(),
             })
-            .getCount()
-        : 0;
+            .select('member.id')
+            .getMany()
+            .then((results) => results.map((result) => result.id))
+        : [];
 
-    const amountDueMembers =
+    // Get member IDs for expiring today
+    const expiringTodayMemberIds =
       branchIds.length > 0
-        ? await this.invoicesRepo
-            .createQueryBuilder('invoice')
-            .innerJoin('invoice.member', 'member')
-            .where('member.branchBranchId IN (:...branchIds)', { branchIds })
-            .andWhere('invoice.status = :status', { status: 'pending' })
-            .getCount()
-        : 0;
+        ? await this.subscriptionsRepo
+            .createQueryBuilder('subscription')
+            .innerJoin('subscription.member', 'member')
+            .where('subscription.endDate >= :today', { today })
+            .andWhere('subscription.endDate < :tomorrow', { tomorrow })
+            .andWhere('subscription.isActive = :isActive', { isActive: true })
+            .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
+            .select('DISTINCT member.id', 'id')
+            .getRawMany()
+            .then((results) => results.map((result) => result.id))
+        : [];
 
-    const totalAmountDueResult =
+    // Get member IDs for expiring in next 10 days
+    const expiring10DaysMemberIds =
       branchIds.length > 0
-        ? await this.invoicesRepo
-            .createQueryBuilder('invoice')
-            .innerJoin('invoice.member', 'member')
-            .select('SUM(invoice.total_amount)', 'total')
-            .where('member.branchBranchId IN (:...branchIds)', { branchIds })
-            .andWhere('invoice.status = :status', { status: 'pending' })
-            .getRawOne()
-        : { total: 0 };
+        ? await this.subscriptionsRepo
+            .createQueryBuilder('subscription')
+            .innerJoin('subscription.member', 'member')
+            .where('subscription.endDate >= :today', { today })
+            .andWhere('subscription.endDate < :tenDaysFromNow', {
+              tenDaysFromNow,
+            })
+            .andWhere('subscription.isActive = :isActive', { isActive: true })
+            .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
+            .select('DISTINCT member.id', 'id')
+            .getRawMany()
+            .then((results) => results.map((result) => result.id))
+        : [];
 
-    const totalAmountDue = parseFloat(totalAmountDueResult?.total || '0');
+    const totalAmountDueValue = parseFloat(totalAmountDue?.total || '0');
 
-    // Attendance, Trainer, Class counts
-    const attendanceToday =
+    // Get trainer and class IDs for resources
+    const [trainerIds, classIds] =
       branchIds.length > 0
-        ? await this.attendanceRepo.count({
-            where: {
-              date: Between(today, tomorrow),
-              branch: { branchId: In(branchIds) },
-            },
-          })
-        : 0;
-
-    const totalTrainers =
-      branchIds.length > 0
-        ? await this.trainersRepo.count({
-            where: { branch: { branchId: In(branchIds) } },
-          })
-        : 0;
-
-    const totalClasses =
-      branchIds.length > 0
-        ? await this.classesRepo.count({
-            where: { branch: { branchId: In(branchIds) } },
-          })
-        : 0;
+        ? await Promise.all([
+            this.trainersRepo
+              .createQueryBuilder('trainer')
+              .where('trainer.branchBranchId IN (:...branchIds)', { branchIds })
+              .select('trainer.id')
+              .getMany()
+              .then((trainers) => trainers.map((trainer) => trainer.id)),
+            this.classesRepo
+              .createQueryBuilder('class')
+              .where('class.branchBranchId IN (:...branchIds)', { branchIds })
+              .select('class.class_id')
+              .getMany()
+              .then((classes) => classes.map((cls) => cls.class_id)),
+          ])
+        : [[], []];
 
     // Payment Analytics for Today
     const paymentsToday =
@@ -174,46 +271,44 @@ export class AnalyticsService {
       (p) => p.method !== 'cash',
     ).length;
 
-    // Admission, Renewal, Due Paid counts
-    const admissionCountToday =
-      branchIds.length > 0
-        ? await this.membersRepo
-            .createQueryBuilder('member')
-            .where('member.branchBranchId IN (:...branchIds)', { branchIds })
-            .andWhere('member.createdAt >= :today', { today })
-            .andWhere('member.createdAt < :tomorrow', { tomorrow })
-            .getCount()
-        : 0;
+    // Quick counts for today
+    const [admissionCountToday, renewalCountToday, duePaidByMemberCountToday] =
+      await Promise.all([
+        branchIds.length > 0
+          ? this.membersRepo
+              .createQueryBuilder('member')
+              .where('member.branchBranchId IN (:...branchIds)', { branchIds })
+              .andWhere('member.createdAt >= :today', { today })
+              .andWhere('member.createdAt < :tomorrow', { tomorrow })
+              .getCount()
+          : 0,
+        branchIds.length > 0
+          ? this.subscriptionsRepo
+              .createQueryBuilder('subscription')
+              .innerJoin('subscription.member', 'member')
+              .where('member.branchBranchId IN (:...branchIds)', { branchIds })
+              .andWhere('subscription.startDate >= :today', { today })
+              .andWhere('subscription.startDate < :tomorrow', { tomorrow })
+              .andWhere('member.createdAt < :today', { today })
+              .getCount()
+          : 0,
+        branchIds.length > 0
+          ? this.paymentsRepo
+              .createQueryBuilder('payment')
+              .innerJoin('payment.invoice', 'invoice')
+              .innerJoin('invoice.member', 'member')
+              .where('member.branchBranchId IN (:...branchIds)', { branchIds })
+              .andWhere('payment.created_at >= :today', { today })
+              .andWhere('payment.created_at < :tomorrow', { tomorrow })
+              .andWhere('payment.status = :status', { status: 'completed' })
+              .andWhere('invoice.status = :invoiceStatus', {
+                invoiceStatus: 'paid',
+              })
+              .getCount()
+          : 0,
+      ]);
 
-    const renewalCountToday =
-      branchIds.length > 0
-        ? await this.subscriptionsRepo
-            .createQueryBuilder('subscription')
-            .innerJoin('subscription.member', 'member')
-            .where('member.branchBranchId IN (:...branchIds)', { branchIds })
-            .andWhere('subscription.startDate >= :today', { today })
-            .andWhere('subscription.startDate < :tomorrow', { tomorrow })
-            .andWhere('member.createdAt < :today', { today })
-            .getCount()
-        : 0;
-
-    const duePaidByMemberCountToday =
-      branchIds.length > 0
-        ? await this.paymentsRepo
-            .createQueryBuilder('payment')
-            .innerJoin('payment.invoice', 'invoice')
-            .innerJoin('invoice.member', 'member')
-            .where('member.branchBranchId IN (:...branchIds)', { branchIds })
-            .andWhere('payment.created_at >= :today', { today })
-            .andWhere('payment.created_at < :tomorrow', { tomorrow })
-            .andWhere('payment.status = :status', { status: 'completed' })
-            .andWhere('invoice.status = :invoiceStatus', {
-              invoiceStatus: 'paid',
-            })
-            .getCount()
-        : 0;
-
-    // Recent Payments
+    // Recent Payments (limited)
     const recentPayments =
       branchIds.length > 0
         ? await this.paymentsRepo
@@ -222,7 +317,7 @@ export class AnalyticsService {
             .innerJoinAndSelect('invoice.member', 'member')
             .where('member.branchBranchId IN (:...branchIds)', { branchIds })
             .orderBy('payment.created_at', 'DESC')
-            .take(10)
+            .take(maxRecentPayments)
             .getMany()
         : [];
 
@@ -231,31 +326,22 @@ export class AnalyticsService {
       amount: payment.amount,
       method: payment.method,
       status: payment.status,
-      referenceNumber: payment.reference_number,
-      notes: payment.notes,
       createdAt: payment.created_at,
       member: {
         id: payment.invoice.member.id,
         fullName: payment.invoice.member.fullName,
-        email: payment.invoice.member.email,
       },
       invoice: {
         invoiceId: payment.invoice.invoice_id,
         totalAmount: payment.invoice.total_amount,
-        status: payment.invoice.status,
       },
     }));
 
-    // Revenue Analytics
+    // Revenue Analytics with month-over-month comparison
     const currentDate = new Date();
     const firstDayOfCurrentMonth = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth(),
-      1,
-    );
-    const firstDayOfLastMonth = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth() - 1,
       1,
     );
     const firstDayOfNextMonth = new Date(
@@ -263,166 +349,137 @@ export class AnalyticsService {
       currentDate.getMonth() + 1,
       1,
     );
+    const firstDayOfLastMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() - 1,
+      1,
+    );
 
-    const currentMonthRevenueResult =
+    // Active Members Analytics with month-over-month comparison (based on attendance)
+    const [currentActiveMembers, lastMonthActiveMembers] =
       branchIds.length > 0
-        ? await this.paymentsRepo
-            .createQueryBuilder('payment')
-            .innerJoin('payment.invoice', 'invoice')
-            .innerJoin('invoice.member', 'member')
-            .select('SUM(payment.amount)', 'total')
-            .where('member.branchBranchId IN (:...branchIds)', { branchIds })
-            .andWhere('payment.created_at >= :firstDayOfCurrentMonth', {
-              firstDayOfCurrentMonth,
-            })
-            .andWhere('payment.created_at < :firstDayOfNextMonth', {
-              firstDayOfNextMonth,
-            })
-            .andWhere('payment.status = :status', { status: 'completed' })
-            .getRawOne()
-        : { total: 0 };
+        ? await Promise.all([
+            // Current active members (members who attended in current month)
+            this.attendanceRepo
+              .createQueryBuilder('attendance')
+              .innerJoin('attendance.member', 'member')
+              .where('member.branchBranchId IN (:...branchIds)', { branchIds })
+              .andWhere('attendance.date >= :firstDayOfCurrentMonth', {
+                firstDayOfCurrentMonth,
+              })
+              .andWhere('attendance.date < :firstDayOfNextMonth', {
+                firstDayOfNextMonth,
+              })
+              .select('COUNT(DISTINCT member.id)', 'count')
+              .getRawOne(),
+            // Last month active members (members who attended in previous month)
+            this.attendanceRepo
+              .createQueryBuilder('attendance')
+              .innerJoin('attendance.member', 'member')
+              .where('member.branchBranchId IN (:...branchIds)', { branchIds })
+              .andWhere('attendance.date >= :firstDayOfLastMonth', {
+                firstDayOfLastMonth,
+              })
+              .andWhere('attendance.date < :firstDayOfCurrentMonth', {
+                firstDayOfCurrentMonth,
+              })
+              .select('COUNT(DISTINCT member.id)', 'count')
+              .getRawOne(),
+          ])
+        : [{ count: 0 }, { count: 0 }];
+
+    const currentActiveCount = parseInt(currentActiveMembers?.count || '0');
+    const lastMonthActiveCount = parseInt(lastMonthActiveMembers?.count || '0');
+
+    // Calculate active members percentage change
+    let activeChange = {
+      percent: 0,
+      type: 'nochange' as 'increase' | 'decrease' | 'nochange',
+    };
+
+    if (lastMonthActiveCount > 0) {
+      const percentChange =
+        ((currentActiveCount - lastMonthActiveCount) / lastMonthActiveCount) *
+        100;
+      activeChange = {
+        percent: Math.round(percentChange * 100) / 100,
+        type:
+          percentChange > 0
+            ? 'increase'
+            : percentChange < 0
+              ? 'decrease'
+              : 'nochange',
+      };
+    } else if (currentActiveCount > 0) {
+      activeChange = {
+        percent: 100,
+        type: 'increase',
+      };
+    }
+
+    const [currentMonthRevenueResult, lastMonthRevenueResult] =
+      branchIds.length > 0
+        ? await Promise.all([
+            this.paymentsRepo
+              .createQueryBuilder('payment')
+              .innerJoin('payment.invoice', 'invoice')
+              .innerJoin('invoice.member', 'member')
+              .select('SUM(payment.amount)', 'total')
+              .where('member.branchBranchId IN (:...branchIds)', { branchIds })
+              .andWhere('payment.created_at >= :firstDayOfCurrentMonth', {
+                firstDayOfCurrentMonth,
+              })
+              .andWhere('payment.created_at < :firstDayOfNextMonth', {
+                firstDayOfNextMonth,
+              })
+              .andWhere('payment.status = :status', { status: 'completed' })
+              .getRawOne(),
+            this.paymentsRepo
+              .createQueryBuilder('payment')
+              .innerJoin('payment.invoice', 'invoice')
+              .innerJoin('invoice.member', 'member')
+              .select('SUM(payment.amount)', 'total')
+              .where('member.branchBranchId IN (:...branchIds)', { branchIds })
+              .andWhere('payment.created_at >= :firstDayOfLastMonth', {
+                firstDayOfLastMonth,
+              })
+              .andWhere('payment.created_at < :firstDayOfCurrentMonth', {
+                firstDayOfCurrentMonth,
+              })
+              .andWhere('payment.status = :status', { status: 'completed' })
+              .getRawOne(),
+          ])
+        : [{ total: 0 }, { total: 0 }];
 
     const currentMonthRevenue = parseFloat(
       currentMonthRevenueResult?.total || '0',
     );
-
-    const lastMonthRevenueResult =
-      branchIds.length > 0
-        ? await this.paymentsRepo
-            .createQueryBuilder('payment')
-            .innerJoin('payment.invoice', 'invoice')
-            .innerJoin('invoice.member', 'member')
-            .select('SUM(payment.amount)', 'total')
-            .where('member.branchBranchId IN (:...branchIds)', { branchIds })
-            .andWhere('payment.created_at >= :firstDayOfLastMonth', {
-              firstDayOfLastMonth,
-            })
-            .andWhere('payment.created_at < :firstDayOfCurrentMonth', {
-              firstDayOfCurrentMonth,
-            })
-            .andWhere('payment.status = :status', { status: 'completed' })
-            .getRawOne()
-        : { total: 0 };
-
     const lastMonthRevenue = parseFloat(lastMonthRevenueResult?.total || '0');
 
-    // Calculate revenue percentage change
-    let revenuePercentageChange = 0;
-    let revenueChangeType = 'no_change';
+    // Calculate percentage change
+    let revenueChange = {
+      percent: 0,
+      type: 'nochange' as 'increase' | 'decrease' | 'nochange',
+    };
 
     if (lastMonthRevenue > 0) {
-      revenuePercentageChange =
+      const percentChange =
         ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
-      revenueChangeType =
-        revenuePercentageChange > 0
-          ? 'increase'
-          : revenuePercentageChange < 0
-            ? 'decrease'
-            : 'no_change';
+      revenueChange = {
+        percent: Math.round(percentChange * 100) / 100, // Round to 2 decimal places
+        type:
+          percentChange > 0
+            ? 'increase'
+            : percentChange < 0
+              ? 'decrease'
+              : 'nochange',
+      };
     } else if (currentMonthRevenue > 0) {
-      revenuePercentageChange = 100;
-      revenueChangeType = 'increase';
+      revenueChange = {
+        percent: 100,
+        type: 'increase',
+      };
     }
-
-    // Active Members Analytics
-    const currentMonthActiveMembers =
-      branchIds.length > 0
-        ? await this.membersRepo.count({
-            where: {
-              isActive: true,
-              branch: { branchId: In(branchIds) },
-              createdAt: MoreThanOrEqual(firstDayOfCurrentMonth),
-            },
-          })
-        : 0;
-
-    const lastMonthActiveMembers =
-      branchIds.length > 0
-        ? await this.membersRepo.count({
-            where: {
-              isActive: true,
-              branch: { branchId: In(branchIds) },
-              createdAt: Between(firstDayOfLastMonth, firstDayOfCurrentMonth),
-            },
-          })
-        : 0;
-
-    // Calculate active members percentage change
-    let activeMembersPercentageChange = 0;
-    let activeMembersChangeType = 'no_change';
-
-    if (lastMonthActiveMembers > 0) {
-      activeMembersPercentageChange =
-        ((currentMonthActiveMembers - lastMonthActiveMembers) /
-          lastMonthActiveMembers) *
-        100;
-      activeMembersChangeType =
-        activeMembersPercentageChange > 0
-          ? 'increase'
-          : activeMembersPercentageChange < 0
-            ? 'decrease'
-            : 'no_change';
-    } else if (currentMonthActiveMembers > 0) {
-      activeMembersPercentageChange = 100;
-      activeMembersChangeType = 'increase';
-    }
-
-    // Get member IDs for expiring today and next 3 days
-    const expiringTodayMembers =
-      branchIds.length > 0
-        ? await this.subscriptionsRepo
-            .createQueryBuilder('subscription')
-            .innerJoin('subscription.member', 'member')
-            .select('member.id', 'id')
-            .where('subscription.endDate >= :today', { today })
-            .andWhere('subscription.endDate < :tomorrow', { tomorrow })
-            .andWhere('subscription.isActive = :isActive', { isActive: true })
-            .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
-            .getRawMany()
-        : [];
-
-    const expiring3DaysMembers =
-      branchIds.length > 0
-        ? await this.subscriptionsRepo
-            .createQueryBuilder('subscription')
-            .innerJoin('subscription.member', 'member')
-            .select('member.id', 'id')
-            .where('subscription.endDate >= :today', { today })
-            .andWhere('subscription.endDate < :threeDaysFromNow', {
-              threeDaysFromNow,
-            })
-            .andWhere('subscription.isActive = :isActive', { isActive: true })
-            .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
-            .getRawMany()
-        : [];
-
-    // Get member IDs for birthdays today
-    const birthdayTodayMembers =
-      branchIds.length > 0
-        ? await this.membersRepo
-            .createQueryBuilder('member')
-            .select('member.id', 'id')
-            .where('member.branchBranchId IN (:...branchIds)', { branchIds })
-            .andWhere('EXTRACT(MONTH FROM member.dateOfBirth) = :month', {
-              month: today.getMonth() + 1,
-            })
-            .andWhere('EXTRACT(DAY FROM member.dateOfBirth) = :day', {
-              day: today.getDate(),
-            })
-            .getRawMany()
-        : [];
-
-    // Get dues information with member IDs and amounts
-    const duesMembers =
-      branchIds.length > 0
-        ? await this.invoicesRepo
-            .createQueryBuilder('invoice')
-            .innerJoin('invoice.member', 'member')
-            .select(['member.id', 'invoice.total_amount'])
-            .where('member.branchBranchId IN (:...branchIds)', { branchIds })
-            .andWhere('invoice.status = :status', { status: 'pending' })
-            .getRawMany()
-        : [];
 
     return {
       gym: {
@@ -432,10 +489,7 @@ export class AnalyticsService {
         branchName: mainBranch?.name,
       },
       today: {
-        payments: {
-          online: onlinePayments,
-          cash: cashPayments,
-        },
+        payments: { online: onlinePayments, cash: cashPayments },
         attendance: attendanceToday,
         admissions: admissionCountToday,
         renewals: renewalCountToday,
@@ -443,52 +497,40 @@ export class AnalyticsService {
       },
       members: {
         total: totalMembers,
-        active: activeMembers,
-        inactive: totalMembers - activeMembers,
+        active: {
+          current_active: currentActiveCount,
+          lastMonth_active: lastMonthActiveCount,
+          change: activeChange,
+        },
         expiring: {
-          today: {
-            count: expiringToday,
-            members: expiringTodayMembers.map((m) => m.id),
-          },
-          next3Days: {
-            count: expiring3Days,
-            members: expiring3DaysMembers.map((m) => m.id),
-          },
+          today: expiringToday,
+          next10Days: expiring10Days,
+          member_id: expiring10DaysMemberIds,
         },
         birthdays: {
-          today: {
-            count: membersWithBirthdayToday,
-            members: birthdayTodayMembers.map((m) => m.id),
-          },
+          today: membersWithBirthdayToday,
+          member_id: birthdayMemberIds,
         },
         dues: {
           count: amountDueMembers,
-          totalAmount: totalAmountDue,
-          members: duesMembers.map((d) => ({
-            id: d.member_id,
-            amount: parseFloat(d.total_amount),
-          })),
+          totalAmount: totalAmountDueValue,
+          members_id: duesMemberIds,
         },
       },
       resources: {
-        trainers: totalTrainers,
-        classes: totalClasses,
+        trainers: {
+          count: totalTrainers,
+          trainers_id: trainerIds,
+        },
+        classes: {
+          count: totalClasses,
+          classes_id: classIds,
+        },
       },
       revenue: {
         current: currentMonthRevenue,
         lastMonth: lastMonthRevenue,
-        change: {
-          percent: revenuePercentageChange,
-          type: revenueChangeType,
-        },
-      },
-      memberGrowth: {
-        current: currentMonthActiveMembers,
-        lastMonth: lastMonthActiveMembers,
-        change: {
-          percent: activeMembersPercentageChange,
-          type: activeMembersChangeType,
-        },
+        change: revenueChange,
       },
       recentPayments: formattedPayments,
     };
@@ -618,436 +660,18 @@ export class AnalyticsService {
         total: totalMembers,
         active: activeMembers,
         inactive: totalMembers - activeMembers,
-        expiringToday,
+        expiringToday: expiringToday,
+        expiring3days: expiring3Days,
+        birthday_today: membersWithBirthdayToday,
         amount_due_members: amountDueMembers,
         total_amount_due: totalAmountDue,
-        expiring3days: expiring3Days,
-        birthday_today: membersWithBirthdayToday,
       },
     };
   }
 
   /**
-   * Get member analytics for a specific branch
-   *
-   * @param branchId - The ID of the branch to get member analytics for
-   * @returns Object containing gym information, branch details, and member analytics
-   *
-   * @example
-   * // Request
-   * GET /analytics/branch/{branchId}/members
-   *
-   * @example
-   * // Response
-   * {
-   *   "gymId": "gym-123",
-   *   "gymName": "Fitness World",
-   *   "branchId": "branch-456",
-   *   "branchName": "Downtown Branch",
-   *   "members": {
-   *     "total": 75,
-   *     "active": 60,
-   *     "inactive": 15,
-   *     "expiringToday": 2,
-   *     "amount_due_members": 4,
-   *     "expiring3days": 6,
-   *     "birthday_today": 1
-   *   }
-   * }
+   * Get branch dashboard analytics
    */
-  async getBranchMemberAnalytics(branchId: string) {
-    const branch = await this.branchesRepo.findOne({
-      where: { branchId },
-      relations: ['gym'],
-    });
-    if (!branch) {
-      throw new NotFoundException(`Branch with ID ${branchId} not found`);
-    }
-
-    const gymId = branch.gym?.gymId;
-    const gymName = branch.gym?.name;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const threeDaysFromNow = new Date(today);
-    threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
-
-    // Member Analytics
-    const totalMembers = await this.membersRepo.count({
-      where: { branch: { branchId } },
-    });
-
-    const activeMembers = await this.membersRepo.count({
-      where: { isActive: true, branch: { branchId } },
-    });
-
-    const expiringToday = await this.subscriptionsRepo
-      .createQueryBuilder('subscription')
-      .innerJoin('subscription.member', 'member')
-      .where('subscription.endDate >= :today', { today })
-      .andWhere('subscription.endDate < :tomorrow', { tomorrow })
-      .andWhere('subscription.isActive = :isActive', { isActive: true })
-      .andWhere('member.branchBranchId = :branchId', { branchId })
-      .getCount();
-
-    const expiring3Days = await this.subscriptionsRepo
-      .createQueryBuilder('subscription')
-      .innerJoin('subscription.member', 'member')
-      .where('subscription.endDate >= :today', { today })
-      .andWhere('subscription.endDate < :threeDaysFromNow', {
-        threeDaysFromNow,
-      })
-      .andWhere('subscription.isActive = :isActive', { isActive: true })
-      .andWhere('member.branchBranchId = :branchId', { branchId })
-      .getCount();
-
-    // Members with birthdays today
-    const membersWithBirthdayToday = await this.membersRepo
-      .createQueryBuilder('member')
-      .where('member.branchBranchId = :branchId', { branchId })
-      .andWhere('EXTRACT(MONTH FROM member.dateOfBirth) = :month', {
-        month: today.getMonth() + 1,
-      })
-      .andWhere('EXTRACT(DAY FROM member.dateOfBirth) = :day', {
-        day: today.getDate(),
-      })
-      .getCount();
-
-    // Amount due members (invoices with status 'pending')
-    const amountDueMembers = await this.invoicesRepo
-      .createQueryBuilder('invoice')
-      .innerJoin('invoice.member', 'member')
-      .where('member.branchBranchId = :branchId', { branchId })
-      .andWhere('invoice.status = :status', { status: 'pending' })
-      .getCount();
-
-    return {
-      gymId,
-      gymName,
-      branchId,
-      branchName: branch.name,
-      members: {
-        total: totalMembers,
-        active: activeMembers,
-        inactive: totalMembers - activeMembers,
-        expiringToday,
-        amount_due_members: amountDueMembers,
-        expiring3days: expiring3Days,
-        birthday_today: membersWithBirthdayToday,
-      },
-    };
-  }
-
-  // Attendance Analytics Methods
-  /**
-   * Get attendance analytics for a gym
-   *
-   * @param gymId - The ID of the gym to get attendance analytics for
-   * @returns Object containing gym information and today's attendance count
-   *
-   * @example
-   * // Request
-   * GET /analytics/gym/{gymId}/attendance
-   *
-   * @example
-   * // Response
-   * {
-   *   "gymId": "gym-123",
-   *   "gymName": "Fitness World",
-   *   "branchId": "branch-456",
-   *   "branchName": "Main Branch",
-   *   "attendance": {
-   *     "today": 42
-   *   }
-   * }
-   */
-  async getGymAttendanceAnalytics(gymId: string) {
-    const gym = await this.gymsRepo.findOne({
-      where: { gymId },
-      relations: ['branches'],
-    });
-    if (!gym) {
-      throw new NotFoundException(`Gym with ID ${gymId} not found`);
-    }
-
-    const branchIds = gym.branches.map((b) => b.branchId);
-    const mainBranch = gym.branches.find((b) => b.mainBranch);
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    // Attendance Analytics
-    const attendanceToday =
-      branchIds.length > 0
-        ? await this.attendanceRepo.count({
-            where: {
-              date: Between(today, tomorrow),
-              branch: { branchId: In(branchIds) },
-            },
-          })
-        : 0;
-
-    return {
-      gymId: gym.gymId,
-      gymName: gym.name,
-      branchId: mainBranch?.branchId,
-      branchName: mainBranch?.name,
-      attendance: {
-        today: attendanceToday,
-      },
-    };
-  }
-
-  /**
-   * Get attendance analytics for a specific branch
-   *
-   * @param branchId - The ID of the branch to get attendance analytics for
-   * @returns Object containing gym information, branch details, and today's attendance count
-   *
-   * @example
-   * // Request
-   * GET /analytics/branch/{branchId}/attendance
-   *
-   * @example
-   * // Response
-   * {
-   *   "gymId": "gym-123",
-   *   "gymName": "Fitness World",
-   *   "branchId": "branch-456",
-   *   "branchName": "Downtown Branch",
-   *   "attendance": {
-   *     "today": 25
-   *   }
-   * }
-   */
-  async getBranchAttendanceAnalytics(branchId: string) {
-    const branch = await this.branchesRepo.findOne({
-      where: { branchId },
-      relations: ['gym'],
-    });
-    if (!branch) {
-      throw new NotFoundException(`Branch with ID ${branchId} not found`);
-    }
-
-    const gymId = branch.gym?.gymId;
-    const gymName = branch.gym?.name;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    // Attendance Today
-    const attendanceToday = await this.attendanceRepo.count({
-      where: {
-        date: Between(today, tomorrow),
-        branch: { branchId },
-      },
-    });
-
-    return {
-      gymId,
-      gymName,
-      branchId,
-      branchName: branch.name,
-      attendance: {
-        today: attendanceToday,
-      },
-    };
-  }
-
-  // Payment Analytics Methods
-  /**
-   * Get 10 most recent payment transactions for a gym
-   *
-   * @param gymId - The ID of the gym to get recent payments for
-   * @returns Object containing gym information and array of recent payment transactions
-   *
-   * @example
-   * // Request
-   * GET /analytics/gym/{gymId}/payments/recent
-   *
-   * @example
-   * // Response
-   * {
-   *   "gymId": "gym-123",
-   *   "gymName": "Fitness World",
-   *   "branchId": "branch-456",
-   *   "branchName": "Main Branch",
-   *   "recentPayments": [
-   *     {
-   *       "transactionId": "txn-001",
-   *       "amount": 1200.00,
-   *       "method": "credit_card",
-   *       "status": "completed",
-   *       "referenceNumber": "REF-12345",
-   *       "notes": "Annual membership fee",
-   *       "createdAt": "2023-12-20T10:30:00Z",
-   *       "member": {
-   *         "id": "member-001",
-   *         "fullName": "John Doe",
-   *         "email": "john@example.com"
-   *       },
-   *       "invoice": {
-   *         "invoiceId": "inv-001",
-   *         "totalAmount": 1200.00,
-   *         "status": "paid"
-   *       }
-   *     }
-   *   ]
-   * }
-   */
-  async getGymRecentPayments(gymId: string) {
-    const gym = await this.gymsRepo.findOne({
-      where: { gymId },
-      relations: ['branches'],
-    });
-    if (!gym) {
-      throw new NotFoundException(`Gym with ID ${gymId} not found`);
-    }
-
-    const branchIds = gym.branches.map((b) => b.branchId);
-    const mainBranch = gym.branches.find((b) => b.mainBranch);
-
-    // Recent Payments
-    const recentPayments =
-      branchIds.length > 0
-        ? await this.paymentsRepo
-            .createQueryBuilder('payment')
-            .innerJoinAndSelect('payment.invoice', 'invoice')
-            .innerJoinAndSelect('invoice.member', 'member')
-            .where('member.branchBranchId IN (:...branchIds)', { branchIds })
-            .orderBy('payment.created_at', 'DESC')
-            .take(10)
-            .getMany()
-        : [];
-
-    const formattedPayments = recentPayments.map((payment) => ({
-      transactionId: payment.transaction_id,
-      amount: payment.amount,
-      method: payment.method,
-      status: payment.status,
-      referenceNumber: payment.reference_number,
-      notes: payment.notes,
-      createdAt: payment.created_at,
-      member: {
-        id: payment.invoice.member.id,
-        fullName: payment.invoice.member.fullName,
-        email: payment.invoice.member.email,
-      },
-      invoice: {
-        invoiceId: payment.invoice.invoice_id,
-        totalAmount: payment.invoice.total_amount,
-        status: payment.invoice.status,
-      },
-    }));
-
-    return {
-      gymId: gym.gymId,
-      gymName: gym.name,
-      branchId: mainBranch?.branchId,
-      branchName: mainBranch?.name,
-      recentPayments: formattedPayments,
-    };
-  }
-
-  /**
-   * Get 10 most recent payment transactions for a specific branch
-   *
-   * @param branchId - The ID of the branch to get recent payments for
-   * @returns Object containing gym information, branch details, and array of recent payment transactions
-   *
-   * @example
-   * // Request
-   * GET /analytics/branch/{branchId}/payments/recent
-   *
-   * @example
-   * // Response
-   * {
-   *   "gymId": "gym-123",
-   *   "gymName": "Fitness World",
-   *   "branchId": "branch-456",
-   *   "branchName": "Downtown Branch",
-   *   "recentPayments": [
-   *     {
-   *       "transactionId": "txn-002",
-   *       "amount": 800.00,
-   *       "method": "cash",
-   *       "status": "completed",
-   *       "referenceNumber": "REF-67890",
-   *       "notes": "Monthly membership renewal",
-   *       "createdAt": "2023-12-21T14:15:00Z",
-   *       "member": {
-   *         "id": "member-002",
-   *         "fullName": "Jane Smith",
-   *         "email": "jane@example.com"
-   *       },
-   *       "invoice": {
-   *         "invoiceId": "inv-002",
-   *         "totalAmount": 800.00,
-   *         "status": "paid"
-   *       }
-   *     }
-   *   ]
-   * }
-   */
-  async getBranchRecentPayments(branchId: string) {
-    const branch = await this.branchesRepo.findOne({
-      where: { branchId },
-      relations: ['gym'],
-    });
-    if (!branch) {
-      throw new NotFoundException(`Branch with ID ${branchId} not found`);
-    }
-
-    const gymId = branch.gym?.gymId;
-    const gymName = branch.gym?.name;
-
-    // Recent Payments (Last 10)
-    const recentPayments = await this.paymentsRepo
-      .createQueryBuilder('payment')
-      .innerJoinAndSelect('payment.invoice', 'invoice')
-      .innerJoinAndSelect('invoice.member', 'member')
-      .where('member.branchBranchId = :branchId', { branchId })
-      .orderBy('payment.created_at', 'DESC')
-      .take(10)
-      .getMany();
-
-    const formattedPayments = recentPayments.map((payment) => ({
-      transactionId: payment.transaction_id,
-      amount: payment.amount,
-      method: payment.method,
-      status: payment.status,
-      referenceNumber: payment.reference_number,
-      notes: payment.notes,
-      createdAt: payment.created_at,
-      member: {
-        id: payment.invoice.member.id,
-        fullName: payment.invoice.member.fullName,
-        email: payment.invoice.member.email,
-      },
-      invoice: {
-        invoiceId: payment.invoice.invoice_id,
-        totalAmount: payment.invoice.total_amount,
-        status: payment.invoice.status,
-      },
-    }));
-
-    return {
-      gymId,
-      gymName,
-      branchId,
-      branchName: branch.name,
-      recentPayments: formattedPayments,
-    };
-  }
-
-  // Other methods remain unchanged...
   async getBranchDashboard(branchId: string) {
     const branch = await this.branchesRepo.findOne({
       where: { branchId },
@@ -1057,48 +681,98 @@ export class AnalyticsService {
       throw new NotFoundException(`Branch with ID ${branchId} not found`);
     }
 
-    const gymId = branch.gym?.gymId;
-    const gymName = branch.gym?.name;
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-
     const threeDaysFromNow = new Date(today);
     threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
+    const tenDaysFromNow = new Date(today);
+    tenDaysFromNow.setDate(tenDaysFromNow.getDate() + 10);
 
-    // Member Analytics
-    const totalMembers = await this.membersRepo.count({
-      where: { branch: { branchId } },
-    });
+    // Branch Analytics
+    const [
+      totalMembers,
+      activeMembers,
+      attendanceToday,
+      totalTrainers,
+      totalClasses,
+      trainerIds,
+      classIds,
+    ] = await Promise.all([
+      this.membersRepo.count({ where: { branch: { branchId } } }),
+      this.membersRepo.count({
+        where: { isActive: true, branch: { branchId } },
+      }),
+      this.attendanceRepo.count({
+        where: { date: Between(today, tomorrow), branch: { branchId } },
+      }),
+      this.trainersRepo.count({ where: { branch: { branchId } } }),
+      this.classesRepo.count({ where: { branch: { branchId } } }),
+      this.trainersRepo
+        .createQueryBuilder('trainer')
+        .where('trainer.branchBranchId = :branchId', { branchId })
+        .select('trainer.id')
+        .getMany()
+        .then((trainers) => trainers.map((trainer) => trainer.id)),
+      this.classesRepo
+        .createQueryBuilder('class')
+        .where('class.branchBranchId = :branchId', { branchId })
+        .select('class.class_id')
+        .getMany()
+        .then((classes) => classes.map((cls) => cls.class_id)),
+    ]);
 
-    const activeMembers = await this.membersRepo.count({
-      where: { isActive: true, branch: { branchId } },
-    });
+    const [
+      expiringToday,
+      expiring10Days,
+      amountDueMembers,
+      totalAmountDue,
+      duesMemberIds,
+    ] = await Promise.all([
+      this.subscriptionsRepo
+        .createQueryBuilder('subscription')
+        .innerJoin('subscription.member', 'member')
+        .where('subscription.endDate >= :today', { today })
+        .andWhere('subscription.endDate < :tomorrow', { tomorrow })
+        .andWhere('subscription.isActive = :isActive', { isActive: true })
+        .andWhere('member.branchBranchId = :branchId', { branchId })
+        .getCount(),
+      this.subscriptionsRepo
+        .createQueryBuilder('subscription')
+        .innerJoin('subscription.member', 'member')
+        .where('subscription.endDate >= :today', { today })
+        .andWhere('subscription.endDate < :tenDaysFromNow', {
+          tenDaysFromNow,
+        })
+        .andWhere('subscription.isActive = :isActive', { isActive: true })
+        .andWhere('member.branchBranchId = :branchId', { branchId })
+        .getCount(),
+      this.invoicesRepo
+        .createQueryBuilder('invoice')
+        .innerJoin('invoice.member', 'member')
+        .where('member.branchBranchId = :branchId', { branchId })
+        .andWhere('invoice.status = :status', { status: 'pending' })
+        .getCount(),
+      this.invoicesRepo
+        .createQueryBuilder('invoice')
+        .innerJoin('invoice.member', 'member')
+        .select('SUM(invoice.total_amount)', 'total')
+        .where('member.branchBranchId = :branchId', { branchId })
+        .andWhere('invoice.status = :status', { status: 'pending' })
+        .getRawOne(),
+      this.invoicesRepo
+        .createQueryBuilder('invoice')
+        .innerJoin('invoice.member', 'member')
+        .where('member.branchBranchId = :branchId', { branchId })
+        .andWhere('invoice.status = :status', { status: 'pending' })
+        .select('DISTINCT member.id', 'id')
+        .getRawMany()
+        .then((results) => results.map((result) => result.id)),
+    ]);
 
-    const expiringToday = await this.subscriptionsRepo
-      .createQueryBuilder('subscription')
-      .innerJoin('subscription.member', 'member')
-      .where('subscription.endDate >= :today', { today })
-      .andWhere('subscription.endDate < :tomorrow', { tomorrow })
-      .andWhere('subscription.isActive = :isActive', { isActive: true })
-      .andWhere('member.branchBranchId = :branchId', { branchId })
-      .getCount();
-
-    const expiring3Days = await this.subscriptionsRepo
-      .createQueryBuilder('subscription')
-      .innerJoin('subscription.member', 'member')
-      .where('subscription.endDate >= :today', { today })
-      .andWhere('subscription.endDate < :threeDaysFromNow', {
-        threeDaysFromNow,
-      })
-      .andWhere('subscription.isActive = :isActive', { isActive: true })
-      .andWhere('member.branchBranchId = :branchId', { branchId })
-      .getCount();
-
-    // Members with birthdays today
-    const membersWithBirthdayToday = await this.membersRepo
+    // Get member IDs for birthdays today
+    const birthdayMemberIds = await this.membersRepo
       .createQueryBuilder('member')
       .where('member.branchBranchId = :branchId', { branchId })
       .andWhere('EXTRACT(MONTH FROM member.dateOfBirth) = :month', {
@@ -1107,23 +781,174 @@ export class AnalyticsService {
       .andWhere('EXTRACT(DAY FROM member.dateOfBirth) = :day', {
         day: today.getDate(),
       })
-      .getCount();
+      .select('member.id')
+      .getMany()
+      .then((results) => results.map((result) => result.id));
 
-    // Amount due members (invoices with status 'pending')
-    const amountDueMembers = await this.invoicesRepo
-      .createQueryBuilder('invoice')
-      .innerJoin('invoice.member', 'member')
-      .where('member.branchBranchId = :branchId', { branchId })
-      .andWhere('invoice.status = :status', { status: 'pending' })
-      .getCount();
+    // Get member IDs for expiring today
+    const expiringTodayMemberIds = await this.subscriptionsRepo
+      .createQueryBuilder('subscription')
+      .innerJoin('subscription.member', 'member')
+      .where('subscription.endDate >= :today', { today })
+      .andWhere('subscription.endDate < :tomorrow', { tomorrow })
+      .andWhere('subscription.isActive = :isActive', { isActive: true })
+      .andWhere('member.branchBranchId = :branchId', { branchId })
+      .select('DISTINCT member.id', 'id')
+      .getRawMany()
+      .then((results) => results.map((result) => result.id));
 
-    // Attendance Today
-    const attendanceToday = await this.attendanceRepo.count({
-      where: {
-        date: Between(today, tomorrow),
-        branch: { branchId },
-      },
-    });
+    // Get member IDs for expiring in next 10 days
+    const expiring10DaysMemberIds = await this.subscriptionsRepo
+      .createQueryBuilder('subscription')
+      .innerJoin('subscription.member', 'member')
+      .where('subscription.endDate >= :today', { today })
+      .andWhere('subscription.endDate < :tenDaysFromNow', { tenDaysFromNow })
+      .andWhere('subscription.isActive = :isActive', { isActive: true })
+      .andWhere('member.branchBranchId = :branchId', { branchId })
+      .select('DISTINCT member.id', 'id')
+      .getRawMany()
+      .then((results) => results.map((result) => result.id));
+
+    const totalAmountDueValue = parseFloat(totalAmountDue?.total || '0');
+
+    // Revenue Analytics with month-over-month comparison
+    const currentDate = new Date();
+    const firstDayOfCurrentMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1,
+    );
+    const firstDayOfNextMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() + 1,
+      1,
+    );
+    const firstDayOfLastMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() - 1,
+      1,
+    );
+
+    // Active Members Analytics with month-over-month comparison (based on attendance)
+    const [currentActiveMembers, lastMonthActiveMembers] = await Promise.all([
+      // Current active members (members who attended in current month)
+      this.attendanceRepo
+        .createQueryBuilder('attendance')
+        .innerJoin('attendance.member', 'member')
+        .where('member.branchBranchId = :branchId', { branchId })
+        .andWhere('attendance.date >= :firstDayOfCurrentMonth', {
+          firstDayOfCurrentMonth,
+        })
+        .andWhere('attendance.date < :firstDayOfNextMonth', {
+          firstDayOfNextMonth,
+        })
+        .select('COUNT(DISTINCT member.id)', 'count')
+        .getRawOne(),
+      // Last month active members (members who attended in previous month)
+      this.attendanceRepo
+        .createQueryBuilder('attendance')
+        .innerJoin('attendance.member', 'member')
+        .where('member.branchBranchId = :branchId', { branchId })
+        .andWhere('attendance.date >= :firstDayOfLastMonth', {
+          firstDayOfLastMonth,
+        })
+        .andWhere('attendance.date < :firstDayOfCurrentMonth', {
+          firstDayOfCurrentMonth,
+        })
+        .select('COUNT(DISTINCT member.id)', 'count')
+        .getRawOne(),
+    ]);
+
+    const currentActiveCount = parseInt(currentActiveMembers?.count || '0');
+    const lastMonthActiveCount = parseInt(lastMonthActiveMembers?.count || '0');
+
+    // Calculate active members percentage change
+    let activeChange = {
+      percent: 0,
+      type: 'nochange' as 'increase' | 'decrease' | 'nochange',
+    };
+
+    if (lastMonthActiveCount > 0) {
+      const percentChange =
+        ((currentActiveCount - lastMonthActiveCount) / lastMonthActiveCount) *
+        100;
+      activeChange = {
+        percent: Math.round(percentChange * 100) / 100,
+        type:
+          percentChange > 0
+            ? 'increase'
+            : percentChange < 0
+              ? 'decrease'
+              : 'nochange',
+      };
+    } else if (currentActiveCount > 0) {
+      activeChange = {
+        percent: 100,
+        type: 'increase',
+      };
+    }
+
+    const [currentMonthRevenueResult, lastMonthRevenueResult] =
+      await Promise.all([
+        this.paymentsRepo
+          .createQueryBuilder('payment')
+          .innerJoin('payment.invoice', 'invoice')
+          .innerJoin('invoice.member', 'member')
+          .select('SUM(payment.amount)', 'total')
+          .where('member.branchBranchId = :branchId', { branchId })
+          .andWhere('payment.created_at >= :firstDayOfCurrentMonth', {
+            firstDayOfCurrentMonth,
+          })
+          .andWhere('payment.created_at < :firstDayOfNextMonth', {
+            firstDayOfNextMonth,
+          })
+          .andWhere('payment.status = :status', { status: 'completed' })
+          .getRawOne(),
+        this.paymentsRepo
+          .createQueryBuilder('payment')
+          .innerJoin('payment.invoice', 'invoice')
+          .innerJoin('invoice.member', 'member')
+          .select('SUM(payment.amount)', 'total')
+          .where('member.branchBranchId = :branchId', { branchId })
+          .andWhere('payment.created_at >= :firstDayOfLastMonth', {
+            firstDayOfLastMonth,
+          })
+          .andWhere('payment.created_at < :firstDayOfCurrentMonth', {
+            firstDayOfCurrentMonth,
+          })
+          .andWhere('payment.status = :status', { status: 'completed' })
+          .getRawOne(),
+      ]);
+
+    const currentMonthRevenue = parseFloat(
+      currentMonthRevenueResult?.total || '0',
+    );
+    const lastMonthRevenue = parseFloat(lastMonthRevenueResult?.total || '0');
+
+    // Calculate percentage change
+    let revenueChange = {
+      percent: 0,
+      type: 'nochange' as 'increase' | 'decrease' | 'nochange',
+    };
+
+    if (lastMonthRevenue > 0) {
+      const percentChange =
+        ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
+      revenueChange = {
+        percent: Math.round(percentChange * 100) / 100,
+        type:
+          percentChange > 0
+            ? 'increase'
+            : percentChange < 0
+              ? 'decrease'
+              : 'nochange',
+      };
+    } else if (currentMonthRevenue > 0) {
+      revenueChange = {
+        percent: 100,
+        type: 'increase',
+      };
+    }
 
     // Payment Analytics for Today
     const paymentsToday = await this.paymentsRepo
@@ -1143,47 +968,271 @@ export class AnalyticsService {
       (p) => p.method !== 'cash',
     ).length;
 
-    // Admission count today (new members created today)
-    const admissionCountToday = await this.membersRepo
-      .createQueryBuilder('member')
-      .where('member.branchBranchId = :branchId', { branchId })
-      .andWhere('member.createdAt >= :today', { today })
-      .andWhere('member.createdAt < :tomorrow', { tomorrow })
-      .getCount();
-
-    // Renewal count today (subscriptions created today for existing members)
-    const renewalCountToday = await this.subscriptionsRepo
-      .createQueryBuilder('subscription')
-      .innerJoin('subscription.member', 'member')
-      .where('member.branchBranchId = :branchId', { branchId })
-      .andWhere('subscription.startDate >= :today', { today })
-      .andWhere('subscription.startDate < :tomorrow', { tomorrow })
-      .andWhere('member.createdAt < :today', { today })
-      .getCount();
-
-    // Due paid by member count today (invoices paid today that were previously pending)
-    const duePaidByMemberCountToday = await this.paymentsRepo
+    // Recent Payments
+    const recentPayments = await this.paymentsRepo
       .createQueryBuilder('payment')
-      .innerJoin('payment.invoice', 'invoice')
-      .innerJoin('invoice.member', 'member')
+      .innerJoinAndSelect('payment.invoice', 'invoice')
+      .innerJoinAndSelect('invoice.member', 'member')
       .where('member.branchBranchId = :branchId', { branchId })
-      .andWhere('payment.created_at >= :today', { today })
-      .andWhere('payment.created_at < :tomorrow', { tomorrow })
-      .andWhere('payment.status = :status', { status: 'completed' })
-      .andWhere('invoice.status = :invoiceStatus', { invoiceStatus: 'paid' })
-      .getCount();
+      .orderBy('payment.created_at', 'DESC')
+      .take(5)
+      .getMany();
 
-    // Trainer Analytics
-    const totalTrainers = await this.trainersRepo.count({
-      where: { branch: { branchId } },
+    const formattedPayments = recentPayments.map((payment) => ({
+      transactionId: payment.transaction_id,
+      amount: payment.amount,
+      method: payment.method,
+      status: payment.status,
+      createdAt: payment.created_at,
+      member: {
+        id: payment.invoice.member.id,
+        fullName: payment.invoice.member.fullName,
+      },
+      invoice: {
+        invoiceId: payment.invoice.invoice_id,
+        totalAmount: payment.invoice.total_amount,
+      },
+    }));
+
+    return {
+      gym: {
+        id: branch.gym.gymId,
+        name: branch.gym.name,
+        branchId: branch.branchId,
+        branchName: branch.name,
+      },
+      today: {
+        payments: { online: onlinePayments, cash: cashPayments },
+        attendance: attendanceToday,
+        admissions: 0,
+        renewals: 0,
+        duesPaid: 0,
+      },
+      members: {
+        total: totalMembers,
+        active: {
+          current_active: currentActiveCount,
+          lastMonth_active: lastMonthActiveCount,
+          change: activeChange,
+        },
+        inactive: totalMembers - activeMembers,
+        expiring: {
+          today: expiringToday,
+          next10Days: expiring10Days,
+          member_id: expiring10DaysMemberIds,
+        },
+        birthdays: {
+          today: birthdayMemberIds.length,
+          member_id: birthdayMemberIds,
+        },
+        dues: {
+          count: amountDueMembers,
+          totalAmount: totalAmountDueValue,
+          members_id: duesMemberIds,
+        },
+      },
+      resources: {
+        trainers: { count: totalTrainers, trainers_id: trainerIds },
+        classes: { count: totalClasses, classes_id: classIds },
+      },
+      revenue: {
+        current: currentMonthRevenue,
+        lastMonth: lastMonthRevenue,
+        change: revenueChange,
+      },
+      recentPayments: formattedPayments,
+    };
+  }
+
+  /**
+   * Get branch member analytics
+   */
+  async getBranchMemberAnalytics(branchId: string) {
+    const branch = await this.branchesRepo.findOne({
+      where: { branchId },
+      relations: ['gym'],
+    });
+    if (!branch) {
+      throw new NotFoundException(`Branch with ID ${branchId} not found`);
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const threeDaysFromNow = new Date(today);
+    threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
+
+    const [
+      totalMembers,
+      activeMembers,
+      expiringToday,
+      expiring3Days,
+      amountDueMembers,
+    ] = await Promise.all([
+      this.membersRepo.count({ where: { branch: { branchId } } }),
+      this.membersRepo.count({
+        where: { isActive: true, branch: { branchId } },
+      }),
+      this.subscriptionsRepo
+        .createQueryBuilder('subscription')
+        .innerJoin('subscription.member', 'member')
+        .where('subscription.endDate >= :today', { today })
+        .andWhere('subscription.endDate < :tomorrow', { tomorrow })
+        .andWhere('subscription.isActive = :isActive', { isActive: true })
+        .andWhere('member.branchBranchId = :branchId', { branchId })
+        .getCount(),
+      this.subscriptionsRepo
+        .createQueryBuilder('subscription')
+        .innerJoin('subscription.member', 'member')
+        .where('subscription.endDate >= :today', { today })
+        .andWhere('subscription.endDate < :threeDaysFromNow', {
+          threeDaysFromNow,
+        })
+        .andWhere('subscription.isActive = :isActive', { isActive: true })
+        .andWhere('member.branchBranchId = :branchId', { branchId })
+        .getCount(),
+      this.invoicesRepo
+        .createQueryBuilder('invoice')
+        .innerJoin('invoice.member', 'member')
+        .where('member.branchBranchId = :branchId', { branchId })
+        .andWhere('invoice.status = :status', { status: 'pending' })
+        .getCount(),
+    ]);
+
+    return {
+      gymId: branch.gym.gymId,
+      gymName: branch.gym.name,
+      branchId: branch.branchId,
+      branchName: branch.name,
+      members: {
+        total: totalMembers,
+        active: activeMembers,
+        inactive: totalMembers - activeMembers,
+        expiringToday,
+        expiring3days: expiring3Days,
+        birthday_today: 0,
+        amount_due_members: amountDueMembers,
+      },
+    };
+  }
+
+  /**
+   * Get gym attendance analytics
+   */
+  async getGymAttendanceAnalytics(gymId: string) {
+    const gym = await this.gymsRepo.findOne({
+      where: { gymId },
+      relations: ['branches'],
+    });
+    if (!gym) {
+      throw new NotFoundException(`Gym with ID ${gymId} not found`);
+    }
+
+    const branchIds = gym.branches.map((b) => b.branchId);
+    const mainBranch = gym.branches.find((b) => b.mainBranch);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const attendanceToday =
+      branchIds.length > 0
+        ? await this.attendanceRepo.count({
+            where: {
+              date: Between(today, tomorrow),
+              branch: { branchId: In(branchIds) },
+            },
+          })
+        : 0;
+
+    return {
+      gymId: gym.gymId,
+      gymName: gym.name,
+      branchId: mainBranch?.branchId,
+      branchName: mainBranch?.name,
+      attendance: { today: attendanceToday },
+    };
+  }
+
+  /**
+   * Get branch attendance analytics
+   */
+  async getBranchAttendanceAnalytics(branchId: string) {
+    const branch = await this.branchesRepo.findOne({
+      where: { branchId },
+      relations: ['gym'],
+    });
+    if (!branch) {
+      throw new NotFoundException(`Branch with ID ${branchId} not found`);
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const attendanceToday = await this.attendanceRepo.count({
+      where: { date: Between(today, tomorrow), branch: { branchId } },
     });
 
-    // Class Analytics
-    const totalClasses = await this.classesRepo.count({
-      where: { branch: { branchId } },
-    });
+    return {
+      gymId: branch.gym.gymId,
+      gymName: branch.gym.name,
+      branchId: branch.branchId,
+      branchName: branch.name,
+      attendance: { today: attendanceToday },
+    };
+  }
 
-    // Recent Payments (Last 10)
+  /**
+   * Get gym recent payments
+   */
+  async getGymRecentPayments(gymId: string) {
+    const gym = await this.gymsRepo.findOne({
+      where: { gymId },
+      relations: ['branches'],
+    });
+    if (!gym) {
+      throw new NotFoundException(`Gym with ID ${gymId} not found`);
+    }
+
+    const branchIds = gym.branches.map((b) => b.branchId);
+    const mainBranch = gym.branches.find((b) => b.mainBranch);
+
+    const recentPayments =
+      branchIds.length > 0
+        ? await this.paymentsRepo
+            .createQueryBuilder('payment')
+            .innerJoinAndSelect('payment.invoice', 'invoice')
+            .innerJoinAndSelect('invoice.member', 'member')
+            .where('member.branchBranchId IN (:...branchIds)', { branchIds })
+            .orderBy('payment.created_at', 'DESC')
+            .take(10)
+            .getMany()
+        : [];
+
+    return {
+      gymId: gym.gymId,
+      gymName: gym.name,
+      branchId: mainBranch?.branchId,
+      branchName: mainBranch?.name,
+      recentPayments,
+    };
+  }
+
+  /**
+   * Get branch recent payments
+   */
+  async getBranchRecentPayments(branchId: string) {
+    const branch = await this.branchesRepo.findOne({
+      where: { branchId },
+      relations: ['gym'],
+    });
+    if (!branch) {
+      throw new NotFoundException(`Branch with ID ${branchId} not found`);
+    }
+
     const recentPayments = await this.paymentsRepo
       .createQueryBuilder('payment')
       .innerJoinAndSelect('payment.invoice', 'invoice')
@@ -1193,258 +1242,56 @@ export class AnalyticsService {
       .take(10)
       .getMany();
 
-    const formattedPayments = recentPayments.map((payment) => ({
-      transactionId: payment.transaction_id,
-      amount: payment.amount,
-      method: payment.method,
-      status: payment.status,
-      referenceNumber: payment.reference_number,
-      notes: payment.notes,
-      createdAt: payment.created_at,
-      member: {
-        id: payment.invoice.member.id,
-        fullName: payment.invoice.member.fullName,
-        email: payment.invoice.member.email,
-      },
-      invoice: {
-        invoiceId: payment.invoice.invoice_id,
-        totalAmount: payment.invoice.total_amount,
-        status: payment.invoice.status,
-      },
-    }));
+    return {
+      gymId: branch.gym.gymId,
+      gymName: branch.gym.name,
+      branchId: branch.branchId,
+      branchName: branch.name,
+      recentPayments,
+    };
+  }
 
-    // Get member IDs for expiring today and next 3 days (for this specific branch)
-    const expiringTodayMembers = await this.subscriptionsRepo
-      .createQueryBuilder('subscription')
-      .innerJoin('subscription.member', 'member')
-      .select('member.id', 'id')
-      .where('subscription.endDate >= :today', { today })
-      .andWhere('subscription.endDate < :tomorrow', { tomorrow })
-      .andWhere('subscription.isActive = :isActive', { isActive: true })
-      .andWhere('member.branchBranchId = :branchId', { branchId })
-      .getRawMany();
-
-    const expiring3DaysMembers = await this.subscriptionsRepo
-      .createQueryBuilder('subscription')
-      .innerJoin('subscription.member', 'member')
-      .select('member.id', 'id')
-      .where('subscription.endDate >= :today', { today })
-      .andWhere('subscription.endDate < :threeDaysFromNow', {
-        threeDaysFromNow,
-      })
-      .andWhere('subscription.isActive = :isActive', { isActive: true })
-      .andWhere('member.branchBranchId = :branchId', { branchId })
-      .getRawMany();
-
-    // Get member IDs for birthdays today (for this specific branch)
-    const birthdayTodayMembers = await this.membersRepo
-      .createQueryBuilder('member')
-      .select('member.id', 'id')
-      .where('member.branchBranchId = :branchId', { branchId })
-      .andWhere('EXTRACT(MONTH FROM member.dateOfBirth) = :month', {
-        month: today.getMonth() + 1,
-      })
-      .andWhere('EXTRACT(DAY FROM member.dateOfBirth) = :day', {
-        day: today.getDate(),
-      })
-      .getRawMany();
-
-    // Get dues information with member IDs and amounts (for this specific branch)
-    const duesMembers = await this.invoicesRepo
-      .createQueryBuilder('invoice')
-      .innerJoin('invoice.member', 'member')
-      .select(['member.id', 'invoice.total_amount'])
-      .where('member.branchBranchId = :branchId', { branchId })
-      .andWhere('invoice.status = :status', { status: 'pending' })
-      .getRawMany();
-
-    // Revenue Analytics
-    const currentDate = new Date();
-    const firstDayOfCurrentMonth = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      1,
-    );
-    const firstDayOfLastMonth = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth() - 1,
-      1,
-    );
-    const firstDayOfNextMonth = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth() + 1,
-      1,
-    );
-
-    const currentMonthRevenueResult = await this.paymentsRepo
-      .createQueryBuilder('payment')
-      .innerJoin('payment.invoice', 'invoice')
-      .innerJoin('invoice.member', 'member')
-      .select('SUM(payment.amount)', 'total')
-      .where('member.branchBranchId = :branchId', { branchId })
-      .andWhere('payment.created_at >= :firstDayOfCurrentMonth', {
-        firstDayOfCurrentMonth,
-      })
-      .andWhere('payment.created_at < :firstDayOfNextMonth', {
-        firstDayOfNextMonth,
-      })
-      .andWhere('payment.status = :status', { status: 'completed' })
-      .getRawOne();
-
-    const currentMonthRevenue = parseFloat(
-      currentMonthRevenueResult?.total || '0',
-    );
-
-    const lastMonthRevenueResult = await this.paymentsRepo
-      .createQueryBuilder('payment')
-      .innerJoin('payment.invoice', 'invoice')
-      .innerJoin('invoice.member', 'member')
-      .select('SUM(payment.amount)', 'total')
-      .where('member.branchBranchId = :branchId', { branchId })
-      .andWhere('payment.created_at >= :firstDayOfLastMonth', {
-        firstDayOfLastMonth,
-      })
-      .andWhere('payment.created_at < :firstDayOfCurrentMonth', {
-        firstDayOfCurrentMonth,
-      })
-      .andWhere('payment.status = :status', { status: 'completed' })
-      .getRawOne();
-
-    const lastMonthRevenue = parseFloat(lastMonthRevenueResult?.total || '0');
-
-    // Calculate revenue percentage change
-    let revenuePercentageChange = 0;
-    let revenueChangeType = 'no_change';
-
-    if (lastMonthRevenue > 0) {
-      revenuePercentageChange =
-        ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
-      revenueChangeType =
-        revenuePercentageChange > 0
-          ? 'increase'
-          : revenuePercentageChange < 0
-            ? 'decrease'
-            : 'no_change';
-    } else if (currentMonthRevenue > 0) {
-      revenuePercentageChange = 100;
-      revenueChangeType = 'increase';
+  /**
+   * Get trainer dashboard analytics
+   */
+  async getTrainerDashboard(trainerId: string) {
+    const trainer = await this.trainersRepo.findOne({
+      where: { id: parseInt(trainerId) },
+      relations: ['branch'],
+    });
+    if (!trainer) {
+      throw new NotFoundException(`Trainer with ID ${trainerId} not found`);
     }
 
-    // Active Members Analytics
-    const currentMonthActiveMembers = await this.membersRepo.count({
-      where: {
-        isActive: true,
-        branch: { branchId },
-        createdAt: MoreThanOrEqual(firstDayOfCurrentMonth),
-      },
-    });
+    const classesData = await this.classesRepo
+      .createQueryBuilder('class')
+      .where('class.branchBranchId = :branchId', {
+        branchId: trainer.branch.branchId,
+      })
+      .select(['class.class_id', 'class.name', 'class.timings'])
+      .getMany();
 
-    const lastMonthActiveMembers = await this.membersRepo.count({
-      where: {
-        isActive: true,
-        branch: { branchId },
-        createdAt: Between(firstDayOfLastMonth, firstDayOfCurrentMonth),
-      },
-    });
-
-    // Calculate active members percentage change
-    let activeMembersPercentageChange = 0;
-    let activeMembersChangeType = 'no_change';
-
-    if (lastMonthActiveMembers > 0) {
-      activeMembersPercentageChange =
-        ((currentMonthActiveMembers - lastMonthActiveMembers) /
-          lastMonthActiveMembers) *
-        100;
-      activeMembersChangeType =
-        activeMembersPercentageChange > 0
-          ? 'increase'
-          : activeMembersPercentageChange < 0
-            ? 'decrease'
-            : 'no_change';
-    } else if (currentMonthActiveMembers > 0) {
-      activeMembersPercentageChange = 100;
-      activeMembersChangeType = 'increase';
-    }
-
-    // Get total amount due
-    const totalAmountDueResult = await this.invoicesRepo
-      .createQueryBuilder('invoice')
-      .innerJoin('invoice.member', 'member')
-      .select('SUM(invoice.total_amount)', 'total')
-      .where('member.branchBranchId = :branchId', { branchId })
-      .andWhere('invoice.status = :status', { status: 'pending' })
-      .getRawOne();
-
-    const totalAmountDue = parseFloat(totalAmountDueResult?.total || '0');
+    const assignedMembers = await this.assignmentsRepo
+      .createQueryBuilder('assignment')
+      .innerJoinAndSelect('assignment.member', 'member')
+      .where('assignment.trainerId = :trainerId', { trainerId: trainer.id })
+      .getMany();
 
     return {
-      gym: {
-        id: gymId,
-        name: gymName,
-        branchId: branchId,
-        branchName: branch.name,
+      trainer: {
+        id: trainer.id,
+        fullName: trainer.fullName,
+        specialization: trainer.specialization,
       },
-      today: {
-        payments: {
-          online: onlinePayments,
-          cash: cashPayments,
-        },
-        attendance: attendanceToday,
-        admissions: admissionCountToday,
-        renewals: renewalCountToday,
-        duesPaid: duePaidByMemberCountToday,
+      classes: classesData,
+      stats: {
+        totalClasses: classesData.length,
+        totalMembers: assignedMembers.length,
       },
-      members: {
-        total: totalMembers,
-        active: activeMembers,
-        inactive: totalMembers - activeMembers,
-        expiring: {
-          today: {
-            count: expiringToday,
-            members: expiringTodayMembers.map((m) => m.id),
-          },
-          next3Days: {
-            count: expiring3Days,
-            members: expiring3DaysMembers.map((m) => m.id),
-          },
-        },
-        birthdays: {
-          today: {
-            count: membersWithBirthdayToday,
-            members: birthdayTodayMembers.map((m) => m.id),
-          },
-        },
-        dues: {
-          count: amountDueMembers,
-          totalAmount: totalAmountDue,
-          members: duesMembers.map((d) => ({
-            id: d.member_id,
-            amount: parseFloat(d.total_amount),
-          })),
-        },
-      },
-      resources: {
-        trainers: totalTrainers,
-        classes: totalClasses,
-      },
-      revenue: {
-        current: currentMonthRevenue,
-        lastMonth: lastMonthRevenue,
-        change: {
-          percent: revenuePercentageChange,
-          type: revenueChangeType,
-        },
-      },
-      memberGrowth: {
-        current: currentMonthActiveMembers,
-        lastMonth: lastMonthActiveMembers,
-        change: {
-          percent: activeMembersPercentageChange,
-          type: activeMembersChangeType,
-        },
-      },
-      recentPayments: formattedPayments,
+      assignedMembers: assignedMembers.map((assignment) => ({
+        id: assignment.member.id,
+        fullName: assignment.member.fullName,
+      })),
     };
   }
 }
