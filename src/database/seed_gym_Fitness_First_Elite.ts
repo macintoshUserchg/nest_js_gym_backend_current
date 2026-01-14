@@ -32,7 +32,6 @@ import { Goal } from '../entities/goals.entity';
 import { AttendanceGoal } from '../entities/attendance_goals.entity';
 import { WorkoutLog } from '../entities/workout_logs.entity';
 import * as bcrypt from 'bcrypt';
-import { faker } from '@faker-js/faker';
 
 interface UserCredential {
   email: string;
@@ -324,7 +323,15 @@ class FitnessFirstEliteSeeder {
       );
     }
 
-    // Level 3: Classes and inquiries (depend on branches)
+    // Level 3: Member subscriptions must be deleted BEFORE classes (due to selectedClass FK)
+    if (memberIds.length > 0) {
+      await safeDelete(
+        `DELETE FROM "member_subscriptions" WHERE "memberId" IN (${memberIdsStr})`,
+        'member_subscriptions',
+      );
+    }
+
+    // Level 4: Classes and inquiries (depend on branches)
     if (branchIds.length > 0) {
       await safeDelete(
         `DELETE FROM "classes" WHERE "branchBranchId" IN (${branchIdsStr})`,
@@ -333,14 +340,6 @@ class FitnessFirstEliteSeeder {
       await safeDelete(
         `DELETE FROM "inquiries" WHERE "branchBranchId" IN (${branchIdsStr})`,
         'inquiries',
-      );
-    }
-
-    // Level 4: Member subscriptions (will be cascade deleted by members, but delete explicitly just in case)
-    if (memberIds.length > 0) {
-      await safeDelete(
-        `DELETE FROM "member_subscriptions" WHERE "memberId" IN (${memberIdsStr})`,
-        'member_subscriptions',
       );
     }
 
@@ -1278,16 +1277,19 @@ class FitnessFirstEliteSeeder {
 
         // Add realistic variation (±5%) to base amount while keeping it aligned with plan pricing
         const baseAmount = subscription.plan.price / 100; // Convert from cents
-        const variationPercent = faker.number.float({ min: -0.05, max: 0.05 }); // ±5%
+        const variationPercent = (Math.random() * 0.1) - 0.05; // ±5%
         const finalAmount = parseFloat(
           (baseAmount * (1 + variationPercent)).toFixed(2),
         );
+
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const randomMonth = months[Math.floor(Math.random() * months.length)];
 
         invoices.push({
           member: subscription.member,
           subscription: subscription,
           total_amount: parseFloat(finalAmount.toFixed(2)),
-          description: `${subscription.plan.name} - ${this.getBillingPeriodDescription(billingCycle)} ${faker.date.month()}`,
+          description: `${subscription.plan.name} - ${this.getBillingPeriodDescription(billingCycle)} ${randomMonth}`,
           due_date: dueDate,
           status: status,
         });
@@ -1306,48 +1308,29 @@ class FitnessFirstEliteSeeder {
     const paymentTransactionRepository =
       this.dataSource.getRepository(PaymentTransaction);
 
-    const transactions = [
-      {
-        invoice: invoices[0],
-        amount: 239.99,
-        method: 'card',
-        reference_number: 'FFE001',
-        notes: 'Elite Premium membership payment',
-        status: 'completed',
-      },
-      {
-        invoice: invoices[1],
-        amount: 429.99,
-        method: 'online',
-        reference_number: 'FFE002',
-        notes: 'Elite VIP membership payment',
-        status: 'completed',
-      },
-      {
-        invoice: invoices[2],
-        amount: 89.99,
-        method: 'bank_transfer',
-        reference_number: 'FFE003',
-        notes: 'Elite Basic membership payment',
-        status: 'completed',
-      },
-      {
-        invoice: invoices[4],
-        amount: 59.99,
-        method: 'card',
-        reference_number: 'FFE004',
-        notes: 'Elite Student membership payment',
-        status: 'completed',
-      },
-      {
-        invoice: invoices[5],
-        amount: 239.99,
-        method: 'online',
-        reference_number: 'FFE005',
-        notes: 'Premium personal training add-on',
-        status: 'completed',
-      },
-    ];
+    const transactions: any[] = [];
+    const methods = ['card', 'online', 'bank_transfer', 'cash'];
+    let refNumber = 1;
+
+    for (const invoice of invoices) {
+      // Only create payment for invoices with 'paid' or 'pending' status
+      if (invoice.status === 'paid' || invoice.status === 'pending') {
+        const isCompleted = invoice.status === 'paid';
+        const paymentDate = new Date();
+        paymentDate.setDate(paymentDate.getDate() - Math.floor(Math.random() * 30));
+
+        transactions.push({
+          invoice: invoice,
+          amount: invoice.total_amount,
+          method: methods[Math.floor(Math.random() * methods.length)],
+          reference_number: `FFE${String(refNumber).padStart(3, '0')}`,
+          notes: `Payment for ${invoice.description}`,
+          status: isCompleted ? 'completed' : 'pending',
+          payment_date: paymentDate,
+        });
+        refNumber++;
+      }
+    }
 
     const savedTransactions =
       await paymentTransactionRepository.save(transactions);
@@ -1399,7 +1382,7 @@ class FitnessFirstEliteSeeder {
           selectedClass: selectedClass, // NEW: Class assignment during subscription
           startDate: startDate,
           endDate: endDate,
-          isActive: Math.random() > 0.05,
+          isActive: true, // All subscriptions are active
         });
       }
     }

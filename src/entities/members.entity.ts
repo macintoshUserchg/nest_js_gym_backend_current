@@ -72,6 +72,9 @@ export class Member {
   isActive: boolean;
 
   @Column({ default: false })
+  /**
+   * @deprecated Typo - should be freezeMember. Will be fixed in next major version.
+   */
   freezMember: boolean;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
@@ -99,18 +102,18 @@ export class Member {
   @JoinColumn({ name: 'branchBranchId' })
   branch?: Branch;
 
-  @OneToMany(() => Attendance, (attendance) => attendance.member)
+  @OneToMany(() => Attendance, (attendance) => attendance.member, { cascade: true })
   attendanceRecords: Attendance[];
 
-  @OneToMany(() => AttendanceGoal, (goal) => goal.member)
+  @OneToMany(() => AttendanceGoal, (goal) => goal.member, { cascade: true })
   attendanceGoals: AttendanceGoal[];
 
-  @OneToMany(() => WorkoutPlan, (plan) => plan.member)
+  @OneToMany(() => WorkoutPlan, (plan) => plan.member, { cascade: true })
   workoutPlans: WorkoutPlan[];
 
-  @OneToMany(() => DietPlan, (plan) => plan.member)
+  @OneToMany(() => DietPlan, (plan) => plan.member, { cascade: true })
   dietPlans: DietPlan[];
 
-  @OneToMany(() => ProgressTracking, (progress) => progress.member)
+  @OneToMany(() => ProgressTracking, (progress) => progress.member, { cascade: true })
   progressRecords: ProgressTracking[];
 }

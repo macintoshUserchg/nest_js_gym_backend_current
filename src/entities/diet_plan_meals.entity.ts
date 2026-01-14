@@ -13,7 +13,7 @@ export class DietPlanMeal {
   @PrimaryGeneratedColumn('uuid')
   meal_id: string;
 
-  @ManyToOne(() => DietPlan, (plan) => plan.meals)
+  @ManyToOne(() => DietPlan, (plan) => plan.meals, { onDelete: 'CASCADE' })
   dietPlan: DietPlan;
 
   @Column({

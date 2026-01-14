@@ -6,6 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a **production-ready multi-tenant gym management system** built with NestJS 11, TypeScript 5.7, and PostgreSQL (TypeORM). The system supports multiple gym chains with branch-level operations, comprehensive member/trainer management, subscriptions, classes, attendance tracking, financial management (invoices/payments), lead management, analytics, and advanced fitness tracking (diet plans, workout plans, progress monitoring).
 
+## Development Guidelines
+
+1. **Understand Before Acting**: First think through the problem, read the codebase for relevant files. Never speculate about code you have not opened.
+
+2. **Verify Before Changes**: Before making major changes, present the plan to the user for verification.
+
+3. **Explain Changes**: Every step of the way, provide a high-level explanation of what changes were made.
+
+4. **Keep It Simple**: Make every task and code change as simple as possible. Avoid massive or complex changes. Impact as little code as possible. Simplicity is key.
+
+5. **Document Architecture**: Maintain documentation that describes how the architecture of the app works inside and out.
+
+6. **No Speculation**: Never speculate about code you have not opened. If the user references a specific file, read it first. Investigate and read relevant files BEFORE answering questions. Give grounded, hallucination-free answers.
+
 ## Common Development Commands
 
 ```bash

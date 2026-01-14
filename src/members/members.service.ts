@@ -217,8 +217,8 @@ export class MembersService {
 
     if (search) {
       queryBuilder.andWhere(
-        '(member.fullName ILIKE :search OR member.email ILIKE :search)',
-        { search: `%${search}%` },
+        '(member.fullName % :search OR member.email % :search)',
+        { search },
       );
     }
 

@@ -14,7 +14,7 @@ export class Diet {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Member, { nullable: false })
+  @ManyToOne(() => Member, { nullable: false, onDelete: 'CASCADE' })
   member: Member;
 
   @ManyToOne(() => User, { nullable: true })

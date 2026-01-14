@@ -14,7 +14,7 @@ export class Attendance {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Member, { nullable: true })
+  @ManyToOne(() => Member, { nullable: true, onDelete: 'CASCADE' })
   member?: Member;
 
   @ManyToOne(() => Trainer, { nullable: true })

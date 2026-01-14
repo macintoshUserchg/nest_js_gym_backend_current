@@ -14,7 +14,7 @@ export class AttendanceGoal {
   @PrimaryGeneratedColumn('uuid')
   goal_id: string;
 
-  @ManyToOne(() => Member, (member) => member.attendanceGoals)
+  @ManyToOne(() => Member, (member) => member.attendanceGoals, { onDelete: 'CASCADE' })
   member: Member;
 
   @ManyToOne(() => Branch, { nullable: true })

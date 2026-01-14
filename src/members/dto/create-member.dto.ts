@@ -8,6 +8,8 @@ import {
   IsEnum,
   IsDateString,
   IsNumber,
+  IsArray,
+  MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Gender } from '../../common/enums/gender.enum';
@@ -16,6 +18,7 @@ export class CreateMemberDto {
   @ApiProperty({ description: 'Member full name', example: 'John Doe' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   fullName: string;
 
   @ApiProperty({
@@ -24,6 +27,7 @@ export class CreateMemberDto {
   })
   @IsEmail()
   @IsNotEmpty()
+  @MaxLength(255)
   email: string;
 
   @ApiPropertyOptional({
@@ -32,6 +36,7 @@ export class CreateMemberDto {
   })
   @IsString()
   @IsOptional()
+  @MaxLength(20)
   phone?: string;
 
   @ApiPropertyOptional({
@@ -54,26 +59,31 @@ export class CreateMemberDto {
   })
   @IsString()
   @IsOptional()
+  @MaxLength(500)
   addressLine1?: string;
 
   @ApiPropertyOptional({ description: 'Address line 2', example: 'Apt 4B' })
   @IsString()
   @IsOptional()
+  @MaxLength(500)
   addressLine2?: string;
 
   @ApiPropertyOptional({ description: 'City', example: 'New York' })
   @IsString()
   @IsOptional()
+  @MaxLength(100)
   city?: string;
 
   @ApiPropertyOptional({ description: 'State', example: 'NY' })
   @IsString()
   @IsOptional()
+  @MaxLength(100)
   state?: string;
 
   @ApiPropertyOptional({ description: 'Postal code', example: '10001' })
   @IsString()
   @IsOptional()
+  @MaxLength(20)
   postalCode?: string;
 
   @ApiPropertyOptional({
@@ -82,6 +92,7 @@ export class CreateMemberDto {
   })
   @IsString()
   @IsOptional()
+  @MaxLength(500)
   avatarUrl?: string;
 
   @ApiPropertyOptional({
@@ -90,6 +101,7 @@ export class CreateMemberDto {
   })
   @IsString()
   @IsOptional()
+  @MaxLength(100)
   emergencyContactName?: string;
 
   @ApiPropertyOptional({
@@ -98,6 +110,7 @@ export class CreateMemberDto {
   })
   @IsString()
   @IsOptional()
+  @MaxLength(20)
   emergencyContactPhone?: string;
 
   @ApiProperty({
@@ -131,6 +144,7 @@ export class CreateMemberDto {
   })
   @IsString()
   @IsOptional()
+  @MaxLength(500)
   attachmentUrl?: string;
 
   @ApiPropertyOptional({
@@ -141,4 +155,14 @@ export class CreateMemberDto {
   @IsBoolean()
   @IsOptional()
   freezMember?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Array of class IDs for this subscription',
+    type: [String],
+    example: ['ab1caf4b-bb4c-489e-aefd-ad6031fc92b1'],
+  })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @IsOptional()
+  selectedClassIds?: string[];
 }

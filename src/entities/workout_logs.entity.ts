@@ -14,7 +14,7 @@ export class WorkoutLog {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Member, { nullable: false })
+  @ManyToOne(() => Member, { nullable: false, onDelete: 'CASCADE' })
   member: Member;
 
   @ManyToOne(() => Trainer, { nullable: true })

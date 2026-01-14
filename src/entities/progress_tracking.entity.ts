@@ -14,7 +14,7 @@ export class ProgressTracking {
   @PrimaryGeneratedColumn('uuid')
   progress_id: string;
 
-  @ManyToOne(() => Member, (member) => member.progressRecords)
+  @ManyToOne(() => Member, (member) => member.progressRecords, { onDelete: 'CASCADE' })
   member: Member;
 
   @ManyToOne(() => Trainer, { nullable: true })

@@ -14,7 +14,7 @@ export class MemberTrainerAssignment {
   @PrimaryGeneratedColumn('uuid')
   assignment_id: string;
 
-  @ManyToOne(() => Member)
+  @ManyToOne(() => Member, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'member_id' })
   member: Member;
 

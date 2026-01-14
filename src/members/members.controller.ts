@@ -178,21 +178,20 @@ export class MembersController {
         summary: 'Member details',
         value: {
           id: 123,
-          firstName: 'John',
-          lastName: 'Doe',
+          fullName: 'John Doe',
           email: 'john.doe@example.com',
           phone: '+1234567890',
           dateOfBirth: '1990-01-01',
-          address: '123 Main St, City, State',
-          emergencyContact: {
-            name: 'Jane Doe',
-            phone: '+0987654321',
-            relationship: 'Spouse',
-          },
-          membershipPlanId: 1,
-          branchId: 'branch_123',
+          addressLine1: '123 Main St',
+          addressLine2: 'Apt 4B',
+          city: 'New York',
+          state: 'NY',
+          postalCode: '10001',
           isActive: true,
+          freezMember: false,
+          branchBranchId: '123e4567-e89b-12d3-a456-426614174000',
           createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-01T00:00:00Z',
         },
       },
     },
@@ -236,20 +235,16 @@ export class MembersController {
         summary: 'Member updated successfully',
         value: {
           id: 123,
-          firstName: 'John',
-          lastName: 'Updated',
+          fullName: 'John Updated',
           email: 'john.updated@example.com',
           phone: '+1234567891',
           dateOfBirth: '1990-01-01',
-          address: '456 New St, City, State',
-          emergencyContact: {
-            name: 'Jane Doe',
-            phone: '+0987654321',
-            relationship: 'Spouse',
-          },
-          membershipPlanId: 1,
-          branchId: 'branch_123',
+          addressLine1: '456 New St',
+          city: 'New York',
+          state: 'NY',
+          postalCode: '10001',
           isActive: true,
+          freezMember: false,
           updatedAt: '2024-01-02T00:00:00Z',
         },
       },
@@ -308,22 +303,37 @@ export class MembersController {
   @ApiOperation({
     summary: 'Delete a member',
     description:
-      'Permanently deletes a member account and all associated data. Requires admin privileges. This action cannot be undone.',
+      'Permanently deletes a member account and all associated data including subscriptions, workout plans, diet plans, attendance records, and progress tracking. Requires admin privileges. This action cannot be undone.',
   })
   @ApiParam({
     name: 'id',
-    description: 'Member ID',
-    example: 123,
+    description: 'Member ID (numeric)',
+    example: 7,
   })
   @ApiResponse({
     status: 200,
-    description: 'Member deleted successfully.',
+    description: 'Member deleted successfully. Returns the deleted member object.',
     examples: {
       success: {
         summary: 'Member deleted successfully',
         value: {
-          message: 'Member has been successfully deleted',
-          deletedMemberId: 123,
+          id: 7,
+          fullName: "Ava Jackson-White",
+          email: "ava.jackson-white6@email.com",
+          phone: "+1-555-8006",
+          gender: "female",
+          dateOfBirth: "1991-07-07",
+          addressLine1: "106 Elite Avenue",
+          city: "Downtown",
+          state: "California",
+          isActive: true,
+          freezMember: false,
+          subscriptionId: null,
+          branchBranchId: "b6fdb0ca-3edf-47eb-85c9-ae1ec214e663",
+          branch: {
+            branchId: "b6fdb0ca-3edf-47eb-85c9-ae1ec214e663",
+            name: "Fitness First Elite - Downtown",
+          },
         },
       },
     },
@@ -341,6 +351,11 @@ export class MembersController {
         },
       },
     },
+  })
+  @ApiResponse({
+    status: 500,
+    description:
+      'Internal server error. May occur if cascade deletion fails due to missing foreign key constraints.',
   })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.membersService.remove(id);

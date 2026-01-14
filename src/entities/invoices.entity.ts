@@ -15,7 +15,7 @@ export class Invoice {
   @PrimaryGeneratedColumn('uuid')
   invoice_id: string;
 
-  @ManyToOne(() => Member)
+  @ManyToOne(() => Member, { onDelete: 'CASCADE' })
   member: Member;
 
   @ManyToOne(() => MemberSubscription, { nullable: true })

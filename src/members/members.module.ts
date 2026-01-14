@@ -13,6 +13,7 @@ import { Attendance } from '../entities/attendance.entity';
 import { PaymentTransaction } from '../entities/payment_transactions.entity';
 import { MemberSubscription } from '../entities/member_subscriptions.entity';
 import { MembershipPlan } from '../entities/membership_plans.entity';
+import { Class } from '../entities/classes.entity';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { MembershipPlan } from '../entities/membership_plans.entity';
       PaymentTransaction,
       MemberSubscription,
       MembershipPlan,
+      Class,
     ]),
   ],
   controllers: [MembersController, BranchMembersController],

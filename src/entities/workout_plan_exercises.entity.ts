@@ -13,7 +13,7 @@ export class WorkoutPlanExercise {
   @PrimaryGeneratedColumn('uuid')
   exercise_id: string;
 
-  @ManyToOne(() => WorkoutPlan, (plan) => plan.exercises)
+  @ManyToOne(() => WorkoutPlan, (plan) => plan.exercises, { onDelete: 'CASCADE' })
   workoutPlan: WorkoutPlan;
 
   @Column({ length: 100 })

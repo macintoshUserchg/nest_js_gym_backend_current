@@ -25,11 +25,18 @@ export class MemberSubscription {
     description: 'Member associated with this subscription',
     type: () => Member,
   })
-  @OneToOne(() => Member, (member) => member.subscription, { onDelete: 'CASCADE' })
+  @OneToOne(() => Member, (member) => member.subscription, {
+    onDelete: 'CASCADE',
+    eager: true,
+  })
   @JoinColumn({ name: 'memberId' })
   @Column({ nullable: true })
   memberId: number;
 
+  @ApiProperty({
+    description: 'Member associated with this subscription',
+    type: () => Member,
+  })
   member: Member;
 
   @ApiProperty({
