@@ -883,20 +883,27 @@ class FitnessFirstEliteSeeder {
     const attendanceRepository = this.dataSource.getRepository(Attendance);
 
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const attendanceRecords: Attendance[] = [];
 
-    for (let i = 0; i < 10; i++) {
+    // Seed 30 days of attendance data to ensure "today" has records
+    for (let i = 0; i < 30; i++) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
 
-      for (let m = 0; m < Math.min(10, members.length); m++) {
-        const memberIndex = (i * 10 + m) % members.length;
-        const member = members[memberIndex];
+      // Determine how many members attended today (60-80% participation rate)
+      const participationRate = 0.6 + Math.random() * 0.2;
+      const numMembersToday = Math.floor(members.length * participationRate);
+
+      // Shuffle members for random selection
+      const shuffledMembers = [...members].sort(() => 0.5 - Math.random());
+      const attendingMembers = shuffledMembers.slice(0, numMembersToday);
+
+      for (const member of attendingMembers) {
         const checkInHour = 7 + Math.floor(Math.random() * 10);
         const checkInMinute = [0, 15, 30, 45][Math.floor(Math.random() * 4)];
         const workoutDuration = 60 + Math.floor(Math.random() * 60);
 
-        // Calculate checkout time (checkIn + duration)
         const checkOutDate = new Date(
           date.getFullYear(),
           date.getMonth(),
@@ -923,10 +930,8 @@ class FitnessFirstEliteSeeder {
         attendanceRecords.push(memberAttendance);
       }
 
-      for (let t = 0; t < Math.min(5, trainers.length); t++) {
-        const trainerIndex = (i * 5 + t) % trainers.length;
-        const trainer = trainers[trainerIndex];
-
+      // All trainers check in (they work every day)
+      for (const trainer of trainers) {
         const trainerAttendance = await attendanceRepository.save({
           trainer: trainer,
           attendanceType: 'trainer',
@@ -1312,12 +1317,27 @@ class FitnessFirstEliteSeeder {
     const methods = ['card', 'online', 'bank_transfer', 'cash'];
     let refNumber = 1;
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     for (const invoice of invoices) {
       // Only create payment for invoices with 'paid' or 'pending' status
       if (invoice.status === 'paid' || invoice.status === 'pending') {
         const isCompleted = invoice.status === 'paid';
+
+        // 30% chance of payment being TODAY to ensure analytics shows data
+        const isToday = Math.random() < 0.3;
         const paymentDate = new Date();
-        paymentDate.setDate(paymentDate.getDate() - Math.floor(Math.random() * 30));
+
+        if (isToday) {
+          // Payment today
+          paymentDate.setHours(Math.floor(Math.random() * 12) + 8, Math.floor(Math.random() * 60));
+        } else {
+          // Random date in the past 30 days (but not today)
+          const daysAgo = 1 + Math.floor(Math.random() * 29);
+          paymentDate.setDate(paymentDate.getDate() - daysAgo);
+          paymentDate.setHours(Math.floor(Math.random() * 12) + 8, Math.floor(Math.random() * 60));
+        }
 
         transactions.push({
           invoice: invoice,
@@ -1327,6 +1347,7 @@ class FitnessFirstEliteSeeder {
           notes: `Payment for ${invoice.description}`,
           status: isCompleted ? 'completed' : 'pending',
           payment_date: paymentDate,
+          created_at: paymentDate,
         });
         refNumber++;
       }
@@ -2064,46 +2085,83 @@ class FitnessFirstEliteSeeder {
     const records: ProgressTracking[] = [];
     const today = new Date();
 
+    // Seed weekly progress tracking for 16 weeks (4 months) instead of just monthly
     for (const member of members) {
       if (!member.branch) continue;
-      for (let monthOffset = 0; monthOffset < 4; monthOffset++) {
+
+      const branchTrainers = trainers.filter(
+        (t) => t.branch && t.branch.branchId === member.branch!.branchId,
+      );
+      const trainer =
+        branchTrainers.length > 0
+          ? branchTrainers[Math.floor(Math.random() * branchTrainers.length)]
+          : null;
+
+      // Base measurements for this member
+      const baseWeight = 65 + Math.random() * 25;
+      const baseHeight = 165 + Math.random() * 20;
+      const baseBodyFat = 10 + Math.random() * 10;
+      const baseMuscle = 35 + Math.random() * 15;
+
+      // Generate weekly records for 16 weeks
+      for (let weekOffset = 0; weekOffset < 16; weekOffset++) {
         const recordDate = new Date(today);
-        recordDate.setMonth(recordDate.getMonth() - monthOffset);
-        recordDate.setDate(1);
+        recordDate.setDate(today.getDate() - weekOffset * 7);
 
-        const branchTrainers = trainers.filter(
-          (t) => t.branch && t.branch.branchId === member.branch!.branchId,
-        );
-        const trainer =
-          branchTrainers.length > 0
-            ? branchTrainers[Math.floor(Math.random() * branchTrainers.length)]
-            : null;
+        // Gradual progress tracking (weight loss ~0.3kg/week, muscle gain ~0.2kg/week)
+        const weightChange = weekOffset * -0.35;
+        const bodyFatChange = weekOffset * -0.2;
+        const muscleChange = weekOffset * 0.25;
 
-        const baseWeight = 65 + Math.random() * 25;
-        const baseHeight = 165 + Math.random() * 20;
-        const baseBodyFat = 10 + Math.random() * 10;
-        const baseMuscle = 35 + Math.random() * 15;
+        // Add some weekly variation (±0.3kg)
+        const weeklyVariation = (Math.random() - 0.5) * 0.6;
 
         records.push({
           member: member,
           recorded_by_trainer: trainer,
           record_date: recordDate,
-          weight_kg: parseFloat((baseWeight + monthOffset * -1.5).toFixed(2)),
+          weight_kg: parseFloat(
+            (baseWeight + weightChange + weeklyVariation).toFixed(2),
+          ),
           height_cm: parseFloat(baseHeight.toFixed(2)),
           body_fat_percentage: parseFloat(
-            (baseBodyFat + monthOffset * -0.8).toFixed(2),
+            (baseBodyFat + bodyFatChange).toFixed(2),
           ),
           muscle_mass_kg: parseFloat(
-            (baseMuscle + monthOffset * 1.2).toFixed(2),
+            (baseMuscle + muscleChange + weeklyVariation * 0.5).toFixed(2),
           ),
           bmi: parseFloat(
-            (baseWeight / Math.pow(baseHeight / 100, 2)).toFixed(2),
+            (
+              (baseWeight + weightChange + weeklyVariation) /
+              Math.pow(baseHeight / 100, 2)
+            ).toFixed(2),
           ),
-          chest_cm: parseFloat((100 + Math.random() * 15).toFixed(2)),
-          waist_cm: parseFloat((75 + Math.random() * 15).toFixed(2)),
-          arms_cm: parseFloat((32 + Math.random() * 8).toFixed(2)),
-          thighs_cm: parseFloat((55 + Math.random() * 10).toFixed(2)),
-          notes: `Elite progress check month ${monthOffset + 1} - ${['Outstanding progress', 'Elite performance', 'Exceptional improvement'][Math.floor(Math.random() * 3)]}`,
+          chest_cm: parseFloat(
+            (100 + Math.sin(weekOffset * 0.5) * 3 + Math.random() * 4).toFixed(
+              2,
+            ),
+          ),
+          waist_cm: parseFloat(
+            (75 - weekOffset * 0.3 + Math.random() * 3).toFixed(2),
+          ),
+          arms_cm: parseFloat(
+            (32 + Math.sin(weekOffset * 0.3) * 2 + Math.random() * 2).toFixed(
+              2,
+            ),
+          ),
+          thighs_cm: parseFloat(
+            (55 + Math.sin(weekOffset * 0.4) * 2 + Math.random() * 2).toFixed(
+              2,
+            ),
+          ),
+          notes: `Week ${weekOffset + 1} progress - ${[
+            'On track with goals',
+            'Great improvement',
+            'Strong performance',
+            'Excellent dedication',
+            'Solid progress made',
+            'Maintaining consistency',
+          ][Math.floor(Math.random() * 6)]}`,
         } as any);
       }
     }
@@ -2266,14 +2324,19 @@ class FitnessFirstEliteSeeder {
     const logs: WorkoutLog[] = [];
     const today = new Date();
 
-    for (let day = 0; day < 45; day++) {
+    // Seed 60 days of workout logs with consistent daily participation
+    for (let day = 0; day < 60; day++) {
       const logDate = new Date(today);
       logDate.setDate(logDate.getDate() - day);
-      const numMembers = 8 + Math.floor(Math.random() * 12);
 
-      for (let m = 0; m < numMembers; m++) {
-        const memberIndex = Math.floor(Math.random() * members.length);
-        const member = members[memberIndex];
+      // Consistent 10-15 members working out each day
+      const numMembers = 10 + Math.floor(Math.random() * 6);
+
+      // Shuffle members for fair distribution
+      const shuffledMembers = [...members].sort(() => 0.5 - Math.random());
+      const activeMembers = shuffledMembers.slice(0, numMembers);
+
+      for (const member of activeMembers) {
         if (!member.branch) continue;
         const branchTrainers = trainers.filter(
           (t) => t.branch && t.branch.branchId === member.branch!.branchId,
@@ -2282,7 +2345,7 @@ class FitnessFirstEliteSeeder {
           branchTrainers.length > 0
             ? branchTrainers[Math.floor(Math.random() * branchTrainers.length)]
             : null;
-        const numExercises = 3 + Math.floor(Math.random() * 4);
+        const numExercises = 4 + Math.floor(Math.random() * 4);
 
         for (let e = 0; e < numExercises; e++) {
           const exerciseName =
@@ -2291,13 +2354,13 @@ class FitnessFirstEliteSeeder {
             member: member,
             trainer: trainer,
             exercise_name: exerciseName,
-            sets: 4 + Math.floor(Math.random() * 3),
-            reps: 10 + Math.floor(Math.random() * 10),
-            weight: 25 + Math.floor(Math.random() * 85),
-            duration: 45 + Math.floor(Math.random() * 75),
+            sets: 3 + Math.floor(Math.random() * 4),
+            reps: 8 + Math.floor(Math.random() * 12),
+            weight: 20 + Math.floor(Math.random() * 80),
+            duration: 30 + Math.floor(Math.random() * 90),
             notes:
-              Math.random() < 0.4
-                ? `Elite session - Felt ${['exceptional', 'powerful', 'strong', 'energized'][Math.floor(Math.random() * 4)]}`
+              Math.random() < 0.5
+                ? `Elite session - Felt ${['exceptional', 'powerful', 'strong', 'energized', 'great', 'motivated'][Math.floor(Math.random() * 6)]}`
                 : null,
             date: logDate,
           } as any);
