@@ -4,8 +4,10 @@ import {
   Column,
   OneToOne,
   ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsArray, IsUUID } from 'class-validator';
 import { Member } from './members.entity';
 import { MembershipPlan } from './membership_plans.entity';
 import { Class } from './classes.entity';
@@ -23,7 +25,11 @@ export class MemberSubscription {
     description: 'Member associated with this subscription',
     type: () => Member,
   })
-  @OneToOne(() => Member, (member) => member.subscription)
+  @OneToOne(() => Member, (member) => member.subscription, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'memberId' })
+  @Column({ nullable: true })
+  memberId: number;
+
   member: Member;
 
   @ApiProperty({
@@ -61,4 +67,14 @@ export class MemberSubscription {
   })
   @Column({ default: true })
   isActive: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Array of selected class IDs for this subscription',
+    type: [String],
+    nullable: true,
+  })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @Column({ type: 'uuid', array: true, nullable: true })
+  selectedClassIds?: string[];
 }
