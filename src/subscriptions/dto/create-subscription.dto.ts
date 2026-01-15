@@ -8,11 +8,6 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateSubscriptionDto {
-  @ApiProperty({ description: 'Member ID', example: 1 })
-  @IsInt()
-  @IsNotEmpty()
-  memberId: number;
-
   @ApiProperty({ description: 'Membership Plan ID', example: 1 })
   @IsInt()
   @IsNotEmpty()

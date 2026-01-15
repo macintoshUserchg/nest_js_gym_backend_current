@@ -17,7 +17,9 @@ export class DietPlan {
   @PrimaryGeneratedColumn('uuid')
   plan_id: string;
 
-  @ManyToOne(() => Member, (member) => member.dietPlans, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Member, (member) => member.dietPlans, {
+    onDelete: 'CASCADE',
+  })
   member: Member;
 
   @ManyToOne(() => Trainer, { nullable: true })

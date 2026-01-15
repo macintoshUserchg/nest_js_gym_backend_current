@@ -731,7 +731,8 @@ export class BranchesController {
         summary: 'Branch ID not found',
         value: {
           statusCode: 404,
-          message: 'Branch with ID dc33cf0d-763b-44af-bdd8-21427357df1b not found',
+          message:
+            'Branch with ID dc33cf0d-763b-44af-bdd8-21427357df1b not found',
           error: 'Not Found',
         },
       },

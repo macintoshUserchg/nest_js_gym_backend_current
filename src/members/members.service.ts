@@ -158,7 +158,10 @@ export class MembersService {
         return await manager.save(savedMemberEntity);
       } catch (error: any) {
         // Handle unique constraint violation (PostgreSQL error code 23505)
-        if (error.code === '23505' || error.message?.includes('duplicate key')) {
+        if (
+          error.code === '23505' ||
+          error.message?.includes('duplicate key')
+        ) {
           throw new ConflictException('Member with this email already exists');
         }
         throw error;
@@ -168,12 +171,7 @@ export class MembersService {
     // Fetch member with full relations for response
     const member = await this.membersRepo.findOne({
       where: { id: savedMember.id },
-      relations: [
-        'subscription',
-        'subscription.plan',
-        'branch',
-        'branch.gym',
-      ],
+      relations: ['subscription', 'subscription.plan', 'branch', 'branch.gym'],
     });
 
     // Fetch classes from selectedClassIds

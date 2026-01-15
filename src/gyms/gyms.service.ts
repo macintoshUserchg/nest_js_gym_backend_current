@@ -192,9 +192,12 @@ export class GymsService {
     }
 
     // Basic UUID validation (format: 8-4-4-4-12 characters)
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(id)) {
-      throw new NotFoundException(`Invalid branch ID format. Branch ID must be a valid UUID.`);
+      throw new NotFoundException(
+        `Invalid branch ID format. Branch ID must be a valid UUID.`,
+      );
     }
 
     try {
@@ -210,8 +213,13 @@ export class GymsService {
       return branch;
     } catch (error) {
       // Handle database-specific errors (e.g., invalid UUID syntax)
-      if (error.code === '22P02' || error.message?.includes('invalid input syntax for type uuid')) {
-        throw new NotFoundException(`Invalid branch ID format. Branch ID must be a valid UUID.`);
+      if (
+        error.code === '22P02' ||
+        error.message?.includes('invalid input syntax for type uuid')
+      ) {
+        throw new NotFoundException(
+          `Invalid branch ID format. Branch ID must be a valid UUID.`,
+        );
       }
       throw error;
     }

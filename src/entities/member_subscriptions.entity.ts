@@ -4,7 +4,6 @@ import {
   Column,
   OneToOne,
   ManyToOne,
-  JoinColumn,
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsUUID } from 'class-validator';
@@ -25,18 +24,7 @@ export class MemberSubscription {
     description: 'Member associated with this subscription',
     type: () => Member,
   })
-  @OneToOne(() => Member, (member) => member.subscription, {
-    onDelete: 'CASCADE',
-    eager: true,
-  })
-  @JoinColumn({ name: 'memberId' })
-  @Column({ nullable: true })
-  memberId: number;
-
-  @ApiProperty({
-    description: 'Member associated with this subscription',
-    type: () => Member,
-  })
+  @OneToOne(() => Member, { onDelete: 'CASCADE', eager: true })
   member: Member;
 
   @ApiProperty({

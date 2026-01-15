@@ -106,7 +106,8 @@ export class AnalyticsService {
             .where('subscription.endDate >= :today', { today })
             .andWhere('subscription.endDate < :tomorrow', { tomorrow })
             .andWhere('subscription.isActive = :isActive', { isActive: true })
-            .andWhere('subscription.memberId IN (SELECT id FROM members WHERE "branchBranchId" IN (:...branchIds))', { branchIds })
+            .innerJoin('subscription.member', 'member')
+            .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
             .getCount()
         : 0,
       branchIds.length > 0
@@ -117,7 +118,8 @@ export class AnalyticsService {
               threeDaysFromNow,
             })
             .andWhere('subscription.isActive = :isActive', { isActive: true })
-            .andWhere('subscription.memberId IN (SELECT id FROM members WHERE "branchBranchId" IN (:...branchIds))', { branchIds })
+            .innerJoin('subscription.member', 'member')
+            .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
             .getCount()
         : 0,
       branchIds.length > 0
@@ -203,7 +205,8 @@ export class AnalyticsService {
             .where('subscription.endDate >= :today', { today })
             .andWhere('subscription.endDate < :tomorrow', { tomorrow })
             .andWhere('subscription.isActive = :isActive', { isActive: true })
-            .andWhere('subscription.memberId IN (SELECT id FROM members WHERE "branchBranchId" IN (:...branchIds))', { branchIds })
+            .innerJoin('subscription.member', 'member')
+            .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
             .select('DISTINCT subscription.memberId', 'id')
             .getRawMany()
             .then((results) => results.map((result) => result.id))
@@ -219,7 +222,8 @@ export class AnalyticsService {
               tenDaysFromNow,
             })
             .andWhere('subscription.isActive = :isActive', { isActive: true })
-            .andWhere('subscription.memberId IN (SELECT id FROM members WHERE "branchBranchId" IN (:...branchIds))', { branchIds })
+            .innerJoin('subscription.member', 'member')
+            .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
             .select('DISTINCT subscription.memberId', 'id')
             .getRawMany()
             .then((results) => results.map((result) => result.id))
@@ -281,9 +285,13 @@ export class AnalyticsService {
         branchIds.length > 0
           ? this.subscriptionsRepo
               .createQueryBuilder('subscription')
+              .innerJoin('subscription.member', 'member')
               .where('subscription.startDate >= :today', { today })
               .andWhere('subscription.startDate < :tomorrow', { tomorrow })
-              .andWhere('subscription.memberId IN (SELECT id FROM members WHERE "branchBranchId" IN (:...branchIds) AND "createdAt" < :today)', { branchIds, today })
+              .andWhere('member.branchBranchId IN (:...branchIds)', {
+                branchIds,
+              })
+              .andWhere('member.createdAt < :today', { today })
               .getCount()
           : 0,
         branchIds.length > 0
@@ -596,7 +604,8 @@ export class AnalyticsService {
             .where('subscription.endDate >= :today', { today })
             .andWhere('subscription.endDate < :tomorrow', { tomorrow })
             .andWhere('subscription.isActive = :isActive', { isActive: true })
-            .andWhere('subscription.memberId IN (SELECT id FROM members WHERE "branchBranchId" IN (:...branchIds))', { branchIds })
+            .innerJoin('subscription.member', 'member')
+            .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
             .getCount()
         : 0;
 
@@ -609,7 +618,8 @@ export class AnalyticsService {
               threeDaysFromNow,
             })
             .andWhere('subscription.isActive = :isActive', { isActive: true })
-            .andWhere('subscription.memberId IN (SELECT id FROM members WHERE "branchBranchId" IN (:...branchIds))', { branchIds })
+            .innerJoin('subscription.member', 'member')
+            .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
             .getCount()
         : 0;
 
@@ -729,19 +739,21 @@ export class AnalyticsService {
     ] = await Promise.all([
       this.subscriptionsRepo
         .createQueryBuilder('subscription')
+        .innerJoin('subscription.member', 'member')
         .where('subscription.endDate >= :today', { today })
         .andWhere('subscription.endDate < :tomorrow', { tomorrow })
         .andWhere('subscription.isActive = :isActive', { isActive: true })
-        .andWhere('subscription.memberId IN (SELECT id FROM members WHERE "branchBranchId" = :branchId)', { branchId })
+        .andWhere('member.branchBranchId = :branchId', { branchId })
         .getCount(),
       this.subscriptionsRepo
         .createQueryBuilder('subscription')
+        .innerJoin('subscription.member', 'member')
         .where('subscription.endDate >= :today', { today })
         .andWhere('subscription.endDate < :tenDaysFromNow', {
           tenDaysFromNow,
         })
         .andWhere('subscription.isActive = :isActive', { isActive: true })
-        .andWhere('subscription.memberId IN (SELECT id FROM members WHERE "branchBranchId" = :branchId)', { branchId })
+        .andWhere('member.branchBranchId = :branchId', { branchId })
         .getCount(),
       this.invoicesRepo
         .createQueryBuilder('invoice')
@@ -783,22 +795,24 @@ export class AnalyticsService {
     // Get member IDs for expiring today
     const expiringTodayMemberIds = await this.subscriptionsRepo
       .createQueryBuilder('subscription')
+      .innerJoin('subscription.member', 'member')
       .where('subscription.endDate >= :today', { today })
       .andWhere('subscription.endDate < :tomorrow', { tomorrow })
       .andWhere('subscription.isActive = :isActive', { isActive: true })
-      .andWhere('subscription.memberId IN (SELECT id FROM members WHERE "branchBranchId" = :branchId)', { branchId })
-      .select('DISTINCT subscription.memberId', 'id')
+      .andWhere('member.branchBranchId = :branchId', { branchId })
+      .select('DISTINCT member.id', 'id')
       .getRawMany()
       .then((results) => results.map((result) => result.id));
 
     // Get member IDs for expiring in next 10 days
     const expiring10DaysMemberIds = await this.subscriptionsRepo
       .createQueryBuilder('subscription')
+      .innerJoin('subscription.member', 'member')
       .where('subscription.endDate >= :today', { today })
       .andWhere('subscription.endDate < :tenDaysFromNow', { tenDaysFromNow })
       .andWhere('subscription.isActive = :isActive', { isActive: true })
-      .andWhere('subscription.memberId IN (SELECT id FROM members WHERE "branchBranchId" = :branchId)', { branchId })
-      .select('DISTINCT subscription.memberId', 'id')
+      .andWhere('member.branchBranchId = :branchId', { branchId })
+      .select('DISTINCT member.id', 'id')
       .getRawMany()
       .then((results) => results.map((result) => result.id));
 
@@ -1074,19 +1088,21 @@ export class AnalyticsService {
       }),
       this.subscriptionsRepo
         .createQueryBuilder('subscription')
+        .innerJoin('subscription.member', 'member')
         .where('subscription.endDate >= :today', { today })
         .andWhere('subscription.endDate < :tomorrow', { tomorrow })
         .andWhere('subscription.isActive = :isActive', { isActive: true })
-        .andWhere('subscription.memberId IN (SELECT id FROM members WHERE "branchBranchId" = :branchId)', { branchId })
+        .andWhere('member.branchBranchId = :branchId', { branchId })
         .getCount(),
       this.subscriptionsRepo
         .createQueryBuilder('subscription')
+        .innerJoin('subscription.member', 'member')
         .where('subscription.endDate >= :today', { today })
         .andWhere('subscription.endDate < :threeDaysFromNow', {
           threeDaysFromNow,
         })
         .andWhere('subscription.isActive = :isActive', { isActive: true })
-        .andWhere('subscription.memberId IN (SELECT id FROM members WHERE "branchBranchId" = :branchId)', { branchId })
+        .andWhere('member.branchBranchId = :branchId', { branchId })
         .getCount(),
       this.invoicesRepo
         .createQueryBuilder('invoice')

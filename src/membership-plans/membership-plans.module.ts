@@ -12,7 +12,11 @@ import { Gym } from '../entities/gym.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([MembershipPlan, Branch, Gym])],
-  controllers: [MembershipPlansController, BranchMembershipPlansController, GymMembershipPlansController],
+  controllers: [
+    MembershipPlansController,
+    BranchMembershipPlansController,
+    GymMembershipPlansController,
+  ],
   providers: [MembershipPlansService],
   exports: [MembershipPlansService],
 })

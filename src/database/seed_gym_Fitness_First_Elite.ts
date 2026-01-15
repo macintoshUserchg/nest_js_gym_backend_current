@@ -324,12 +324,11 @@ class FitnessFirstEliteSeeder {
     }
 
     // Level 3: Member subscriptions must be deleted BEFORE classes (due to selectedClass FK)
-    if (memberIds.length > 0) {
-      await safeDelete(
-        `DELETE FROM "member_subscriptions" WHERE "memberId" IN (${memberIdsStr})`,
-        'member_subscriptions',
-      );
-    }
+    // Note: memberId column removed from entity, delete all subscriptions for seed cleanup
+    await safeDelete(
+      `DELETE FROM "member_subscriptions"`,
+      'member_subscriptions',
+    );
 
     // Level 4: Classes and inquiries (depend on branches)
     if (branchIds.length > 0) {
@@ -1282,12 +1281,25 @@ class FitnessFirstEliteSeeder {
 
         // Add realistic variation (±5%) to base amount while keeping it aligned with plan pricing
         const baseAmount = subscription.plan.price / 100; // Convert from cents
-        const variationPercent = (Math.random() * 0.1) - 0.05; // ±5%
+        const variationPercent = Math.random() * 0.1 - 0.05; // ±5%
         const finalAmount = parseFloat(
           (baseAmount * (1 + variationPercent)).toFixed(2),
         );
 
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const months = [
+          'January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July',
+          'August',
+          'September',
+          'October',
+          'November',
+          'December',
+        ];
         const randomMonth = months[Math.floor(Math.random() * months.length)];
 
         invoices.push({
@@ -1331,12 +1343,18 @@ class FitnessFirstEliteSeeder {
 
         if (isToday) {
           // Payment today
-          paymentDate.setHours(Math.floor(Math.random() * 12) + 8, Math.floor(Math.random() * 60));
+          paymentDate.setHours(
+            Math.floor(Math.random() * 12) + 8,
+            Math.floor(Math.random() * 60),
+          );
         } else {
           // Random date in the past 30 days (but not today)
           const daysAgo = 1 + Math.floor(Math.random() * 29);
           paymentDate.setDate(paymentDate.getDate() - daysAgo);
-          paymentDate.setHours(Math.floor(Math.random() * 12) + 8, Math.floor(Math.random() * 60));
+          paymentDate.setHours(
+            Math.floor(Math.random() * 12) + 8,
+            Math.floor(Math.random() * 60),
+          );
         }
 
         transactions.push({
@@ -2154,14 +2172,16 @@ class FitnessFirstEliteSeeder {
               2,
             ),
           ),
-          notes: `Week ${weekOffset + 1} progress - ${[
-            'On track with goals',
-            'Great improvement',
-            'Strong performance',
-            'Excellent dedication',
-            'Solid progress made',
-            'Maintaining consistency',
-          ][Math.floor(Math.random() * 6)]}`,
+          notes: `Week ${weekOffset + 1} progress - ${
+            [
+              'On track with goals',
+              'Great improvement',
+              'Strong performance',
+              'Excellent dedication',
+              'Solid progress made',
+              'Maintaining consistency',
+            ][Math.floor(Math.random() * 6)]
+          }`,
         } as any);
       }
     }

@@ -161,8 +161,8 @@ export class SubscriptionsController {
       },
     },
   })
-  create(@Body() createDto: CreateSubscriptionDto) {
-    return this.subscriptionsService.create(createDto);
+  create(@Body() body: CreateSubscriptionDto & { memberId: number }) {
+    return this.subscriptionsService.create(body.memberId, body);
   }
 
   @Get()

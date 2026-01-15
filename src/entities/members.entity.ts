@@ -92,7 +92,7 @@ export class Member {
   @Column({ default: true })
   is_managed_by_member: boolean;
 
-  @OneToOne(() => MemberSubscription, (subscription) => subscription.member, {
+  @OneToOne(() => MemberSubscription, {
     cascade: true,
   })
   @JoinColumn({ name: 'subscriptionId' })
@@ -102,7 +102,9 @@ export class Member {
   @JoinColumn({ name: 'branchBranchId' })
   branch?: Branch;
 
-  @OneToMany(() => Attendance, (attendance) => attendance.member, { cascade: true })
+  @OneToMany(() => Attendance, (attendance) => attendance.member, {
+    cascade: true,
+  })
   attendanceRecords: Attendance[];
 
   @OneToMany(() => AttendanceGoal, (goal) => goal.member, { cascade: true })
@@ -114,6 +116,8 @@ export class Member {
   @OneToMany(() => DietPlan, (plan) => plan.member, { cascade: true })
   dietPlans: DietPlan[];
 
-  @OneToMany(() => ProgressTracking, (progress) => progress.member, { cascade: true })
+  @OneToMany(() => ProgressTracking, (progress) => progress.member, {
+    cascade: true,
+  })
   progressRecords: ProgressTracking[];
 }

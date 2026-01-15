@@ -25,16 +25,14 @@ export class SubscriptionsService {
     private classesRepo: Repository<Class>,
   ) {}
 
-  async create(createDto: CreateSubscriptionDto) {
+  async create(memberId: number, createDto: CreateSubscriptionDto) {
     // Check if member exists
     const member = await this.membersRepo.findOne({
-      where: { id: createDto.memberId },
+      where: { id: memberId },
       relations: ['subscription'],
     });
     if (!member) {
-      throw new NotFoundException(
-        `Member with ID ${createDto.memberId} not found`,
-      );
+      throw new NotFoundException(`Member with ID ${memberId} not found`);
     }
 
     // Check if member already has an active subscription

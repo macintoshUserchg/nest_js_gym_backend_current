@@ -12,7 +12,9 @@ export class PaymentTransaction {
   @PrimaryGeneratedColumn('uuid')
   transaction_id: string;
 
-  @ManyToOne(() => Invoice, (invoice) => invoice.payments, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Invoice, (invoice) => invoice.payments, {
+    onDelete: 'CASCADE',
+  })
   invoice: Invoice;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })

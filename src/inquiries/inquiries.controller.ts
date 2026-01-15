@@ -38,7 +38,8 @@ export class InquiriesController {
   @Post()
   @ApiOperation({
     summary: 'Create a new inquiry (Public)',
-    description: 'Public endpoint for lead capture - creates a new inquiry from potential customers. No authentication required. Use this endpoint for contact forms and lead generation.',
+    description:
+      'Public endpoint for lead capture - creates a new inquiry from potential customers. No authentication required. Use this endpoint for contact forms and lead generation.',
   })
   @ApiBody({ type: CreateInquiryDto })
   @ApiResponse({
@@ -71,7 +72,10 @@ export class InquiriesController {
         summary: 'Validation error',
         value: {
           statusCode: 400,
-          message: ['email must be an email', 'fullName must be longer than or equal to 2 characters'],
+          message: [
+            'email must be an email',
+            'fullName must be longer than or equal to 2 characters',
+          ],
           error: 'Bad Request',
         },
       },
@@ -100,7 +104,8 @@ export class InquiriesController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Get all inquiries (Admin)',
-    description: 'Admin-only endpoint to retrieve all inquiries with advanced filtering and pagination. Requires JWT authentication.',
+    description:
+      'Admin-only endpoint to retrieve all inquiries with advanced filtering and pagination. Requires JWT authentication.',
   })
   @ApiResponse({
     status: 200,
@@ -235,7 +240,8 @@ export class InquiriesController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Get pending inquiries (Admin)',
-    description: 'Admin-only endpoint to retrieve pending inquiries (NEW and CONTACTED status). Requires JWT authentication.',
+    description:
+      'Admin-only endpoint to retrieve pending inquiries (NEW and CONTACTED status). Requires JWT authentication.',
   })
   @ApiResponse({
     status: 200,
@@ -256,8 +262,14 @@ export class InquiriesController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async getPendingInquiries() {
     return this.inquiriesService.getPendingInquiries();
   }
@@ -267,7 +279,8 @@ export class InquiriesController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Get inquiry statistics (Admin)',
-    description: 'Admin-only endpoint to get inquiry statistics and analytics. Requires JWT authentication.',
+    description:
+      'Admin-only endpoint to get inquiry statistics and analytics. Requires JWT authentication.',
   })
   @ApiResponse({
     status: 200,
@@ -290,8 +303,14 @@ export class InquiriesController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async getStats() {
     return this.inquiriesService.getInquiryStats();
   }
@@ -301,7 +320,8 @@ export class InquiriesController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Get inquiry by ID (Admin)',
-    description: 'Admin-only endpoint to retrieve a specific inquiry by ID. Requires JWT authentication.',
+    description:
+      'Admin-only endpoint to retrieve a specific inquiry by ID. Requires JWT authentication.',
   })
   @ApiParam({ name: 'id', description: 'Inquiry ID', example: 1 })
   @ApiResponse({
@@ -326,8 +346,14 @@ export class InquiriesController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Inquiry not found' })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.inquiriesService.findOne(id);
@@ -338,7 +364,8 @@ export class InquiriesController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Get inquiry by email (Admin)',
-    description: 'Admin-only endpoint to find inquiry by customer email. Requires JWT authentication.',
+    description:
+      'Admin-only endpoint to find inquiry by customer email. Requires JWT authentication.',
   })
   @ApiParam({
     name: 'email',
@@ -350,8 +377,14 @@ export class InquiriesController {
     description: 'Inquiry found successfully',
     type: InquiryResponseDto,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Inquiry not found' })
   async findByEmail(@Param('email') email: string) {
     return this.inquiriesService.findByEmail(email);
@@ -362,7 +395,8 @@ export class InquiriesController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Update inquiry (Admin)',
-    description: 'Admin-only endpoint to update inquiry details. Requires JWT authentication.',
+    description:
+      'Admin-only endpoint to update inquiry details. Requires JWT authentication.',
   })
   @ApiParam({ name: 'id', description: 'Inquiry ID', example: 1 })
   @ApiBody({ type: UpdateInquiryDto })
@@ -388,8 +422,14 @@ export class InquiriesController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Inquiry not found' })
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -403,7 +443,8 @@ export class InquiriesController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Update inquiry status (Admin)',
-    description: 'Admin-only endpoint to update inquiry status (NEW, CONTACTED, CONVERTED, LOST). Requires JWT authentication.',
+    description:
+      'Admin-only endpoint to update inquiry status (NEW, CONTACTED, CONVERTED, LOST). Requires JWT authentication.',
   })
   @ApiParam({ name: 'id', description: 'Inquiry ID', example: 1 })
   @ApiBody({
@@ -435,8 +476,14 @@ export class InquiriesController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Inquiry not found' })
   async updateStatus(
     @Param('id', ParseIntPipe) id: number,
@@ -450,7 +497,8 @@ export class InquiriesController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Convert inquiry to member (Admin)',
-    description: 'Admin-only endpoint to convert an inquiry into a full member account. Creates a member profile and user account. Requires JWT authentication.',
+    description:
+      'Admin-only endpoint to convert an inquiry into a full member account. Creates a member profile and user account. Requires JWT authentication.',
   })
   @ApiParam({ name: 'id', description: 'Inquiry ID', example: 1 })
   @ApiResponse({
@@ -471,10 +519,19 @@ export class InquiriesController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Inquiry not found' })
-  @ApiResponse({ status: 409, description: 'Inquiry already converted or email already exists as member' })
+  @ApiResponse({
+    status: 409,
+    description: 'Inquiry already converted or email already exists as member',
+  })
   async convertToMember(@Param('id', ParseIntPipe) id: number) {
     return this.inquiriesService.convertToMember(id);
   }
@@ -484,7 +541,8 @@ export class InquiriesController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Delete inquiry (Admin)',
-    description: 'Admin-only endpoint to permanently delete an inquiry. This action cannot be undone. Requires JWT authentication.',
+    description:
+      'Admin-only endpoint to permanently delete an inquiry. This action cannot be undone. Requires JWT authentication.',
   })
   @ApiParam({ name: 'id', description: 'Inquiry ID', example: 1 })
   @ApiResponse({
@@ -500,8 +558,14 @@ export class InquiriesController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Inquiry not found' })
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id', ParseIntPipe) id: number) {

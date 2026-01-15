@@ -312,27 +312,28 @@ export class MembersController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Member deleted successfully. Returns the deleted member object.',
+    description:
+      'Member deleted successfully. Returns the deleted member object.',
     examples: {
       success: {
         summary: 'Member deleted successfully',
         value: {
           id: 7,
-          fullName: "Ava Jackson-White",
-          email: "ava.jackson-white6@email.com",
-          phone: "+1-555-8006",
-          gender: "female",
-          dateOfBirth: "1991-07-07",
-          addressLine1: "106 Elite Avenue",
-          city: "Downtown",
-          state: "California",
+          fullName: 'Ava Jackson-White',
+          email: 'ava.jackson-white6@email.com',
+          phone: '+1-555-8006',
+          gender: 'female',
+          dateOfBirth: '1991-07-07',
+          addressLine1: '106 Elite Avenue',
+          city: 'Downtown',
+          state: 'California',
           isActive: true,
           freezMember: false,
           subscriptionId: null,
-          branchBranchId: "b6fdb0ca-3edf-47eb-85c9-ae1ec214e663",
+          branchBranchId: 'b6fdb0ca-3edf-47eb-85c9-ae1ec214e663',
           branch: {
-            branchId: "b6fdb0ca-3edf-47eb-85c9-ae1ec214e663",
-            name: "Fitness First Elite - Downtown",
+            branchId: 'b6fdb0ca-3edf-47eb-85c9-ae1ec214e663',
+            name: 'Fitness First Elite - Downtown',
           },
         },
       },
