@@ -9,7 +9,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsUUID } from 'class-validator';
 import { Member } from './members.entity';
 import { MembershipPlan } from './membership_plans.entity';
-import { Class } from './classes.entity';
 
 @Entity('member_subscriptions')
 export class MemberSubscription {
@@ -33,14 +32,6 @@ export class MemberSubscription {
   })
   @ManyToOne(() => MembershipPlan, (plan) => plan.members)
   plan: MembershipPlan;
-
-  @ApiPropertyOptional({
-    description: 'Selected class for this subscription (optional)',
-    type: () => Class,
-    nullable: true,
-  })
-  @ManyToOne(() => Class, { nullable: true })
-  selectedClass?: Class;
 
   @ApiProperty({
     description: 'Subscription start date',

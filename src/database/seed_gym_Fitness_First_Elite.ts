@@ -323,8 +323,7 @@ class FitnessFirstEliteSeeder {
       );
     }
 
-    // Level 3: Member subscriptions must be deleted BEFORE classes (due to selectedClass FK)
-    // Note: memberId column removed from entity, delete all subscriptions for seed cleanup
+    // Level 3: Member subscriptions must be deleted BEFORE classes (due to selectedClassIds FK dependency)
     await safeDelete(
       `DELETE FROM "member_subscriptions"`,
       'member_subscriptions',
@@ -1403,22 +1402,9 @@ class FitnessFirstEliteSeeder {
         const endDate = new Date(startDate);
         endDate.setDate(endDate.getDate() + randomPlan.durationInDays);
 
-        // Assign a class from the same branch
-        const branchClasses = classes.filter(
-          (cls) =>
-            cls.branch &&
-            member.branch &&
-            cls.branch.branchId === member.branch.branchId,
-        );
-        const selectedClass =
-          branchClasses.length > 0
-            ? branchClasses[Math.floor(Math.random() * branchClasses.length)]
-            : null;
-
         subscriptions.push({
           member: member,
           plan: randomPlan,
-          selectedClass: selectedClass, // NEW: Class assignment during subscription
           startDate: startDate,
           endDate: endDate,
           isActive: true, // All subscriptions are active
