@@ -171,7 +171,7 @@ export class MembersService {
     // Fetch member with full relations for response
     const member = await this.membersRepo.findOne({
       where: { id: savedMember.id },
-      relations: ['subscription', 'subscription.plan', 'branch', 'branch.gym'],
+      relations: ['subscription', 'subscription.plan', 'branch'],
     });
 
     // Fetch classes from selectedClassIds
@@ -179,9 +179,16 @@ export class MembersService {
       const classes = await this.classesRepo.find({
         where: { class_id: In(member.subscription.selectedClassIds) },
       });
-      // Map class details for response
+      // Map class details for response (without nested member)
       const subscriptionWithClasses = {
-        ...member.subscription,
+        id: member.subscription.id,
+        plan: member.subscription.plan ? {
+          id: member.subscription.plan.id,
+          name: member.subscription.plan.name,
+          price: member.subscription.plan.price,
+          durationInDays: member.subscription.plan.durationInDays,
+          description: member.subscription.plan.description,
+        } : null,
         classes: classes.map((c) => ({
           classId: c.class_id,
           name: c.name,
@@ -190,8 +197,30 @@ export class MembersService {
           recurrenceType: c.recurrence_type,
           daysOfWeek: c.days_of_week,
         })),
+        startDate: member.subscription.startDate,
+        endDate: member.subscription.endDate,
+        isActive: member.subscription.isActive,
       };
       member.subscription = subscriptionWithClasses as any;
+    }
+
+    // Build branch response without gym
+    if (member?.branch) {
+      const branchData = member.branch;
+      member.branch = {
+        branchId: branchData.branchId,
+        name: branchData.name,
+        email: branchData.email,
+        phone: branchData.phone,
+        address: branchData.address,
+        location: branchData.location,
+        state: branchData.state,
+        mainBranch: branchData.mainBranch,
+        latitude: branchData.latitude,
+        longitude: branchData.longitude,
+        createdAt: branchData.createdAt,
+        updatedAt: branchData.updatedAt,
+      } as any;
     }
 
     return member;

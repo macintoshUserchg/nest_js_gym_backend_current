@@ -48,7 +48,7 @@ npm run test:e2e           # Run end-to-end tests
 
 ## Architecture Overview
 
-### Module Structure (26 Feature Modules)
+### Module Structure (23 Feature Modules)
 
 ```
 src/
@@ -82,88 +82,159 @@ src/
 └── database/                  # Database configuration & seeds
 ```
 
-### Key Design Patterns
+---
 
-- **Module Pattern**: Each feature is self-contained with controller, service, and repository
-- **Repository Pattern**: TypeORM repositories for data access abstraction
-- **DTO Pattern**: Data Transfer Objects for validation and type safety
-- **Guard Pattern**: JWT authentication guards (`@UseGuards(JwtAuthGuard)`)
-- **Dependency Injection**: NestJS built-in DI for loose coupling
-- **Global Pipes**: ValidationPipe with whitelist, transform, forbidNonWhitelisted
+## Entity Architecture (27 Entities)
 
-## Database Architecture
+### Entity Summary Table
 
-### Core Entities (27 entities)
+| # | Entity | Table | PK Type | Key Columns | Relationships |
+|---|--------|-------|---------|-------------|---------------|
+| 1 | User | users | UUID | email, passwordHash, memberId | ManyToOne: Gym, Branch, Role |
+| 2 | Role | roles | UUID | name, description | OneToMany: User |
+| 3 | Gym | gyms | UUID | name, email, phone | OneToMany: Branch |
+| 4 | Branch | branches | UUID | name, email, mainBranch | ManyToOne: Gym; OneToMany: Member, Trainer, Class |
+| 5 | Member | members | Auto-increment | fullName, email, isActive | OneToOne: MemberSubscription; ManyToOne: Branch |
+| 6 | MembershipPlan | membership_plans | Auto-increment | name, price, durationInDays | ManyToOne: Branch |
+| 7 | MemberSubscription | member_subscriptions | Auto-increment | startDate, endDate, selectedClassIds[] | OneToOne: Member; ManyToOne: MembershipPlan |
+| 8 | Trainer | trainers | Auto-increment | fullName, email, specialization | ManyToOne: Branch |
+| 9 | Class | classes | UUID | name, description, recurrence_type | ManyToOne: Branch |
+| 10 | MemberTrainerAssignment | member_trainer_assignments | UUID | start_date, end_date, status | ManyToOne: Member, Trainer |
+| 11 | Attendance | attendance | UUID | attendanceType, checkInTime, checkOutTime | ManyToOne: Member, Trainer, Branch |
+| 12 | Inquiry | inquiries | Auto-increment | fullName, email, status | ManyToOne: Branch |
+| 13 | Invoice | invoices | UUID | total_amount, status | ManyToOne: Member; OneToMany: PaymentTransaction |
+| 14 | PaymentTransaction | payment_transactions | UUID | amount, method, status | ManyToOne: Invoice |
+| 15 | AuditLog | audit_logs | UUID | action, entity_type | ManyToOne: User |
+| 16 | DietPlan | diet_plans | UUID | title, goal_type, target_calories | ManyToOne: Member; OneToMany: DietPlanMeal |
+| 17 | DietPlanMeal | diet_plan_meals | UUID | meal_type, calories | ManyToOne: DietPlan |
+| 18 | ExerciseLibrary | exercise_library | UUID | exercise_name, body_part | - |
+| 19 | WorkoutPlan | workout_plans | UUID | title, difficulty_level | ManyToOne: Member; OneToMany: WorkoutPlanExercise |
+| 20 | WorkoutPlanExercise | workout_plan_exercises | UUID | exercise_name, sets, reps | ManyToOne: WorkoutPlan |
+| 21 | WorkoutLog | workout_logs | Auto-increment | exercise_name, sets, reps | ManyToOne: Member |
+| 22 | BodyProgress | body_progress | Auto-increment | weight, body_fat, measurements | ManyToOne: Member |
+| 23 | ProgressTracking | progress_tracking | UUID | weight_kg, bmi, body_fat_percentage | ManyToOne: Member |
+| 24 | AttendanceGoal | attendance_goals | UUID | goal_type, target_count, current_streak | ManyToOne: Member |
+| 25 | Goal | goals | Auto-increment | goal_type, target_value, status | ManyToOne: Member |
+| 26 | Notification | notifications | UUID | title, message, is_read | ManyToOne: User |
+| 27 | Diet | diets | Auto-increment | calories, protein, carbs, fat | ManyToOne: Member |
 
-**User Management:**
-- `users` - System users with role-based access (UUID PK)
-- `roles` - Predefined roles (SUPERADMIN, ADMIN, TRAINER, MEMBER)
+### Primary Key Distribution
 
-**Gym Operations:**
-- `gyms` - Multi-tenant gym organizations (UUID PK)
-- `branches` - Gym locations with hierarchical structure (UUID PK)
+- **UUID (15 entities):** User, Role, Gym, Branch, Class, MemberTrainerAssignment, Attendance, Invoice, PaymentTransaction, AuditLog, DietPlan, DietPlanMeal, ExerciseLibrary, WorkoutPlan, WorkoutPlanExercise, ProgressTracking, AttendanceGoal, Notification
 
-**Member Management:**
-- `members` - Member profiles (auto-increment PK)
-- `membership_plans` - Subscription plans (auto-increment PK)
-- `member_subscriptions` - Active subscriptions (auto-increment PK)
+- **Auto-increment (12 entities):** Member, MembershipPlan, MemberSubscription, Trainer, Inquiry, WorkoutLog, BodyProgress, Goal, Diet
 
-**Trainer & Classes:**
-- `trainers` - Trainer profiles (auto-increment PK)
-- `classes` - Class definitions with recurrence (UUID PK)
-- `member_trainer_assignments` - Many-to-many join table (UUID PK)
+### Cascade Delete Relationships
 
-**Lead Management:**
-- `inquiries` - Leads with status tracking (auto-increment PK)
+- Branch → Gym
+- MemberTrainerAssignment → Member
+- Attendance → Member
+- Invoice → Member
+- PaymentTransaction → Invoice
+- DietPlan → Member
+- DietPlanMeal → DietPlan
+- WorkoutPlan → Member
+- WorkoutPlanExercise → WorkoutPlan
+- WorkoutLog → Member
+- BodyProgress → Member
+- ProgressTracking → Member
+- AttendanceGoal → Member
+- Goal → Member
+- Diet → Member
 
-**Financial:**
-- `invoices` - Billing records (UUID PK)
-- `payment_transactions` - Payment tracking (UUID PK)
+### JSONB Columns
 
-**Attendance & Audit:**
-- `attendance` - Check-in/check-out records (UUID PK)
-- `audit_logs` - Complete activity tracking (UUID PK)
+- AuditLog: `previous_values`, `new_values`
+- BodyProgress: `measurements`, `progress_photos`
+- Goal: `milestone`
+- Diet: `meals`
 
-**Advanced Fitness:**
-- `diet_plans` - Structured diet plans (UUID PK)
-- `diet_plan_meals` - Meal components (UUID PK)
-- `exercise_library` - Exercise database (UUID PK)
-- `workout_plans` - Workout plans (UUID PK)
-- `workout_plan_exercises` - Exercise components (UUID PK)
-- `workout_logs` - Workout history (auto-increment PK)
-- `progress_tracking` - Body measurements & metrics (UUID PK)
-- `body_progress` - Body measurements (auto-increment PK)
-- `attendance_goals` - Attendance goal tracking (UUID PK)
-- `goals` - Fitness goals (auto-increment PK)
-- `notifications` - User notifications (UUID PK)
+### Unique Constraints
 
-### Relationship Types
+- User: `email`
+- Role: `name`
+- Gym: `email`
+- Member: `email`, `subscriptionId`
+- Trainer: `email`
+- Inquiry: `email`
 
-- **One-to-One**: Member ↔ MemberSubscription
-- **One-to-Many**: Gym → Branches, Member → Attendance, etc.
-- **Many-to-One**: Branch → Gym, Member → Branch, etc.
-- **Many-to-Many**: Member ↔ Trainer (via MemberTrainerAssignment)
+---
 
-### Special Behaviors
+## Service Architecture
 
-- **CASCADE DELETE**: Branches deleted when Gym is deleted
-- **EAGER LOADING**: User.role is always loaded automatically
-- **Polymorphic Pattern**: Attendance can reference Member OR Trainer
-- **JSONB Storage**: Flexible data for measurements, milestones, audit logs
+### Core Services
+
+| Service | Key Feature | Dependencies |
+|---------|-------------|--------------|
+| **AuthService** | JWT generation, bcrypt validation | UsersService, JwtService |
+| **UsersService** | User management with linked member/trainer data | User, Member, Trainer |
+| **MembersService** | **TRANSACTIONAL** - atomic member+user+subscription creation | 9 entities |
+| **TrainersService** | Trainer profile with auto user account creation | Trainer, User, Role |
+| **AttendanceService** | Dual-polymorphic (Member OR Trainer), streak calculation | Attendance, Member, Trainer |
+| **PaymentsService** | Auto-invoice settlement | PaymentTransaction, Invoice |
+| **InquiriesService** | Lead conversion workflow | Inquiry |
+| **AnalyticsService** | Promise.all() parallelization for dashboards | 10+ entities |
+
+### Key Service Patterns
+
+1. **Transaction Handling**: Only `MembersService.create()` uses explicit transactions with row-level locking
+2. **Role-Based Access**: GYM_OWNER → TRAINER → MEMBER hierarchy in fitness services
+3. **Auto-Settlement**: PaymentsService marks invoices paid when amount threshold met
+4. **Streak Calculation**: AttendanceService tracks check-in streaks
+
+---
+
+## Controller Architecture (23 Controllers, ~140 Endpoints)
+
+### Authentication Pattern
+
+| Pattern | Controllers Using |
+|---------|-------------------|
+| `@UseGuards(JwtAuthGuard)` on ALL endpoints | Most controllers (21/23) |
+| `@UseGuards(JwtAuthGuard)` on SOME endpoints | `auth` (login/logout public), `inquiries` (POST public) |
+| NO authentication | `app.controller` (root, health, info) |
+
+### Public Endpoints
+
+- `POST /auth/login` - User login
+- `POST /auth/logout` - User logout
+- `GET /`, `/health`, `/info` - API info
+- `POST /inquiries` - Lead capture (public)
+
+### Key Controllers
+
+| Controller | Endpoints | Special Features |
+|------------|-----------|------------------|
+| **AuthController** | POST /login, POST /logout | Public endpoints |
+| **MembersController** | POST/GET /members, GET /members/:id/dashboard | Transactional create |
+| **AttendanceController** | POST /attendance, PATCH /attendance/:id/checkout | Polymorphic (member/trainer) |
+| **InquiriesController** | POST /inquiries, POST /inquiries/:id/convert | Lead conversion |
+| **PaymentsController** | POST /payments | Auto-invoice settlement |
+| **AnalyticsController** | GET /analytics/gym/:gymId/dashboard | Parallel queries |
+| **DietPlansController** | POST/GET /diet-plans | Uses `@CurrentUser()` |
+| **WorkoutsController** | POST/GET /workouts | Composite pattern (plans+exercises) |
+
+### Common Patterns
+
+- **Numeric IDs**: `@Param('id', ParseIntPipe) id: number` (Member, Trainer, etc.)
+- **UUID IDs**: `@Param('id') id: string` (Branch, Class, Invoice, etc.)
+- **Nested Resources**: Classes, Members, Trainers have branch/gym variants
+- **Custom Decorator**: `@CurrentUser() user: UserEntity` extracts authenticated user
+
+---
 
 ## Authentication & Security
 
 ### JWT Authentication Flow
 
-1. Login: `POST /auth/login` → Returns JWT token
+1. Login: `POST /auth/login` → Returns `{ userid, access_token }`
 2. Token stored in Authorization header: `Bearer <token>`
 3. Protected routes use `@UseGuards(JwtAuthGuard)`
-4. Passwords hashed with bcrypt (6 rounds)
+4. Passwords hashed with bcrypt (10 rounds)
 
 ### Role-Based Access Control
 
 ```typescript
-// Roles enum
 enum UserRole {
   SUPERADMIN = 'SUPERADMIN',  // System level
   ADMIN = 'ADMIN',            // Gym owner level
@@ -172,11 +243,7 @@ enum UserRole {
 }
 ```
 
-### Global Security Configuration
-
-- **ValidationPipe**: Strips non-whitelisted properties, auto-transforms payloads
-- **JWT Strategy**: Passport strategy validates tokens
-- **bcrypt**: Password hashing with salt rounds
+---
 
 ## API Structure
 
@@ -188,53 +255,24 @@ enum UserRole {
 
 ### Key API Endpoints
 
-#### Authentication
-- `POST /auth/login` - User login
+| Category | Endpoints |
+|----------|-----------|
+| **Auth** | POST /auth/login, POST /auth/logout |
+| **Gym/Branch** | POST /gyms, POST /gyms/:gymId/branches, GET /branches |
+| **Members** | POST /members, GET /members, GET /branches/:branchId/members |
+| **Subscriptions** | POST /membership-plans, POST /subscriptions, POST /subscriptions/:id/cancel |
+| **Classes** | POST /classes, GET /classes, GET /branches/:branchId/classes |
+| **Attendance** | POST /attendance, PATCH /attendance/:id/checkout |
+| **Financial** | POST /invoices, POST /payments, GET /members/:memberId/invoices |
+| **Leads** | POST /inquiries, POST /inquiries/:id/convert, GET /inquiries/stats |
+| **Analytics** | GET /analytics/gym/:gymId/dashboard, GET /analytics/branch/:branchId/attendance |
+| **Fitness** | POST /diet-plans, POST /workouts, POST /progress-tracking, POST /goals |
 
-#### Gym & Branch Management
-- `POST /gyms` - Create gym
-- `POST /gyms/:gymId/branches` - Create branch
-- `GET /branches` - List all branches
-
-#### Member Management
-- `POST /members` - Create member
-- `GET /members` - List members with filtering
-- `GET /branches/:branchId/members` - Branch members
-
-#### Membership & Subscriptions
-- `POST /membership-plans` - Create plan
-- `POST /subscriptions` - Assign member to plan
-- `POST /subscriptions/:id/cancel` - Cancel subscription
-
-#### Classes & Attendance
-- `POST /classes` - Create class with recurrence
-- `POST /attendance` - Check-in/check-out
-- `GET /attendance/:id/checkout` - Check out
-
-#### Financial Management
-- `POST /invoices` - Create invoice
-- `POST /payments` - Record payment
-- `GET /members/:memberId/invoices` - Member billing
-
-#### Lead Management
-- `POST /inquiries` - Create lead
-- `POST /inquiries/:id/convert` - Convert to member
-- `GET /inquiries/stats` - Lead analytics
-
-#### Analytics & Reporting
-- `GET /analytics/gym/:gymId/dashboard` - Gym dashboard
-- `GET /analytics/branch/:branchId/members` - Member analytics
-- `GET /analytics/gym/:gymId/attendance` - Attendance analytics
-
-#### Advanced Fitness Tracking
-- `POST /diet-plans` - Create diet plan
-- `POST /workout-plans` - Create workout plan
-- `POST /progress-tracking` - Record progress
-- `POST /goals` - Set fitness goals
+---
 
 ## Configuration
 
-### Environment Variables (.env)
+### Environment Variables
 
 ```env
 PORT=3000
@@ -243,7 +281,7 @@ JWT_SECRET=your-secret-key
 JWT_EXPIRATION=24h
 ```
 
-### Database Configuration (dbConfig.ts)
+### Database Configuration
 
 ```typescript
 export const pgConfig: PostgresConnectionOptions = {
@@ -253,136 +291,78 @@ export const pgConfig: PostgresConnectionOptions = {
   synchronize: true,  // ⚠️ Set to false in production
   logging: ['error', 'warn'],
   entities: [__dirname + '/**/*.entity{.ts,.js}'],
-  migrations: ['dist/migrations/**/*.js'],
   ssl: { rejectUnauthorized: false }
 };
 ```
 
-### Global Configuration (main.ts)
+### Global Configuration
 
 ```typescript
 app.useGlobalPipes(
   new ValidationPipe({
-    whitelist: true,           // Strip non-whitelisted properties
-    transform: true,           // Auto-transform to DTO instances
-    forbidNonWhitelisted: true // Throw error for non-whitelisted
+    whitelist: true,
+    transform: true,
+    forbidNonWhitelisted: true
   })
 );
 ```
 
+---
+
 ## Development Workflow
-
-### Adding a New Feature Module
-
-1. **Create entities** in `src/entities/`
-2. **Create DTOs** in `src/<module>/dto/`
-3. **Create service** in `src/<module>/<module>.service.ts`
-4. **Create controller** in `src/<module>/<module>.controller.ts`
-5. **Create module** in `src/<module>/<module>.module.ts`
-6. **Import in app.module.ts**
 
 ### Standard Module Pattern
 
 ```typescript
-// src/<module>/<module>.module.ts
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      // List entities used by this module
-    ])
-  ],
-  controllers: [<Module>Controller],
-  providers: [<Module>Service],
-  exports: [<Module>Service],
+  imports: [TypeOrmModule.forFeature([Entity])],
+  controllers: [ModuleController],
+  providers: [ModuleService],
+  exports: [ModuleService],
 })
-export class <Module>Module {}
+export class ModuleModule {}
 ```
 
 ### Standard Service Pattern
 
 ```typescript
-// src/<module>/<module>.service.ts
 @Injectable()
-export class <Module>Service {
+export class ModuleService {
   constructor(
-    @InjectRepository(<Entity>)
-    private readonly <entity>Repository: Repository<>,
+    @InjectRepository(Entity)
+    private readonly entityRepository: Repository<Entity>,
   ) {}
-
-  // CRUD methods with business logic
 }
 ```
 
 ### Standard Controller Pattern
 
 ```typescript
-// src/<module>/<module>.controller.ts
-@Controller('<module>')
+@Controller('module')
 @UseGuards(JwtAuthGuard)
-export class <Module>Controller {
-  constructor(private readonly <module>Service: <Module>Service) {}
+@ApiBearerAuth('JWT-auth')
+@ApiTags('module')
+export class ModuleController {
+  constructor(private readonly moduleService: ModuleService) {}
 
   @Post()
-  @ApiBearerAuth('JWT-auth')
-  @ApiTags('<module>')
-  async create(@Body() createDto: Create<Module>Dto) {
-    return this.<module>Service.create(createDto);
+  async create(@Body() createDto: CreateModuleDto) {
+    return this.moduleService.create(createDto);
   }
 }
 ```
 
-## Testing
+---
 
-### Unit Tests
+## Entity Naming Conventions
 
-```bash
-npm run test              # Run all tests
-npm run test:watch        # Watch mode for TDD
-npm run test:cov          # With coverage report
-```
+- **Tables**: snake_case (e.g., `member_subscriptions`)
+- **Columns**: camelCase (e.g., `memberId`, `createdAt`)
+- **Primary Keys**: `uuid` or `auto-increment`
+- **Foreign Keys**: `<entity>Id` (e.g., `gymId`, `memberId`)
+- **Timestamps**: `createdAt`, `updatedAt`
 
-### E2E Tests
-
-```bash
-npm run test:e2e          # End-to-end tests
-```
-
-## Production Deployment Checklist
-
-1. **Environment**: Set `NODE_ENV=production`
-2. **Database**: Disable `synchronize: true`, use migrations
-3. **JWT Secret**: Use strong random secret (32+ characters)
-4. **HTTPS**: Enable TLS/SSL for API endpoints
-5. **CORS**: Configure allowed origins
-6. **Logging**: Implement structured logging
-7. **Monitoring**: Add error tracking (e.g., Sentry)
-8. **Database**: Enable connection pooling
-9. **Security**: Rate limiting on auth endpoints
-
-## Common Tasks
-
-### Fix TypeScript Errors
-```bash
-npm run lint              # Auto-fixes many issues
-# Then manually fix remaining errors
-```
-
-### Format Code
-```bash
-npm run format            # Prettier formatting
-```
-
-### View API Documentation
-```bash
-npm run start:dev
-# Navigate to http://localhost:3000/api
-```
-
-### Check Database Schema
-```bash
-# Schema auto-syncs in development (dbConfig.ts:8)
-# View entities in src/entities/
-```
+---
 
 ## Important Notes
 
@@ -393,27 +373,12 @@ npm run start:dev
 - **Multi-Tenant**: Gym/branch hierarchy ensures data isolation
 - **Audit Trail**: All changes logged in audit_logs table
 - **JSONB Fields**: Used for flexible data (measurements, milestones, meals)
+- **Transactions**: Only MembersService uses database transactions
 
-## Entity Naming Conventions
-
-- **Tables**: snake_case (e.g., `member_subscriptions`)
-- **Columns**: camelCase (e.g., `memberId`, `createdAt`)
-- **Primary Keys**: `uuid` or `auto-increment`
-- **Foreign Keys**: `<entity>Id` (e.g., `gymId`, `memberId`)
-- **Timestamps**: `createdAt`, `updatedAt`
-
-## Module Dependencies
-
-Core modules that other modules depend on:
-- `auth` - Authentication (imports users)
-- `users` - User management (imports roles)
-- `gyms` - Multi-tenant structure (imports branches)
-- `members` - Member management (imports branches, users)
-- `trainers` - Trainer management (imports branches)
+---
 
 ## File Structure Pattern
 
-Each feature module follows this structure:
 ```
 src/<module>/
 ├── <module>.module.ts      # Module definition
@@ -424,6 +389,8 @@ src/<module>/
 │   └── update-<module>.dto.ts
 └── types/                  # Optional type definitions
 ```
+
+---
 
 ## Database Seeding
 

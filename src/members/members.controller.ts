@@ -37,71 +37,177 @@ export class MembersController {
   @ApiOperation({
     summary: 'Create a new member',
     description:
-      'Creates a new member profile with branch assignment and default user account',
+      'Creates a new member profile with branch assignment, membership plan, and optional class selections. A user account is automatically created with default password.',
   })
   @ApiResponse({
     status: 201,
-    description: 'Member created successfully.',
-    type: Member,
+    description: 'Member created successfully with subscription and classes.',
+    examples: {
+      success: {
+        summary: 'Member created with full details',
+        value: {
+          id: 111,
+          fullName: 'Alice Johnson',
+          email: 'alice.johnson.test@example.com',
+          phone: '+1555123456',
+          gender: 'female',
+          dateOfBirth: '1992-05-20',
+          addressLine1: '456 Oak Avenue',
+          addressLine2: null,
+          city: 'Los Angeles',
+          state: 'CA',
+          postalCode: '90001',
+          avatarUrl: null,
+          attachmentUrl: null,
+          emergencyContactName: 'Bob Johnson',
+          emergencyContactPhone: '+1555987654',
+          isActive: true,
+          freezMember: false,
+          createdAt: '2026-01-11T00:04:35.510Z',
+          updatedAt: '2026-01-11T00:04:35.510Z',
+          branchBranchId: '3c1f3add-0783-460b-ab77-df3f29aeb7ea',
+          is_managed_by_member: true,
+          subscription: {
+            id: 113,
+            plan: {
+              id: 1,
+              name: 'Elite Basic - Downtown',
+              price: 8999,
+              durationInDays: 30,
+              description: 'Access to premium gym facilities and basic classes'
+            },
+            classes: [
+              {
+                classId: 'ab1caf4b-bb4c-489e-aefd-ad6031fc92b1',
+                name: 'Elite Morning Yoga',
+                description: 'Premium yoga session to start your day with mindfulness and strength',
+                timings: 'morning',
+                recurrenceType: 'weekly',
+                daysOfWeek: [1, 3, 5]
+              },
+              {
+                classId: '7b773efc-b250-4550-9763-8052cac699c0',
+                name: 'HIIT Elite Performance',
+                description: 'High-intensity interval training for elite athletes',
+                timings: 'evening',
+                recurrenceType: 'weekly',
+                daysOfWeek: [2, 4]
+              }
+            ],
+            startDate: '2026-01-11T05:34:36.139Z',
+            endDate: '2026-02-10T05:34:36.139Z',
+            isActive: true
+          },
+          branch: {
+            branchId: '3c1f3add-0783-460b-ab77-df3f29aeb7ea',
+            name: 'Fitness First Elite - Downtown',
+            email: 'downtown@fitnessfirstelite.com',
+            phone: '+1-555-0101',
+            address: '123 Elite Fitness Drive, Wellness City, WC 90210',
+            location: 'Downtown',
+            state: 'California',
+            mainBranch: true,
+            latitude: null,
+            longitude: null,
+            createdAt: '2026-01-06T06:32:39.084Z',
+            updatedAt: '2026-01-06T06:32:39.084Z'
+          }
+        }
+      }
+    },
   })
   @ApiResponse({
     status: 400,
     description: 'Invalid input data. Check validation errors.',
+    examples: {
+      validationError: {
+        summary: 'Validation failed',
+        value: {
+          statusCode: 400,
+          message: ['gender must be one of the following values: male, female, other'],
+          error: 'Bad Request'
+        }
+      }
+    }
   })
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token.',
   })
   @ApiResponse({
+    status: 404,
+    description: 'Branch or Membership Plan not found.',
+    examples: {
+      branchNotFound: {
+        summary: 'Branch not found',
+        value: {
+          statusCode: 404,
+          message: 'Branch with ID 123e4567-e89b-12d3-a456-426614174000 not found',
+          error: 'Not Found'
+        }
+      },
+      planNotFound: {
+        summary: 'Plan not found',
+        value: {
+          statusCode: 404,
+          message: 'Membership plan with ID 999 not found',
+          error: 'Not Found'
+        }
+      }
+    }
+  })
+  @ApiResponse({
     status: 409,
     description: 'Member with this email already exists.',
+    examples: {
+      duplicateEmail: {
+        summary: 'Email already exists',
+        value: {
+          statusCode: 409,
+          message: 'Member with this email already exists',
+          error: 'Conflict'
+        }
+      }
+    }
   })
   @ApiBody({
     type: CreateMemberDto,
     examples: {
+      completeMember: {
+        summary: 'Create a member with complete information',
+        value: {
+          fullName: 'Alice Johnson',
+          email: 'alice.johnson@example.com',
+          phone: '+1555123456',
+          gender: 'female',
+          dateOfBirth: '1992-05-20',
+          addressLine1: '456 Oak Avenue',
+          addressLine2: 'Apt 4B',
+          city: 'Los Angeles',
+          state: 'CA',
+          postalCode: '90001',
+          avatarUrl: 'https://example.com/avatars/alice.jpg',
+          emergencyContactName: 'Bob Johnson',
+          emergencyContactPhone: '+1555987654',
+          branchId: 'a4a43bf7-e997-4716-839b-9f05a45f42be',
+          membershipPlanId: 1,
+          isActive: true,
+          attachmentUrl: 'https://example.com/docs/alice-id.pdf',
+          freezMember: false,
+          selectedClassIds: [
+            '8cd45646-061b-4730-a2a5-1f400226564b',
+            '33ec8f27-0708-4808-958f-091301f8aa2c'
+          ]
+        },
+      },
       minimalMember: {
         summary: 'Create a member with minimal required information',
         value: {
           fullName: 'John Doe',
           email: 'john.doe@example.com',
           phone: '+1234567890',
-          branchId: '123e4567-e89b-12d3-a456-426614174000',
+          branchId: 'a4a43bf7-e997-4716-839b-9f05a45f42be',
           membershipPlanId: 1,
-        },
-      },
-      completeMember: {
-        summary: 'Create a member with complete information',
-        value: {
-          fullName: 'Alice Johnson',
-          email: 'alice.johnson@example.com',
-          phone: '+1987654321',
-          gender: 'FEMALE',
-          dateOfBirth: '1992-05-15',
-          addressLine1: '456 Oak Avenue',
-          addressLine2: 'Apt 3B',
-          city: 'Los Angeles',
-          state: 'CA',
-          postalCode: '90210',
-          avatarUrl: 'https://example.com/avatars/alice.jpg',
-          emergencyContactName: 'Robert Johnson',
-          emergencyContactPhone: '+1122334455',
-          branchId: '456e7890-e89b-12d3-a456-426614174001',
-          membershipPlanId: 2,
-          isActive: true,
-        },
-      },
-      basicMember: {
-        summary: 'Create a member with basic information',
-        value: {
-          fullName: 'Michael Smith',
-          email: 'michael.smith@example.com',
-          phone: '+1555123456',
-          gender: 'MALE',
-          dateOfBirth: '1985-12-10',
-          city: 'Chicago',
-          state: 'IL',
-          branchId: '789e0123-e89b-12d3-a456-426614174002',
-          membershipPlanId: 3,
         },
       },
     },

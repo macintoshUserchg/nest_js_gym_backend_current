@@ -419,9 +419,10 @@ export class AnalyticsService {
       };
     }
 
-    const [currentMonthRevenueResult, lastMonthRevenueResult] =
+    const [currentMonthRevenueResult, lastMonthRevenueResult, currentMonthRefundsResult, lastMonthRefundsResult] =
       branchIds.length > 0
         ? await Promise.all([
+            // Completed payments (revenue)
             this.paymentsRepo
               .createQueryBuilder('payment')
               .innerJoin('payment.invoice', 'invoice')
@@ -436,6 +437,7 @@ export class AnalyticsService {
               })
               .andWhere('payment.status = :status', { status: 'completed' })
               .getRawOne(),
+            // Last month completed payments
             this.paymentsRepo
               .createQueryBuilder('payment')
               .innerJoin('payment.invoice', 'invoice')
@@ -450,13 +452,45 @@ export class AnalyticsService {
               })
               .andWhere('payment.status = :status', { status: 'completed' })
               .getRawOne(),
+            // Current month refunds (to deduct from revenue)
+            this.paymentsRepo
+              .createQueryBuilder('payment')
+              .innerJoin('payment.invoice', 'invoice')
+              .innerJoin('invoice.member', 'member')
+              .select('SUM(payment.amount)', 'total')
+              .where('member.branchBranchId IN (:...branchIds)', { branchIds })
+              .andWhere('payment.created_at >= :firstDayOfCurrentMonth', {
+                firstDayOfCurrentMonth,
+              })
+              .andWhere('payment.created_at < :firstDayOfNextMonth', {
+                firstDayOfNextMonth,
+              })
+              .andWhere('payment.status = :status', { status: 'refund' })
+              .getRawOne(),
+            // Last month refunds
+            this.paymentsRepo
+              .createQueryBuilder('payment')
+              .innerJoin('payment.invoice', 'invoice')
+              .innerJoin('invoice.member', 'member')
+              .select('SUM(payment.amount)', 'total')
+              .where('member.branchBranchId IN (:...branchIds)', { branchIds })
+              .andWhere('payment.created_at >= :firstDayOfLastMonth', {
+                firstDayOfLastMonth,
+              })
+              .andWhere('payment.created_at < :firstDayOfCurrentMonth', {
+                firstDayOfCurrentMonth,
+              })
+              .andWhere('payment.status = :status', { status: 'refund' })
+              .getRawOne(),
           ])
-        : [{ total: 0 }, { total: 0 }];
+        : [{ total: 0 }, { total: 0 }, { total: 0 }, { total: 0 }];
 
-    const currentMonthRevenue = parseFloat(
-      currentMonthRevenueResult?.total || '0',
-    );
-    const lastMonthRevenue = parseFloat(lastMonthRevenueResult?.total || '0');
+    const currentMonthRevenue =
+      parseFloat(currentMonthRevenueResult?.total || '0') -
+      parseFloat(currentMonthRefundsResult?.total || '0');
+    const lastMonthRevenue =
+      parseFloat(lastMonthRevenueResult?.total || '0') -
+      parseFloat(lastMonthRefundsResult?.total || '0');
 
     // Calculate percentage change
     let revenueChange = {
@@ -895,8 +929,9 @@ export class AnalyticsService {
       };
     }
 
-    const [currentMonthRevenueResult, lastMonthRevenueResult] =
+    const [currentMonthRevenueResult, lastMonthRevenueResult, currentMonthRefundsResult, lastMonthRefundsResult] =
       await Promise.all([
+        // Completed payments (revenue)
         this.paymentsRepo
           .createQueryBuilder('payment')
           .innerJoin('payment.invoice', 'invoice')
@@ -911,6 +946,7 @@ export class AnalyticsService {
           })
           .andWhere('payment.status = :status', { status: 'completed' })
           .getRawOne(),
+        // Last month completed payments
         this.paymentsRepo
           .createQueryBuilder('payment')
           .innerJoin('payment.invoice', 'invoice')
@@ -925,12 +961,44 @@ export class AnalyticsService {
           })
           .andWhere('payment.status = :status', { status: 'completed' })
           .getRawOne(),
+        // Current month refunds (to deduct from revenue)
+        this.paymentsRepo
+          .createQueryBuilder('payment')
+          .innerJoin('payment.invoice', 'invoice')
+          .innerJoin('invoice.member', 'member')
+          .select('SUM(payment.amount)', 'total')
+          .where('member.branchBranchId = :branchId', { branchId })
+          .andWhere('payment.created_at >= :firstDayOfCurrentMonth', {
+            firstDayOfCurrentMonth,
+          })
+          .andWhere('payment.created_at < :firstDayOfNextMonth', {
+            firstDayOfNextMonth,
+          })
+          .andWhere('payment.status = :status', { status: 'refund' })
+          .getRawOne(),
+        // Last month refunds
+        this.paymentsRepo
+          .createQueryBuilder('payment')
+          .innerJoin('payment.invoice', 'invoice')
+          .innerJoin('invoice.member', 'member')
+          .select('SUM(payment.amount)', 'total')
+          .where('member.branchBranchId = :branchId', { branchId })
+          .andWhere('payment.created_at >= :firstDayOfLastMonth', {
+            firstDayOfLastMonth,
+          })
+          .andWhere('payment.created_at < :firstDayOfCurrentMonth', {
+            firstDayOfCurrentMonth,
+          })
+          .andWhere('payment.status = :status', { status: 'refund' })
+          .getRawOne(),
       ]);
 
-    const currentMonthRevenue = parseFloat(
-      currentMonthRevenueResult?.total || '0',
-    );
-    const lastMonthRevenue = parseFloat(lastMonthRevenueResult?.total || '0');
+    const currentMonthRevenue =
+      parseFloat(currentMonthRevenueResult?.total || '0') -
+      parseFloat(currentMonthRefundsResult?.total || '0');
+    const lastMonthRevenue =
+      parseFloat(lastMonthRevenueResult?.total || '0') -
+      parseFloat(lastMonthRefundsResult?.total || '0');
 
     // Calculate percentage change
     let revenueChange = {

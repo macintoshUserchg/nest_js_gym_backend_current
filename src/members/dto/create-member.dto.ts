@@ -15,15 +15,20 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Gender } from '../../common/enums/gender.enum';
 
 export class CreateMemberDto {
-  @ApiProperty({ description: 'Member full name', example: 'John Doe' })
+  @ApiProperty({
+    description: 'Full name of the member',
+    example: 'Alice Johnson',
+    maxLength: 100,
+  })
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
   fullName: string;
 
   @ApiProperty({
-    description: 'Member email address',
-    example: 'john.doe@example.com',
+    description: 'Unique email address of the member',
+    example: 'alice.johnson@example.com',
+    format: 'email',
   })
   @IsEmail()
   @IsNotEmpty()
@@ -31,8 +36,9 @@ export class CreateMemberDto {
   email: string;
 
   @ApiPropertyOptional({
-    description: 'Member phone number',
-    example: '1234567890',
+    description: 'Phone number with country code',
+    example: '+1-555-123-4567',
+    maxLength: 20,
   })
   @IsString()
   @IsOptional()
@@ -40,55 +46,78 @@ export class CreateMemberDto {
   phone?: string;
 
   @ApiPropertyOptional({
-    description: 'Gender',
+    description: 'Gender of the member',
     enum: Gender,
-    example: Gender.MALE,
+    example: 'female',
+    enumName: 'Gender',
   })
   @IsEnum(Gender)
   @IsOptional()
   gender?: Gender;
 
-  @ApiPropertyOptional({ description: 'Date of birth', example: '1990-01-01' })
+  @ApiPropertyOptional({
+    description: 'Date of birth in YYYY-MM-DD format',
+    example: '1992-05-20',
+    format: 'date',
+  })
   @IsDateString()
   @IsOptional()
   dateOfBirth?: string;
 
   @ApiPropertyOptional({
-    description: 'Address line 1',
-    example: '123 Main St',
+    description: 'Primary address line',
+    example: '456 Oak Avenue',
+    maxLength: 500,
   })
   @IsString()
   @IsOptional()
   @MaxLength(500)
   addressLine1?: string;
 
-  @ApiPropertyOptional({ description: 'Address line 2', example: 'Apt 4B' })
+  @ApiPropertyOptional({
+    description: 'Secondary address line (apartment, suite, etc.)',
+    example: 'Apt 4B',
+    maxLength: 500,
+  })
   @IsString()
   @IsOptional()
   @MaxLength(500)
   addressLine2?: string;
 
-  @ApiPropertyOptional({ description: 'City', example: 'New York' })
+  @ApiPropertyOptional({
+    description: 'City name',
+    example: 'Los Angeles',
+    maxLength: 100,
+  })
   @IsString()
   @IsOptional()
   @MaxLength(100)
   city?: string;
 
-  @ApiPropertyOptional({ description: 'State', example: 'NY' })
+  @ApiPropertyOptional({
+    description: 'State or province abbreviation',
+    example: 'CA',
+    maxLength: 100,
+  })
   @IsString()
   @IsOptional()
   @MaxLength(100)
   state?: string;
 
-  @ApiPropertyOptional({ description: 'Postal code', example: '10001' })
+  @ApiPropertyOptional({
+    description: 'Postal or ZIP code',
+    example: '90001',
+    maxLength: 20,
+  })
   @IsString()
   @IsOptional()
   @MaxLength(20)
   postalCode?: string;
 
   @ApiPropertyOptional({
-    description: 'Member avatar URL',
-    example: 'https://example.com/avatar.jpg',
+    description: 'URL to member avatar image',
+    example: 'https://example.com/avatars/alice.jpg',
+    maxLength: 500,
   })
   @IsString()
   @IsOptional()
@@ -96,8 +125,9 @@ export class CreateMemberDto {
   avatarUrl?: string;
 
   @ApiPropertyOptional({
-    description: 'Emergency contact name',
-    example: 'Jane Doe',
+    description: 'Name of emergency contact person',
+    example: 'Bob Johnson',
+    maxLength: 100,
   })
   @IsString()
   @IsOptional()
@@ -105,8 +135,9 @@ export class CreateMemberDto {
   emergencyContactName?: string;
 
   @ApiPropertyOptional({
-    description: 'Emergency contact phone',
-    example: '0987654321',
+    description: 'Phone number of emergency contact',
+    example: '+1-555-987-6543',
+    maxLength: 20,
   })
   @IsString()
   @IsOptional()
@@ -114,23 +145,25 @@ export class CreateMemberDto {
   emergencyContactPhone?: string;
 
   @ApiProperty({
-    description: 'Branch ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'UUID of the branch/gym location',
+    example: 'a4a43bf7-e997-4716-839b-9f05a45f42be',
+    format: 'uuid',
   })
   @IsUUID()
   @IsNotEmpty()
   branchId: string;
 
   @ApiProperty({
-    description: 'Membership plan ID',
+    description: 'ID of the membership plan to assign',
     example: 1,
+    minimum: 1,
   })
   @IsNumber()
   @IsNotEmpty()
   membershipPlanId: number;
 
   @ApiPropertyOptional({
-    description: 'Member active status',
+    description: 'Whether the member account is active',
     example: true,
     default: true,
   })
@@ -139,8 +172,9 @@ export class CreateMemberDto {
   isActive?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Member attachment URL',
-    example: 'https://example.com/attachment.pdf',
+    description: 'URL to member ID or document attachment',
+    example: 'https://example.com/documents/alice-id.pdf',
+    maxLength: 500,
   })
   @IsString()
   @IsOptional()
@@ -148,7 +182,7 @@ export class CreateMemberDto {
   attachmentUrl?: string;
 
   @ApiPropertyOptional({
-    description: 'Member freeze status',
+    description: 'Whether the membership is frozen (paused)',
     example: false,
     default: false,
   })
@@ -157,9 +191,13 @@ export class CreateMemberDto {
   freezMember?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Array of class IDs for this subscription',
+    description: 'Array of UUIDs for classes to include in subscription',
     type: [String],
-    example: ['ab1caf4b-bb4c-489e-aefd-ad6031fc92b1'],
+    example: [
+      '8cd45646-061b-4730-a2a5-1f400226564b',
+      '33ec8f27-0708-4808-958f-091301f8aa2c',
+    ],
+    format: 'uuid',
   })
   @IsArray()
   @IsUUID('4', { each: true })

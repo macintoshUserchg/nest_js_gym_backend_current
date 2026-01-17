@@ -31,7 +31,7 @@ export class PaymentTransaction {
 
   @Column({
     type: 'enum',
-    enum: ['pending', 'completed', 'failed'],
+    enum: ['pending', 'completed', 'failed', 'refund'],
     default: 'completed',
   })
   status: string;
