@@ -22,9 +22,13 @@ import {
 import { MembersService } from './members.service';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
+import { AdminUpdateMemberDto } from './dto/admin-update-member.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../entities/users.entity';
 import { Member } from '../entities/members.entity';
 import { MemberDashboardDto } from './dto/member-dashboard.dto';
+import { ForbiddenException } from '@nestjs/common';
 
 @ApiTags('members')
 @Controller('members')
@@ -401,6 +405,54 @@ export class MembersController {
     @Body() updateMemberDto: UpdateMemberDto,
   ) {
     return this.membersService.update(id, updateMemberDto);
+  }
+
+  @Patch('admin/:id')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Admin update a member',
+    description:
+      'Admin-only endpoint to update member including sensitive fields like isActive, branchId, membershipPlanId. Requires ADMIN or SUPERADMIN role.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Member ID',
+    example: 123,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Member updated successfully by admin.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Member not found.',
+  })
+  @ApiBody({
+    type: AdminUpdateMemberDto,
+    examples: {
+      updateStatus: {
+        summary: 'Update member active status',
+        value: {
+          isActive: false,
+        },
+      },
+    },
+  })
+  adminUpdate(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() adminUpdateMemberDto: AdminUpdateMemberDto,
+    @CurrentUser() user: User,
+  ) {
+    // Check if user has admin role
+    if (!user.role || !['ADMIN', 'SUPERADMIN'].includes(user.role.name)) {
+      throw new ForbiddenException('Admin access required for this operation');
+    }
+    return this.membersService.update(id, adminUpdateMemberDto);
   }
 
   @Delete(':id')

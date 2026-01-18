@@ -63,7 +63,7 @@ This is a robust multi-tenant gym management platform that enables:
 - **Authentication**: JWT (JSON Web Tokens) with Passport
 - **Password Security**: bcrypt for hashing
 - **Input Validation**: Class Validator & Class Transformer
-- **API Documentation**: Swagger/OpenAPI (to be implemented)
+- **API Documentation**: Swagger/OpenAPI (http://localhost:3000/api)
 
 ## Core Features
 

@@ -206,7 +206,7 @@ src/
 | Controller | Endpoints | Special Features |
 |------------|-----------|------------------|
 | **AuthController** | POST /login, POST /logout | Public endpoints |
-| **MembersController** | POST/GET /members, GET /members/:id/dashboard | Transactional create |
+| **MembersController** | POST/GET /members, PATCH /members/admin/:id, GET /members/:id/dashboard | Transactional create, Admin-only updates |
 | **AttendanceController** | POST /attendance, PATCH /attendance/:id/checkout | Polymorphic (member/trainer) |
 | **InquiriesController** | POST /inquiries, POST /inquiries/:id/convert | Lead conversion |
 | **PaymentsController** | POST /payments | Auto-invoice settlement |
@@ -259,7 +259,7 @@ enum UserRole {
 |----------|-----------|
 | **Auth** | POST /auth/login, POST /auth/logout |
 | **Gym/Branch** | POST /gyms, POST /gyms/:gymId/branches, GET /branches |
-| **Members** | POST /members, GET /members, GET /branches/:branchId/members |
+| **Members** | POST /members, GET /members, PATCH /members/admin/:id, GET /branches/:branchId/members |
 | **Subscriptions** | POST /membership-plans, POST /subscriptions, POST /subscriptions/:id/cancel |
 | **Classes** | POST /classes, GET /classes, GET /branches/:branchId/classes |
 | **Attendance** | POST /attendance, PATCH /attendance/:id/checkout |
