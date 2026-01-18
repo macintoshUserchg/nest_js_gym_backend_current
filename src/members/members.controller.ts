@@ -23,6 +23,7 @@ import { MembersService } from './members.service';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import { AdminUpdateMemberDto } from './dto/admin-update-member.dto';
+import { BranchMemberResponseDto } from './dto/branch-member-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../entities/users.entity';
@@ -560,57 +561,149 @@ export class BranchMembersController {
   @ApiOperation({
     summary: 'Get all members for a branch',
     description:
-      'Retrieves all members assigned to a specific branch with their profiles, subscription status, and branch details.',
+      'Retrieves all members assigned to a specific branch with their profiles, ' +
+      'subscription status, plan details, enrolled classes, and branch information. ' +
+      'This endpoint is typically used by branch administrators to view and manage all members of their branch.',
   })
   @ApiParam({
     name: 'branchId',
     description: 'Branch ID (UUID format)',
-    example: 'dc33cf0d-763b-44af-bdd8-21427357df1b',
+    example: 'a4a43bf7-e997-4716-839b-9f05a45f42be',
+  })
+  @ApiQuery({
+    name: 'isActive',
+    required: false,
+    description: 'Filter by membership active status',
+    type: Boolean,
+    example: true,
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search members by name or email (partial match)',
+    example: 'john',
   })
   @ApiResponse({
     status: 200,
-    description: 'Return all members for the branch.',
+    description: 'List of all members for the branch with subscription, plan, classes, and branch details.',
+    type: [BranchMemberResponseDto],
     examples: {
       success: {
         summary: 'List of branch members',
         value: [
           {
-            id: 1,
-            fullName: 'Sophia Johnson-Smith',
-            email: 'sophia.johnson-smith0@email.com',
-            phone: '+1-555-8000',
-            gender: 'female',
-            dateOfBirth: '1985-01-01',
-            addressLine1: '100 Elite Avenue',
-            addressLine2: null,
-            city: 'Downtown',
-            state: 'California',
-            postalCode: '90000',
-            avatarUrl: null,
-            emergencyContactName: 'Emergency Johnson-Smith',
-            emergencyContactPhone: '+1-555-9000',
+            id: 101,
+            fullName: 'John Doe',
+            email: 'john.doe@example.com',
+            phone: '1234567890',
+            gender: 'male',
+            dateOfBirth: '1990-01-15',
+            addressLine1: '123 Main Street',
+            addressLine2: 'Apt 4B',
+            city: 'New York',
+            state: 'NY',
+            postalCode: '10001',
+            avatarUrl: 'https://example.com/avatars/john.jpg',
+            attachmentUrl: 'https://example.com/docs/john-id.pdf',
+            emergencyContactName: 'Jane Doe',
+            emergencyContactPhone: '9876543210',
             isActive: true,
-            branch: {
-              branchId: 'dc33cf0d-763b-44af-bdd8-21427357df1b',
-              name: 'Fitness First Elite - Downtown',
-              location: 'Downtown',
-            },
+            freezMember: false,
+            createdAt: '2026-01-16T17:13:21.316Z',
+            updatedAt: '2026-01-16T17:13:21.316Z',
+            branchBranchId: 'a4a43bf7-e997-4716-839b-9f05a45f42be',
+            is_managed_by_member: true,
             subscription: {
-              id: 1,
+              id: 101,
+              plan: {
+                id: 1,
+                name: 'Elite Basic - Downtown',
+                price: 8999,
+                durationInDays: 30,
+                description: 'Access to premium gym facilities and basic classes',
+              },
+              classes: [
+                {
+                  classId: '8cd45646-061b-4730-a2a5-1f400226564b',
+                  name: 'Elite Morning Yoga',
+                  description: 'Premium yoga session to start your day with mindfulness and strength',
+                  timings: 'morning',
+                  recurrenceType: 'weekly',
+                  daysOfWeek: [1, 3, 5],
+                },
+                {
+                  classId: '33ec8f27-0708-4808-958f-091301f8aa2c',
+                  name: 'HIIT Elite Performance',
+                  description: 'High-intensity interval training for elite athletes',
+                  timings: 'evening',
+                  recurrenceType: 'weekly',
+                  daysOfWeek: [2, 4],
+                },
+              ],
+              startDate: '2026-01-16T17:13:21.315Z',
+              endDate: '2026-02-15T17:13:21.315Z',
               isActive: true,
-              startDate: '2024-02-29T18:30:00.000Z',
-              endDate: '2025-02-28T18:30:00.000Z',
             },
-            createdAt: '2025-12-25T08:21:51.773Z',
-            updatedAt: '2025-12-25T08:21:52.296Z',
+            branch: {
+              branchId: 'a4a43bf7-e997-4716-839b-9f05a45f42be',
+              name: 'Fitness First Elite - Downtown',
+              email: 'downtown@fitnessfirstelite.com',
+              phone: '+1-555-0101',
+              address: '123 Elite Fitness Drive, Wellness City, WC 90210',
+              location: 'Downtown',
+              state: 'California',
+              mainBranch: true,
+              latitude: null,
+              longitude: null,
+              createdAt: '2026-01-15T17:28:12.198Z',
+              updatedAt: '2026-01-15T17:28:12.198Z',
+            },
           },
         ],
+      },
+      empty: {
+        summary: 'No members found',
+        value: [],
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid branch ID format.',
+    examples: {
+      invalidUuid: {
+        summary: 'Invalid UUID format',
+        value: {
+          statusCode: 400,
+          message: 'Validation failed (uuid is expected)',
+          error: 'Bad Request',
+        },
       },
     },
   })
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token.',
+    examples: {
+      missingToken: {
+        summary: 'No authentication token provided',
+        value: {
+          statusCode: 401,
+          message: 'Unauthorized',
+        },
+      },
+      invalidToken: {
+        summary: 'Invalid JWT token',
+        value: {
+          statusCode: 401,
+          message: 'Invalid token',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - User does not have permission to access this branch\'s members.',
   })
   @ApiResponse({
     status: 404,
@@ -620,8 +713,7 @@ export class BranchMembersController {
         summary: 'Branch ID not found',
         value: {
           statusCode: 404,
-          message:
-            'Branch with ID dc33cf0d-763b-44af-bdd8-21427357df1b not found',
+          message: 'Branch with ID dc33cf0d-763b-44af-bdd8-21427357df1b not found',
           error: 'Not Found',
         },
       },

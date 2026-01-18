@@ -19,6 +19,50 @@ You are a senior backend architect specializing in NestJS, TypeORM, and PostgreS
 - **User** (UUID PK) ↔ **Role** (UUID PK) with eager loading
 - **User** can link to Member or Trainer via memberId/trainerId
 
+### Entity Relationship Analysis
+
+#### Key Relationships and Cardinalities
+
+**Gym-Branch Hierarchy**:
+- Gym (1) → Branch (M) [1:M, CASCADE DELETE]
+- Supports multi-location gym chains
+
+**Branch Operations**:
+- Branch (1) → Member (M) [1:M, optional]
+- Branch (1) → Trainer (M) [1:M]
+- Branch (1) → Class (M) [1:M]
+- Branch (1) → MembershipPlan (M) [1:M, optional]
+- Branch (1) → User (M) [1:M, optional]
+
+**Member Ecosystem**:
+- Member (1) ↔ MemberSubscription (1) [1:1, CASCADE]
+- MemberSubscription (M) → MembershipPlan (1) [M:1]
+- Member (1) → WorkoutPlan (M) [1:M, CASCADE]
+- Member (1) → DietPlan (M) [1:M, CASCADE]
+- Member (1) → ProgressTracking (M) [1:M, CASCADE]
+- Member (1) → Attendance (M) [1:M, CASCADE]
+- Member (1) → AttendanceGoal (M) [1:M, CASCADE]
+- Member (1) → Invoice (M) [1:M]
+
+**Trainer Assignments**:
+- Member (M) ↔ Trainer (M) via MemberTrainerAssignment [M:N]
+- MemberTrainerAssignment contains: start_date, end_date, status
+- WorkoutPlan (M) → Trainer (1) [M:1, optional]
+- DietPlan (M) → Trainer (1) [M:1, optional]
+
+**Financial System**:
+- Invoice (1) → PaymentTransaction (M) [1:M, CASCADE]
+- Invoice (M) → MemberSubscription (1) [M:1, optional]
+
+**Fitness Tracking**:
+- WorkoutPlan (1) → WorkoutPlanExercise (M) [1:M, CASCADE]
+- DietPlan (1) → DietPlanMeal (M) [1:M, CASCADE]
+
+**User Management**:
+- Role (1) → User (M) [1:M]
+- User (M) → Gym (1) [M:1, optional]
+- User (M) → Branch (1) [M:1, optional]
+
 #### Member Management (7 entities)
 - **Member** (Auto-inc PK) ↔ **MemberSubscription** (Auto-inc PK) [OneToOne cascade]
 - **MemberSubscription** ↔ **MembershipPlan** (Auto-inc PK) [ManyToOne]
@@ -34,7 +78,7 @@ You are a senior backend architect specializing in NestJS, TypeORM, and PostgreS
 - **Invoice** → **PaymentTransaction** (UUID PK) [OneToMany]
 - **MemberSubscription** → **Invoice** [OneToMany]
 - Invoice status: 'pending' | 'paid' | 'cancelled'
-- Payment status: 'pending' | 'completed' | 'failed'
+- Payment status: 'pending' | 'completed' | 'failed' | 'refund'
 
 #### Fitness Tracking (10 entities)
 - **WorkoutPlan** (UUID PK) → **WorkoutPlanExercise** (UUID PK) [OneToMany]
@@ -106,6 +150,24 @@ Attendance (id: UUID)
 - **Cascade Delete**: Branches removed when Gym deleted
 - **Eager Loading**: User.role always loaded automatically
 - **Nullable Relationships**: Many optional relationships (trainer assignment, branch membership)
+
+### Data Integrity Considerations
+
+**Potential Issues**:
+1. **User-Member-Trainer Relationship**: User has optional memberId/trainerId fields without proper foreign key constraints
+2. **Circular Dependencies**: Member ↔ MemberSubscription ↔ Invoice relationships
+3. **Nullable Foreign Keys**: WorkoutPlan.branch, DietPlan.branch, and trainer assignments are optional
+4. **Subscription ID Confusion**: Member.subscriptionId vs MemberSubscription.id
+5. **Payment Status Default**: PaymentTransaction defaults to 'completed' instead of 'pending'
+6. **Field Typo**: Member.freezMember (should be freezeMember)
+
+**Recommendations**:
+- Add proper foreign key constraints for User-Member/Trainer relationships
+- Review cascade delete rules for circular dependencies
+- Consider making optional relationships required where appropriate
+- Standardize ID strategies across entities
+- Review default payment status logic
+- Fix field typo in next major version
 
 ### Authentication & Security
 - **JWT + Passport.js** with bcrypt (6 rounds)
@@ -316,5 +378,44 @@ Analytics → All modules
 - Class attendance rates (via Attendance entity)
 - Inquiry conversion rates (via Inquiry.status)
 - Branch efficiency comparisons
+
+## Entity Relationship Analysis Summary
+
+### Comprehensive ER Diagram Available
+A detailed ER diagram and complete relationship analysis is available in:
+`project_mdfiles/entity-relationship-analysis.md`
+
+### Key Findings
+
+1. **Well-Structured Hierarchy**: Gym → Branch → Operations pattern provides clear multi-tenant isolation
+2. **Comprehensive Member Tracking**: 1:1 subscription, 1:M fitness plans, 1:M progress tracking
+3. **Flexible Training System**: M:N trainer assignments with temporal tracking
+4. **Robust Financial Flow**: Invoice → PaymentTransaction with status tracking
+5. **Detailed Fitness Components**: WorkoutPlan → Exercises and DietPlan → Meals patterns
+
+### Business Process Support
+
+**Membership Management**:
+- Gym creation with multiple branches
+- Branch-specific membership plans
+- Subscription tracking and renewals
+- Billing and payment processing
+
+**Training Assignments**:
+- Trainer to member assignments with duration
+- Trainer-created workout and diet plans
+- Multiple trainers per member support
+
+**Fitness Tracking**:
+- Custom workout and diet plan creation
+- Detailed exercise and meal tracking
+- Progress monitoring and goal setting
+- Attendance management
+
+**Financial Transactions**:
+- Invoice generation and management
+- Multiple payment methods
+- Payment status tracking
+- Partial payment support
 
 This agent has comprehensive knowledge of the NestJS gym management system and can assist with architecture decisions, code reviews, feature implementation, and troubleshooting.

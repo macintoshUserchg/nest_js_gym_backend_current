@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Gym } from '../entities/gym.entity';
 import { Branch } from '../entities/branch.entity';
 import { Member } from '../entities/members.entity';
 import { Trainer } from '../entities/trainers.entity';
+import { Class } from '../entities/classes.entity';
 import { CreateGymDto } from './dto/create-gym.dto';
 import { UpdateGymDto } from './dto/update-gym.dto';
 import { CreateBranchDto } from './dto/create-branch.dto';
@@ -21,6 +22,8 @@ export class GymsService {
     private membersRepo: Repository<Member>,
     @InjectRepository(Trainer)
     private trainersRepo: Repository<Trainer>,
+    @InjectRepository(Class)
+    private classesRepo: Repository<Class>,
   ) {}
 
   // ========== GYM OPERATIONS ==========
@@ -247,46 +250,97 @@ export class GymsService {
       .createQueryBuilder('member')
       .leftJoinAndSelect('member.branch', 'branch')
       .leftJoinAndSelect('member.subscription', 'subscription')
+      .leftJoinAndSelect('subscription.plan', 'plan')
       .leftJoin('branch.gym', 'gym')
       .where('gym.gymId = :gymId', { gymId })
       .getMany();
 
-    return members.map((member) => ({
-      id: member.id,
-      fullName: member.fullName,
-      email: member.email,
-      phone: member.phone,
-      gender: member.gender,
-      dateOfBirth: member.dateOfBirth,
-      addressLine1: member.addressLine1,
-      addressLine2: member.addressLine2,
-      city: member.city,
-      state: member.state,
-      postalCode: member.postalCode,
-      avatarUrl: member.avatarUrl,
-      emergencyContactName: member.emergencyContactName,
-      emergencyContactPhone: member.emergencyContactPhone,
-      isActive: member.isActive,
-      attachmentUrl: member.attachmentUrl,
-      freezMember: member.freezMember,
-      branch: member.branch
-        ? {
-            branchId: member.branch.branchId,
-            name: member.branch.name,
-            location: member.branch.location,
-          }
-        : null,
-      subscription: member.subscription
-        ? {
-            id: member.subscription.id,
-            isActive: member.subscription.isActive,
-            startDate: member.subscription.startDate,
-            endDate: member.subscription.endDate,
-          }
-        : null,
-      createdAt: member.createdAt,
-      updatedAt: member.updatedAt,
-    }));
+    // Transform response to include nested plan and classes (same as findByBranch)
+    return Promise.all(
+      members.map(async (member) => {
+        const subscription = member.subscription;
+
+        // Fetch class details if classes are selected
+        let classes: Class[] = [];
+        const selectedClassIds = subscription?.selectedClassIds;
+        if (selectedClassIds && selectedClassIds.length > 0) {
+          classes = await this.classesRepo.find({
+            where: { class_id: In(selectedClassIds) },
+          });
+        }
+
+        // Build transformed subscription object
+        const transformedSubscription = subscription
+          ? {
+              id: subscription.id,
+              plan: subscription.plan
+                ? {
+                    id: subscription.plan.id,
+                    name: subscription.plan.name,
+                    price: subscription.plan.price,
+                    durationInDays: subscription.plan.durationInDays,
+                    description: subscription.plan.description,
+                  }
+                : null,
+              classes: classes.map((cls) => ({
+                classId: cls.class_id,
+                name: cls.name,
+                description: cls.description,
+                timings: cls.timings,
+                recurrenceType: cls.recurrence_type,
+                daysOfWeek: cls.days_of_week,
+              })),
+              startDate: subscription.startDate,
+              endDate: subscription.endDate,
+              isActive: subscription.isActive,
+            }
+          : null;
+
+        // Build transformed branch object
+        const transformedBranch = member.branch
+          ? {
+              branchId: member.branch.branchId,
+              name: member.branch.name,
+              email: member.branch.email,
+              phone: member.branch.phone,
+              address: member.branch.address,
+              location: member.branch.location,
+              state: member.branch.state,
+              mainBranch: member.branch.mainBranch,
+              latitude: member.branch.latitude,
+              longitude: member.branch.longitude,
+              createdAt: member.branch.createdAt,
+              updatedAt: member.branch.updatedAt,
+            }
+          : null;
+
+        return {
+          id: member.id,
+          fullName: member.fullName,
+          email: member.email,
+          phone: member.phone,
+          gender: member.gender,
+          dateOfBirth: member.dateOfBirth,
+          addressLine1: member.addressLine1,
+          addressLine2: member.addressLine2,
+          city: member.city,
+          state: member.state,
+          postalCode: member.postalCode,
+          avatarUrl: member.avatarUrl,
+          attachmentUrl: member.attachmentUrl,
+          emergencyContactName: member.emergencyContactName,
+          emergencyContactPhone: member.emergencyContactPhone,
+          isActive: member.isActive,
+          freezMember: member.freezMember,
+          createdAt: member.createdAt,
+          updatedAt: member.updatedAt,
+          branchBranchId: member.branchBranchId,
+          is_managed_by_member: member.is_managed_by_member,
+          subscription: transformedSubscription,
+          branch: transformedBranch,
+        };
+      }),
+    );
   }
 
   // ========== TRAINER OPERATIONS BY GYM ==========
