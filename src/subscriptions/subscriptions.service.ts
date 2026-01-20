@@ -121,6 +121,10 @@ export class SubscriptionsService {
       subscription.isActive = updateDto.isActive;
     }
 
+    if (updateDto.selectedClassIds !== undefined) {
+      subscription.selectedClassIds = updateDto.selectedClassIds;
+    }
+
     return this.subscriptionsRepo.save(subscription);
   }
 

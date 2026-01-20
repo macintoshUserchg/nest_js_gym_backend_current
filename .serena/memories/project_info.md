@@ -159,3 +159,17 @@ src/
 - `synchronize: true` enabled in development (dbConfig.ts)
 - **Production**: Disable sync and use TypeORM migrations
 - Seed data available in `src/database/`
+
+---
+
+## Serena MCP Configuration
+
+**To activate Serena in new Claude Code sessions:**
+```
+activate_project new-nestjs-gym-app
+```
+
+Or manually set in conversation: "Activate project new-nestjs-gym-app"
+
+**Project Path for activation:**
+`/Users/chandangaur/development/Nest JS/new-nestjs-gym-app`
