@@ -12,7 +12,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-
+// swager doc builder
   const config = new DocumentBuilder()
     .setTitle('Gym Management System')
     .setDescription('API documentation for the Gym Management System')
