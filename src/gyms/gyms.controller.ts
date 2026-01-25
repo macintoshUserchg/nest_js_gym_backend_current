@@ -389,7 +389,7 @@ export class GymsController {
             emergencyContactName: 'Jane Doe',
             emergencyContactPhone: '9876543210',
             isActive: true,
-            freezMember: false,
+            freezeMember: false,
             createdAt: '2026-01-16T17:13:21.316Z',
             updatedAt: '2026-01-16T17:13:21.316Z',
             branchBranchId: 'a4a43bf7-e997-4716-839b-9f05a45f42be',

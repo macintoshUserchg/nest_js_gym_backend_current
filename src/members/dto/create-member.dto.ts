@@ -188,7 +188,16 @@ export class CreateMemberDto {
   })
   @IsBoolean()
   @IsOptional()
-  freezMember?: boolean;
+  freezeMember?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Whether the member manages their own account',
+    example: true,
+    default: true,
+  })
+  @IsBoolean()
+  @IsOptional()
+  is_managed_by_member?: boolean;
 
   @ApiPropertyOptional({
     description: 'Array of UUIDs for classes to include in subscription',

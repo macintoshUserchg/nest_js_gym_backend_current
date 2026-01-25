@@ -145,7 +145,7 @@ export class GymMemberResponseDto {
   isActive: boolean;
 
   @ApiProperty({ description: 'Whether the member account is frozen', example: false })
-  freezMember: boolean;
+  freezeMember: boolean;
 
   @ApiProperty({ description: 'Creation timestamp', example: '2026-01-16T17:13:21.316Z' })
   createdAt: string;

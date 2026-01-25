@@ -72,10 +72,7 @@ export class Member {
   isActive: boolean;
 
   @Column({ default: false })
-  /**
-   * @deprecated Typo - should be freezeMember. Will be fixed in next major version.
-   */
-  freezMember: boolean;
+  freezeMember: boolean;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;

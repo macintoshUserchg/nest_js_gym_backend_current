@@ -7,6 +7,6 @@ export class UpdateMemberDto extends OmitType(PartialType(CreateMemberDto), [
   'branchId',
   'membershipPlanId',
   'isActive',
-  'freezMember',
+  'freezeMember',
   'selectedClassIds',
 ] as const) {}

@@ -22,7 +22,7 @@ export class MemberDashboardDto {
     phone?: string;
     isActive: boolean;
     attachmentUrl?: string;
-    freezMember: boolean;
+    freezeMember: boolean;
     branch?: {
       branchId: string;
       name: string;

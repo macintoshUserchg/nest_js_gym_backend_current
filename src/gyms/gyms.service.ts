@@ -331,7 +331,7 @@ export class GymsService {
           emergencyContactName: member.emergencyContactName,
           emergencyContactPhone: member.emergencyContactPhone,
           isActive: member.isActive,
-          freezMember: member.freezMember,
+          freezeMember: member.freezeMember,
           createdAt: member.createdAt,
           updatedAt: member.updatedAt,
           branchBranchId: member.branchBranchId,
@@ -405,7 +405,7 @@ export class GymsService {
       emergencyContactPhone: member.emergencyContactPhone,
       isActive: member.isActive,
       attachmentUrl: member.attachmentUrl,
-      freezMember: member.freezMember,
+      freezeMember: member.freezeMember,
       branch: member.branch
         ? {
             branchId: member.branch.branchId,

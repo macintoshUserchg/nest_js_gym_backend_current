@@ -92,7 +92,7 @@ export class MembersService {
       emergencyContactPhone: createMemberDto.emergencyContactPhone,
       isActive: createMemberDto.isActive ?? true,
       attachmentUrl: createMemberDto.attachmentUrl,
-      freezMember: createMemberDto.freezMember ?? false,
+      freezeMember: createMemberDto.freezeMember ?? false,
       branch,
       branchBranchId: branch?.branchId,
     });
@@ -438,7 +438,7 @@ export class MembersService {
           emergencyContactName: member.emergencyContactName,
           emergencyContactPhone: member.emergencyContactPhone,
           isActive: member.isActive,
-          freezMember: member.freezMember,
+          freezeMember: member.freezeMember,
           createdAt: member.createdAt,
           updatedAt: member.updatedAt,
           branchBranchId: member.branchBranchId,
@@ -494,7 +494,7 @@ export class MembersService {
         phone: member.phone,
         isActive: member.isActive,
         attachmentUrl: member.attachmentUrl,
-        freezMember: member.freezMember,
+        freezeMember: member.freezeMember,
         branch: member.branch
           ? {
               branchId: member.branch.branchId,
