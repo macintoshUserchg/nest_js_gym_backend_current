@@ -20,6 +20,24 @@ This is a **production-ready multi-tenant gym management system** built with Nes
 
 6. **No Speculation**: Never speculate about code you have not opened. If the user references a specific file, read it first. Investigate and read relevant files BEFORE answering questions. Give grounded, hallucination-free answers.
 
+## Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server (port 3000)
+npm run start:dev
+
+# Access Swagger API docs
+open http://localhost:3000/api
+```
+
+**First-time setup:**
+1. Copy `.env.example` to `.env` and configure DATABASE_URL, JWT_SECRET
+2. Run `npm run start:dev` - TypeORM will auto-create tables (synchronize: true)
+3. Login at `/auth/login` (seed admin account or create via API)
+
 ## Common Development Commands
 
 ```bash
@@ -86,37 +104,46 @@ src/
 
 ## Entity Architecture (27 Entities)
 
-### Entity Summary Table
+### Entity Groups
 
-| # | Entity | Table | PK Type | Key Columns | Relationships |
-|---|--------|-------|---------|-------------|---------------|
-| 1 | User | users | UUID | email, passwordHash, memberId | ManyToOne: Gym, Branch, Role |
-| 2 | Role | roles | UUID | name, description | OneToMany: User |
-| 3 | Gym | gyms | UUID | name, email, phone | OneToMany: Branch |
-| 4 | Branch | branches | UUID | name, email, mainBranch | ManyToOne: Gym; OneToMany: Member, Trainer, Class |
-| 5 | Member | members | Auto-increment | fullName, email, isActive | OneToOne: MemberSubscription; ManyToOne: Branch |
-| 6 | MembershipPlan | membership_plans | Auto-increment | name, price, durationInDays | ManyToOne: Branch |
-| 7 | MemberSubscription | member_subscriptions | Auto-increment | startDate, endDate, selectedClassIds[] | OneToOne: Member; ManyToOne: MembershipPlan |
-| 8 | Trainer | trainers | Auto-increment | fullName, email, specialization | ManyToOne: Branch |
-| 9 | Class | classes | UUID | name, description, recurrence_type | ManyToOne: Branch |
-| 10 | MemberTrainerAssignment | member_trainer_assignments | UUID | start_date, end_date, status | ManyToOne: Member, Trainer |
-| 11 | Attendance | attendance | UUID | attendanceType, checkInTime, checkOutTime | ManyToOne: Member, Trainer, Branch |
-| 12 | Inquiry | inquiries | Auto-increment | fullName, email, status | ManyToOne: Branch |
-| 13 | Invoice | invoices | UUID | total_amount, status | ManyToOne: Member; OneToMany: PaymentTransaction |
-| 14 | PaymentTransaction | payment_transactions | UUID | amount, method, status | ManyToOne: Invoice |
-| 15 | AuditLog | audit_logs | UUID | action, entity_type | ManyToOne: User |
-| 16 | DietPlan | diet_plans | UUID | title, goal_type, target_calories | ManyToOne: Member; OneToMany: DietPlanMeal |
-| 17 | DietPlanMeal | diet_plan_meals | UUID | meal_type, calories | ManyToOne: DietPlan |
-| 18 | ExerciseLibrary | exercise_library | UUID | exercise_name, body_part | - |
-| 19 | WorkoutPlan | workout_plans | UUID | title, difficulty_level | ManyToOne: Member; OneToMany: WorkoutPlanExercise |
-| 20 | WorkoutPlanExercise | workout_plan_exercises | UUID | exercise_name, sets, reps | ManyToOne: WorkoutPlan |
-| 21 | WorkoutLog | workout_logs | Auto-increment | exercise_name, sets, reps | ManyToOne: Member |
-| 22 | BodyProgress | body_progress | Auto-increment | weight, body_fat, measurements | ManyToOne: Member |
-| 23 | ProgressTracking | progress_tracking | UUID | weight_kg, bmi, body_fat_percentage | ManyToOne: Member |
-| 24 | AttendanceGoal | attendance_goals | UUID | goal_type, target_count, current_streak | ManyToOne: Member |
-| 25 | Goal | goals | Auto-increment | goal_type, target_value, status | ManyToOne: Member |
-| 26 | Notification | notifications | UUID | title, message, is_read | ManyToOne: User |
-| 27 | Diet | diets | Auto-increment | calories, protein, carbs, fat | ManyToOne: Member |
+**Core Business:** User, Role, Gym, Branch
+**People:** Member, Trainer (auto-increment PK)
+**Scheduling:** Class (UUID PK), Attendance (polymorphic: member/trainer)
+**Subscriptions:** MembershipPlan, MemberSubscription
+**Financial:** Invoice, PaymentTransaction
+**Fitness Tracking:** DietPlan, DietPlanMeal, WorkoutPlan, WorkoutPlanExercise, WorkoutLog, BodyProgress, ProgressTracking, Goal, AttendanceGoal, Diet, ExerciseLibrary
+**System:** AuditLog, Notification
+**Relationships:** MemberTrainerAssignment
+
+| # | Entity | Table | PK Type | Key |
+|---|--------|-------|---------|-----|
+| 1 | User | users | UUID | email, passwordHash, memberId |
+| 2 | Role | roles | UUID | name, description |
+| 3 | Gym | gyms | UUID | name, email, phone |
+| 4 | Branch | branches | UUID | name, email, mainBranch |
+| 5 | Member | members | Auto | fullName, email, isActive |
+| 6 | MembershipPlan | membership_plans | Auto | name, price, durationInDays |
+| 7 | MemberSubscription | member_subscriptions | Auto | startDate, endDate, selectedClassIds[] |
+| 8 | Trainer | trainers | Auto | fullName, email, specialization |
+| 9 | Class | classes | UUID | name, description, recurrence_type |
+| 10 | MemberTrainerAssignment | member_trainer_assignments | UUID | start_date, end_date, status |
+| 11 | Attendance | attendance | UUID | attendanceType, checkInTime, checkOutTime |
+| 12 | Inquiry | inquiries | Auto | fullName, email, status |
+| 13 | Invoice | invoices | UUID | total_amount, status |
+| 14 | PaymentTransaction | payment_transactions | UUID | amount, method, status |
+| 15 | AuditLog | audit_logs | UUID | action, entity_type |
+| 16 | DietPlan | diet_plans | UUID | title, goal_type, target_calories |
+| 17 | DietPlanMeal | diet_plan_meals | UUID | meal_type, calories |
+| 18 | ExerciseLibrary | exercise_library | UUID | exercise_name, body_part |
+| 19 | WorkoutPlan | workout_plans | UUID | title, difficulty_level |
+| 20 | WorkoutPlanExercise | workout_plan_exercises | UUID | exercise_name, sets, reps |
+| 21 | WorkoutLog | workout_logs | Auto | exercise_name, sets, reps |
+| 22 | BodyProgress | body_progress | Auto | weight, body_fat, measurements |
+| 23 | ProgressTracking | progress_tracking | UUID | weight_kg, bmi, body_fat_percentage |
+| 24 | AttendanceGoal | attendance_goals | UUID | goal_type, target_count, current_streak |
+| 25 | Goal | goals | Auto | goal_type, target_value, status |
+| 26 | Notification | notifications | UUID | title, message, is_read |
+| 27 | Diet | diets | Auto | calories, protein, carbs, fat |
 
 ### Primary Key Distribution
 
@@ -306,6 +333,51 @@ app.useGlobalPipes(
   })
 );
 ```
+
+---
+
+## Gotchas & Warnings
+
+- **Transaction scope**: Only `MembersService.create()` uses explicit transactions. Other services use auto-commit. Don't assume transactions elsewhere.
+- **Polymorphic attendance**: `Attendance` entity tracks BOTH members AND trainers. Check `attendanceType` column to distinguish.
+- **UUID vs auto-increment**: Some entities use UUID (Class, Invoice, AuditLog) while others use auto-increment (Member, Trainer). Always check the entity before using params.
+- **Cascade deletes**: Deleting a Member cascades to subscriptions, attendance, invoices, diet plans, workouts, progress tracking. This is intentional but can cause data loss if mistaken.
+- **synchronize:true**: Never use in production. Creates auto-migrations but can corrupt data on restarts.
+- **Member+User sync**: Creating a Member via `MembersService.create()` also creates a User account. Don't create Member records manually.
+- **Role names are strings**: `UserRole.SUPERADMIN`, `UserRole.ADMIN`, etc. are literal strings, not enums in the database.
+
+---
+
+## DTO Pattern
+
+```typescript
+// dto/create-member.dto.ts
+import { IsString, IsEmail, IsOptional, IsBoolean, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class CreateMemberDto {
+  @ApiProperty({ example: 'John Doe' })
+  @IsString()
+  @MinLength(2)
+  fullName: string;
+
+  @ApiProperty({ example: 'john@example.com' })
+  @IsEmail()
+  email: string;
+
+  @ApiPropertyOptional({ example: '+1234567890' })
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @ApiPropertyOptional({ default: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+```
+
+**Always include:** `@ApiProperty` with example for Swagger documentation.
 
 ---
 

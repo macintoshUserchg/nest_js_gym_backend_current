@@ -307,6 +307,39 @@ export class MembersService {
       member.branchBranchId = branch.branchId;
     }
 
+    // Handle selectedClassIds - it belongs to MemberSubscription, not Member
+    if (updateMemberDto.selectedClassIds !== undefined) {
+      // Destructure to separate selectedClassIds from other fields
+      const { selectedClassIds, ...dtoWithoutClasses } = updateMemberDto;
+      Object.assign(member, dtoWithoutClasses);
+
+      // Save member first
+      await this.membersRepo.save(member);
+
+      // Use raw SQL query to update the UUID array column with proper PostgreSQL syntax
+      if (member.subscriptionId) {
+        if (updateMemberDto.selectedClassIds.length > 0) {
+          const uuidArray = updateMemberDto.selectedClassIds
+            .map((id) => `'${id}'::uuid`)
+            .join(', ');
+          const sql = `UPDATE member_subscriptions SET "selectedClassIds" = ARRAY[${uuidArray}] WHERE id = $1`;
+          await this.dataSource.manager.query(sql, [member.subscriptionId]);
+        } else {
+          // Set to NULL for empty array
+          await this.dataSource.manager.query(
+            `UPDATE member_subscriptions SET "selectedClassIds" = NULL WHERE id = $1`,
+            [member.subscriptionId],
+          );
+        }
+      }
+
+      // Return the updated member with relations
+      return this.membersRepo.findOne({
+        where: { id: member.id },
+        relations: ['subscription', 'branch'],
+      });
+    }
+
     Object.assign(member, updateMemberDto);
     return this.membersRepo.save(member);
   }

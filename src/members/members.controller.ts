@@ -453,7 +453,7 @@ export class MembersController {
     if (!user.role || !['ADMIN', 'SUPERADMIN'].includes(user.role.name)) {
       throw new ForbiddenException('Admin access required for this operation');
     }
-    return this.membersService.update(id, adminUpdateMemberDto);
+    return this.membersService.adminUpdate(id, adminUpdateMemberDto);
   }
 
   @Delete(':id')
