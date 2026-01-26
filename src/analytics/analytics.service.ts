@@ -207,7 +207,7 @@ export class AnalyticsService {
             .andWhere('subscription.isActive = :isActive', { isActive: true })
             .innerJoin('subscription.member', 'member')
             .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
-            .select('DISTINCT subscription.memberId', 'id')
+            .select('DISTINCT member.id', 'id')
             .getRawMany()
             .then((results) => results.map((result) => result.id))
         : [];
@@ -224,7 +224,7 @@ export class AnalyticsService {
             .andWhere('subscription.isActive = :isActive', { isActive: true })
             .innerJoin('subscription.member', 'member')
             .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
-            .select('DISTINCT subscription.memberId', 'id')
+            .select('DISTINCT member.id', 'id')
             .getRawMany()
             .then((results) => results.map((result) => result.id))
         : [];
