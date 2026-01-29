@@ -43,6 +43,15 @@ export class DietPlan {
   @Column({ type: 'int', default: 0 })
   target_calories: number;
 
+  @Column({ type: 'int', nullable: true })
+  target_protein?: number;
+
+  @Column({ type: 'int', nullable: true })
+  target_carbs?: number;
+
+  @Column({ type: 'int', nullable: true })
+  target_fat?: number;
+
   @Column({ type: 'date' })
   start_date: Date;
 
@@ -57,6 +66,22 @@ export class DietPlan {
 
   @Column({ type: 'text', nullable: true })
   notes?: string;
+
+  // Template fields
+  @Column({ type: 'uuid', nullable: true })
+  template_id?: string;
+
+  @Column({ default: false })
+  is_template: boolean;
+
+  @Column({ type: 'int', default: 0 })
+  usage_count: number;
+
+  @Column({ type: 'uuid', nullable: true })
+  parent_template_id?: string;
+
+  @Column({ type: 'int', default: 0 })
+  version: number;
 
   @OneToMany(() => DietPlanMeal, (meal) => meal.dietPlan)
   meals: DietPlanMeal[];

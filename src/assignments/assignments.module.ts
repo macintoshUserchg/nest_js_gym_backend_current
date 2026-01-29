@@ -9,10 +9,18 @@ import {
 import { MemberTrainerAssignment } from '../entities/member_trainer_assignments.entity';
 import { Member } from '../entities/members.entity';
 import { Trainer } from '../entities/trainers.entity';
+import { WorkoutTemplate } from '../entities/workout_templates.entity';
+import { DietTemplate } from '../entities/diet_templates.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MemberTrainerAssignment, Member, Trainer]),
+    TypeOrmModule.forFeature([
+      MemberTrainerAssignment,
+      Member,
+      Trainer,
+      WorkoutTemplate,
+      DietTemplate,
+    ]),
   ],
   controllers: [
     AssignmentsController,

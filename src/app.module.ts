@@ -13,6 +13,15 @@ import { Trainer } from './entities/trainers.entity';
 import { Attendance } from './entities/attendance.entity';
 import { AuditLog } from './entities/audit_logs.entity';
 import { Inquiry } from './entities/inquiry.entity';
+import { GoalSchedule } from './entities/goal_schedules.entity';
+import { GoalTemplate } from './entities/goal_templates.entity';
+import { WorkoutTemplate } from './entities/workout_templates.entity';
+import { WorkoutTemplateExercise } from './entities/workout_template_exercises.entity';
+import { DietTemplate } from './entities/diet_templates.entity';
+import { DietTemplateMeal } from './entities/diet_template_meals.entity';
+import { TemplateShare } from './entities/template_shares.entity';
+import { TemplateAssignment } from './entities/template_assignments.entity';
+import { MemberTrainerAssignment } from './entities/member_trainer_assignments.entity';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { GymsModule } from './gyms/gyms.module';
@@ -33,6 +42,15 @@ import { DietPlansModule } from './diet-plans/diet-plans.module';
 import { WorkoutLogsModule } from './workout-logs/workout-logs.module';
 import { BodyProgressModule } from './body-progress/body-progress.module';
 import { GoalsModule } from './goals/goals.module';
+import { WorkoutTemplatesModule } from './workouts/workout-templates.module';
+import { DietTemplatesModule } from './diet-plans/diet-templates.module';
+import { GoalTemplatesModule } from './goals/goal-templates.module';
+import { TemplateAssignmentsModule } from './templates/template-assignments.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { DietPlanAssignment } from './entities/diet_plan_assignments.entity';
+import { DietPlanAssignmentsModule } from './diet-plans/diet-assignments.module';
+import { WorkoutPlanChartAssignment } from './entities/workout_plan_chart_assignments.entity';
+import { WorkoutPlanChartAssignmentsModule } from './workouts/workout-plan-chart-assignments.module';
 
 @Module({
   imports: [
@@ -51,6 +69,17 @@ import { GoalsModule } from './goals/goals.module';
       Attendance,
       AuditLog,
       Inquiry,
+      GoalSchedule,
+      GoalTemplate,
+      WorkoutTemplate,
+      WorkoutTemplateExercise,
+      DietTemplate,
+      DietTemplateMeal,
+      TemplateShare,
+      TemplateAssignment,
+      MemberTrainerAssignment,
+      DietPlanAssignment,
+      WorkoutPlanChartAssignment,
     ]),
     AuthModule,
     UsersModule,
@@ -72,6 +101,13 @@ import { GoalsModule } from './goals/goals.module';
     WorkoutLogsModule,
     BodyProgressModule,
     GoalsModule,
+    WorkoutTemplatesModule,
+    DietTemplatesModule,
+    GoalTemplatesModule,
+    TemplateAssignmentsModule,
+    NotificationsModule,
+    DietPlanAssignmentsModule,
+    WorkoutPlanChartAssignmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
