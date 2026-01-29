@@ -42,8 +42,7 @@ export enum Permissions {
 
 export enum UserRole {
   SUPERADMIN = 'SUPERADMIN',
-  ADMIN = 'ADMIN',
-  GYM_OWNER = 'GYM_OWNER',
+  ADMIN = 'ADMIN',  // Gym owner level
   TRAINER = 'TRAINER',
   MEMBER = 'MEMBER',
 }
@@ -69,24 +68,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permissions[]> = {
     Permissions.GOAL_CREATE,
     Permissions.GOAL_VIEW_ALL,
     Permissions.ADMIN_ALL,
-  ],
-  [UserRole.GYM_OWNER]: [
-    Permissions.GYM_READ,
-    Permissions.GYM_UPDATE,
-    Permissions.BRANCH_MANAGE,
-    Permissions.BRANCH_READ,
-    Permissions.MEMBER_MANAGE,
-    Permissions.MEMBER_READ,
-    Permissions.TRAINER_MANAGE,
-    Permissions.TRAINER_READ,
-    Permissions.CHART_CREATE,
-    Permissions.CHART_VIEW_ALL,
-    Permissions.CHART_ASSIGN_ANY,
-    Permissions.DIET_CREATE,
-    Permissions.DIET_VIEW_ALL,
-    Permissions.DIET_ASSIGN_ANY,
-    Permissions.GOAL_CREATE,
-    Permissions.GOAL_VIEW_ALL,
   ],
   [UserRole.TRAINER]: [
     Permissions.CHART_CREATE,

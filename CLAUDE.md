@@ -205,7 +205,7 @@ src/
 ### Key Service Patterns
 
 1. **Transaction Handling**: Only `MembersService.create()` uses explicit transactions with row-level locking
-2. **Role-Based Access**: GYM_OWNER → TRAINER → MEMBER hierarchy in fitness services
+2. **Role-Based Access**: ADMIN → TRAINER → MEMBER hierarchy in fitness services
 3. **Auto-Settlement**: PaymentsService marks invoices paid when amount threshold met
 4. **Streak Calculation**: AttendanceService tracks check-in streaks
 
@@ -461,6 +461,50 @@ src/<module>/
 │   └── update-<module>.dto.ts
 └── types/                  # Optional type definitions
 ```
+
+---
+
+## Recently Implemented Features (Jan 2026)
+
+### Role-Based Access Control
+- **Permissions Enum** (`src/common/enums/permissions.enum.ts`): GYM_*, BRANCH_*, MEMBER_*, TRAINER_*, CHART_*, DIET_*, GOAL_* permissions
+- **@Roles Decorator** (`src/auth/decorators/roles.decorator.ts`): Role-based route protection
+- **RolesGuard** (`src/auth/guards/roles.guard.ts`): Validates user roles against required roles
+- **BranchAccessGuard** (`src/auth/guards/branch-access.guard.ts`): Validates gym/branch ownership
+
+### Goal System
+- **GoalSchedule** (`src/entities/goal_schedules.entity.ts`): Weekly/monthly/quarterly goals with milestones
+- **GoalScheduleMilestone** (`src/entities/goal_schedule_milestones.entity.ts`): Per-period milestone tracking
+- **GoalTemplate** (`src/entities/goal_templates.entity.ts`): Reusable goal templates
+
+### Training Charts (Workout Templates)
+- **WorkoutTemplate** (`src/entities/workout_templates.entity.ts`):
+  - ChartVisibility: PRIVATE, GYM_PUBLIC
+  - ChartType: STRENGTH, CARDIO, HIIT, FLEXIBILITY, COMPOUND
+  - DifficultyLevel: BEGINNER, INTERMEDIATE, ADVANCED
+  - Template versioning (version, parent_template_id, usage_count)
+- **WorkoutTemplateExercise** (`src/entities/workout_template_exercises.entity.ts`):
+  - EquipmentRequired: BARBELL, DUMBBELL, CABLE, MACHINE, BODYWEIGHT, etc.
+- **WorkoutPlanChartAssignment** (`src/entities/workout_plan_chart_assignments.entity.ts`): Chart-to-member assignments with customizations
+
+### Diet Integration
+- **DietTemplate** (`src/entities/diet_templates.entity.ts`): Template fields (is_template, usage_count, version)
+- **DietTemplateMeal** (`src/entities/diet_template_meals.entity.ts`): Template meals
+- **DietPlanAssignment** (`src/entities/diet_plan_assignments.entity.ts`): Diet-to-member assignments
+
+### Template Sharing
+- **TemplateShare** (`src/entities/template_shares.entity.ts`): Admin-to-trainer template sharing
+
+### Notifications
+- **NotificationType Enum**: GOAL_PROGRESS, GOAL_COMPLETED, GOAL_MISSED, MILESTONE_COMPLETE, MILESTONE_MISSED, CHART_ASSIGNED, CHART_SHARED, DIET_ASSIGNED, TEMPLATE_FEEDBACK_REQUEST, SYSTEM, REMINDER
+
+### New Controllers Added
+- `src/goals/goal-schedules.controller.ts` - Goal schedule CRUD
+- `src/goals/goal-templates.controller.ts` - Goal template management
+- `src/workouts/workout-templates.controller.ts` - Workout template management
+- `src/workouts/workout-plan-chart-assignments.controller.ts` - Chart assignments
+- `src/diet-plans/diet-templates.controller.ts` - Diet template management
+- `src/diet-plans/diet-assignments.controller.ts` - Diet assignments
 
 ---
 

@@ -44,7 +44,7 @@ export class GoalsService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    // Check if user has permission (GYM_OWNER, TRAINER, or MEMBER if managing themselves)
+    // Check if user has permission (ADMIN, TRAINER, or MEMBER if managing themselves)
     const userRole = user.role.name;
     const isMember = userRole === 'MEMBER';
 
@@ -61,7 +61,7 @@ export class GoalsService {
           'Members can only create goals for themselves',
         );
       }
-    } else if (userRole !== 'GYM_OWNER' && userRole !== 'TRAINER') {
+    } else if (userRole !== 'ADMIN' && userRole !== 'TRAINER') {
       throw new ForbiddenException(
         'Only gym owners, trainers, or members (if allowed) can create goals',
       );
@@ -133,7 +133,7 @@ export class GoalsService {
     }
 
     const userRole = user.role.name;
-    const isOwner = userRole === 'GYM_OWNER';
+    const isOwner = userRole === 'ADMIN';
     const isTrainer = userRole === 'TRAINER';
     const isMember = userRole === 'MEMBER';
 
@@ -159,7 +159,7 @@ export class GoalsService {
       );
     }
 
-    if (updateGoalDto.trainerId && userRole === 'GYM_OWNER') {
+    if (updateGoalDto.trainerId && userRole === 'ADMIN') {
       const trainer = await this.trainersRepo.findOne({
         where: { id: updateGoalDto.trainerId },
       });
@@ -191,7 +191,7 @@ export class GoalsService {
     }
 
     const userRole = user.role.name;
-    const isOwner = userRole === 'GYM_OWNER';
+    const isOwner = userRole === 'ADMIN';
     const isTrainer = userRole === 'TRAINER';
     const isMember = userRole === 'MEMBER';
 
@@ -245,15 +245,15 @@ export class GoalsService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    // Check if user has permission (GYM_OWNER or TRAINER)
+    // Check if user has permission (ADMIN or TRAINER)
     const userRole = user.role.name;
-    if (userRole !== 'GYM_OWNER' && userRole !== 'TRAINER') {
+    if (userRole !== 'ADMIN' && userRole !== 'TRAINER') {
       throw new ForbiddenException(
         'Only gym owners and trainers can view goals',
       );
     }
 
-    if (userRole === 'GYM_OWNER') {
+    if (userRole === 'ADMIN') {
       // Gym owners can see all goals
       return this.goalsRepo.find({
         relations: ['member', 'trainer'],

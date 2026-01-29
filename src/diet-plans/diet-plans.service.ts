@@ -41,9 +41,9 @@ export class DietPlansService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    // Check if user has permission (GYM_OWNER or TRAINER)
+    // Check if user has permission (ADMIN or TRAINER)
     const userRole = user.role.name;
-    if (userRole !== 'GYM_OWNER' && userRole !== 'TRAINER') {
+    if (userRole !== 'ADMIN' && userRole !== 'TRAINER') {
       throw new ForbiddenException(
         'Only gym owners and trainers can create diet plans',
       );
@@ -82,7 +82,7 @@ export class DietPlansService {
   async update(id: number, updateDietDto: UpdateDietDto, userId: string) {
     const diet = await this.findOne(id);
 
-    // Check if user has permission to update (GYM_OWNER or TRAINER who created it)
+    // Check if user has permission to update (ADMIN or TRAINER who created it)
     const user = await this.usersRepo.findOne({
       where: { userId },
     });
@@ -91,7 +91,7 @@ export class DietPlansService {
     }
 
     const userRole = user.role.name;
-    const isOwner = userRole === 'GYM_OWNER';
+    const isOwner = userRole === 'ADMIN';
     const isCreator = diet.assigned_by.userId === userId;
 
     if (!isOwner && !isCreator) {
@@ -107,7 +107,7 @@ export class DietPlansService {
   async remove(id: number, userId: string) {
     const diet = await this.findOne(id);
 
-    // Check if user has permission to delete (GYM_OWNER or TRAINER who created it)
+    // Check if user has permission to delete (ADMIN or TRAINER who created it)
     const user = await this.usersRepo.findOne({
       where: { userId },
     });
@@ -116,7 +116,7 @@ export class DietPlansService {
     }
 
     const userRole = user.role.name;
-    const isOwner = userRole === 'GYM_OWNER';
+    const isOwner = userRole === 'ADMIN';
     const isCreator = diet.assigned_by.userId === userId;
 
     if (!isOwner && !isCreator) {
@@ -153,15 +153,15 @@ export class DietPlansService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    // Check if user has permission (GYM_OWNER or TRAINER)
+    // Check if user has permission (ADMIN or TRAINER)
     const userRole = user.role.name;
-    if (userRole !== 'GYM_OWNER' && userRole !== 'TRAINER') {
+    if (userRole !== 'ADMIN' && userRole !== 'TRAINER') {
       throw new ForbiddenException(
         'Only gym owners and trainers can view diet plans',
       );
     }
 
-    if (userRole === 'GYM_OWNER') {
+    if (userRole === 'ADMIN') {
       // Gym owners can see all diet plans
       return this.dietsRepo.find({
         relations: ['member', 'assigned_by'],

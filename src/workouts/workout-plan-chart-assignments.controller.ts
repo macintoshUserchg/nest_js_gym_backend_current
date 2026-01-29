@@ -30,7 +30,7 @@ export class WorkoutPlanChartAssignmentsController {
   constructor(private readonly assignmentsService: WorkoutPlanChartAssignmentsService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.GYM_OWNER, UserRole.TRAINER)
+  @Roles(UserRole.ADMIN, UserRole.TRAINER)
   @ApiOperation({ summary: 'Assign a workout chart to a member' })
   async create(@Body() dto: CreateChartAssignmentDto, @CurrentUser() user: User) {
     return this.assignmentsService.create(dto, user);
@@ -62,14 +62,14 @@ export class WorkoutPlanChartAssignmentsController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.GYM_OWNER, UserRole.TRAINER)
+  @Roles(UserRole.ADMIN, UserRole.TRAINER)
   @ApiOperation({ summary: 'Update a chart assignment' })
   async update(@Param('id') id: string, @Body() dto: UpdateChartAssignmentDto) {
     return this.assignmentsService.update(id, dto);
   }
 
   @Post(':id/substitutions')
-  @Roles(UserRole.ADMIN, UserRole.GYM_OWNER, UserRole.TRAINER, UserRole.MEMBER)
+  @Roles(UserRole.ADMIN, UserRole.TRAINER, UserRole.MEMBER)
   @ApiOperation({ summary: 'Add an exercise substitution to an assignment' })
   async addSubstitution(
     @Param('id') id: string,
@@ -79,7 +79,7 @@ export class WorkoutPlanChartAssignmentsController {
   }
 
   @Post(':id/exercise-completion')
-  @Roles(UserRole.ADMIN, UserRole.GYM_OWNER, UserRole.TRAINER, UserRole.MEMBER)
+  @Roles(UserRole.ADMIN, UserRole.TRAINER, UserRole.MEMBER)
   @ApiOperation({ summary: 'Record exercise completion for an assignment' })
   async recordExerciseCompletion(
     @Param('id') id: string,
@@ -94,14 +94,14 @@ export class WorkoutPlanChartAssignmentsController {
   }
 
   @Patch(':id/cancel')
-  @Roles(UserRole.ADMIN, UserRole.GYM_OWNER, UserRole.TRAINER)
+  @Roles(UserRole.ADMIN, UserRole.TRAINER)
   @ApiOperation({ summary: 'Cancel a chart assignment' })
   async cancel(@Param('id') id: string) {
     return this.assignmentsService.cancel(id);
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.GYM_OWNER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Delete a chart assignment' })
   async delete(@Param('id') id: string) {
     return this.assignmentsService.delete(id);

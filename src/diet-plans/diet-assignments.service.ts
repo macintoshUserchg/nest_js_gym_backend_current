@@ -29,7 +29,7 @@ export class DietPlanAssignmentsService {
 
   async create(dto: CreateDietAssignmentDto, user: User) {
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     if (!isAdmin && !isTrainer) {
@@ -77,7 +77,7 @@ export class DietPlanAssignmentsService {
 
   async findAll(user: User, filters: FilterDietAssignmentsDto) {
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     const queryBuilder = this.assignmentRepository
@@ -228,7 +228,7 @@ export class DietPlanAssignmentsService {
     const assignment = await this.findOne(id, user);
 
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
 
     if (!isAdmin && assignment.assigned_by_user_id !== user.userId) {
       throw new ForbiddenException('You can only delete your own assignments');
@@ -241,7 +241,7 @@ export class DietPlanAssignmentsService {
 
   private validateAccess(assignment: DietPlanAssignment, user: User) {
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
 
     if (isAdmin) return;
 

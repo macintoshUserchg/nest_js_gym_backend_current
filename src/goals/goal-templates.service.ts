@@ -21,7 +21,7 @@ export class GoalTemplatesService {
 
   async create(dto: CreateGoalTemplateDto, user: User) {
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     if (!isAdmin && !isTrainer) {
@@ -39,7 +39,7 @@ export class GoalTemplatesService {
 
   async findAll(user: User, filters?: { tags?: string[]; is_active?: boolean }) {
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     const queryBuilder = this.goalTemplateRepository
@@ -81,7 +81,7 @@ export class GoalTemplatesService {
 
     // Check access
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     if (!isAdmin && isTrainer && user.trainerId) {
@@ -97,7 +97,7 @@ export class GoalTemplatesService {
     const goalTemplate = await this.findOne(id, user);
 
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     // Only creator or admin can update
@@ -115,7 +115,7 @@ export class GoalTemplatesService {
     const goalTemplate = await this.findOne(id, user);
 
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     // Only creator or admin can delete

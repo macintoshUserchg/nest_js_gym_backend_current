@@ -39,7 +39,7 @@ export class BranchAccessGuard implements CanActivate {
 
     const userRole = user.role?.name;
     const isSuperAdmin = userRole === 'SUPERADMIN';
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER';
+    const isAdmin = userRole === 'ADMIN';
 
     // Admins can only access their own gym/branch
     if (isAdmin && !isSuperAdmin) {

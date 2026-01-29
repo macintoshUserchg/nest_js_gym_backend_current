@@ -44,7 +44,7 @@ export class ProgressTrackingService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    // Check if user has permission (GYM_OWNER, TRAINER, or MEMBER if managing themselves)
+    // Check if user has permission (ADMIN, TRAINER, or MEMBER if managing themselves)
     const userRole = user.role.name;
     const isMember = userRole === 'MEMBER';
 
@@ -61,7 +61,7 @@ export class ProgressTrackingService {
           'Members can only create progress tracking records for themselves',
         );
       }
-    } else if (userRole !== 'GYM_OWNER' && userRole !== 'TRAINER') {
+    } else if (userRole !== 'ADMIN' && userRole !== 'TRAINER') {
       throw new ForbiddenException(
         'Only gym owners, trainers, or members (if allowed) can create progress tracking records',
       );
@@ -144,7 +144,7 @@ export class ProgressTrackingService {
     }
 
     const userRole = user.role.name;
-    const isOwner = userRole === 'GYM_OWNER';
+    const isOwner = userRole === 'ADMIN';
     const isTrainer = userRole === 'TRAINER';
     const isMember = userRole === 'MEMBER';
 
@@ -176,7 +176,7 @@ export class ProgressTrackingService {
       );
     }
 
-    if (updateProgressDto.trainerId && userRole === 'GYM_OWNER') {
+    if (updateProgressDto.trainerId && userRole === 'ADMIN') {
       const trainer = await this.trainersRepo.findOne({
         where: { id: updateProgressDto.trainerId },
       });
@@ -208,7 +208,7 @@ export class ProgressTrackingService {
     }
 
     const userRole = user.role.name;
-    const isOwner = userRole === 'GYM_OWNER';
+    const isOwner = userRole === 'ADMIN';
     const isTrainer = userRole === 'TRAINER';
     const isMember = userRole === 'MEMBER';
 
@@ -268,15 +268,15 @@ export class ProgressTrackingService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    // Check if user has permission (GYM_OWNER or TRAINER)
+    // Check if user has permission (ADMIN or TRAINER)
     const userRole = user.role.name;
-    if (userRole !== 'GYM_OWNER' && userRole !== 'TRAINER') {
+    if (userRole !== 'ADMIN' && userRole !== 'TRAINER') {
       throw new ForbiddenException(
         'Only gym owners and trainers can view progress tracking records',
       );
     }
 
-    if (userRole === 'GYM_OWNER') {
+    if (userRole === 'ADMIN') {
       // Gym owners can see all progress tracking records
       return this.progressTrackingRepo.find({
         relations: ['member', 'recorded_by_trainer'],

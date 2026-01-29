@@ -47,9 +47,9 @@ export class WorkoutsService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    // Check if user has permission (GYM_OWNER or TRAINER)
+    // Check if user has permission (ADMIN or TRAINER)
     const userRole = user.role.name;
-    if (userRole !== 'GYM_OWNER' && userRole !== 'TRAINER') {
+    if (userRole !== 'ADMIN' && userRole !== 'TRAINER') {
       throw new ForbiddenException(
         'Only gym owners and trainers can create workout plans',
       );
@@ -148,7 +148,7 @@ export class WorkoutsService {
   ) {
     const workoutPlan = await this.findOne(plan_id);
 
-    // Check if user has permission to update (GYM_OWNER or TRAINER who created it)
+    // Check if user has permission to update (ADMIN or TRAINER who created it)
     const user = await this.usersRepo.findOne({
       where: { userId },
     });
@@ -157,7 +157,7 @@ export class WorkoutsService {
     }
 
     const userRole = user.role.name;
-    const isOwner = userRole === 'GYM_OWNER';
+    const isOwner = userRole === 'ADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     let isAssignedTrainer = false;
@@ -172,7 +172,7 @@ export class WorkoutsService {
       );
     }
 
-    if (updateWorkoutPlanDto.trainerId && userRole === 'GYM_OWNER') {
+    if (updateWorkoutPlanDto.trainerId && userRole === 'ADMIN') {
       const trainer = await this.trainersRepo.findOne({
         where: { id: updateWorkoutPlanDto.trainerId },
       });
@@ -198,7 +198,7 @@ export class WorkoutsService {
   async remove(plan_id: string, userId: string) {
     const workoutPlan = await this.findOne(plan_id);
 
-    // Check if user has permission to delete (GYM_OWNER or TRAINER who created it)
+    // Check if user has permission to delete (ADMIN or TRAINER who created it)
     const user = await this.usersRepo.findOne({
       where: { userId },
     });
@@ -207,7 +207,7 @@ export class WorkoutsService {
     }
 
     const userRole = user.role.name;
-    const isOwner = userRole === 'GYM_OWNER';
+    const isOwner = userRole === 'ADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     let isAssignedTrainer = false;
@@ -250,15 +250,15 @@ export class WorkoutsService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    // Check if user has permission (GYM_OWNER or TRAINER)
+    // Check if user has permission (ADMIN or TRAINER)
     const userRole = user.role.name;
-    if (userRole !== 'GYM_OWNER' && userRole !== 'TRAINER') {
+    if (userRole !== 'ADMIN' && userRole !== 'TRAINER') {
       throw new ForbiddenException(
         'Only gym owners and trainers can view workout plans',
       );
     }
 
-    if (userRole === 'GYM_OWNER') {
+    if (userRole === 'ADMIN') {
       // Gym owners can see all workout plans
       return this.workoutPlansRepo.find({
         relations: ['member', 'assigned_by_trainer', 'exercises'],

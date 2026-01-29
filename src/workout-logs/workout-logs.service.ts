@@ -44,7 +44,7 @@ export class WorkoutLogsService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    // Check if user has permission (GYM_OWNER, TRAINER, or MEMBER if managing themselves)
+    // Check if user has permission (ADMIN, TRAINER, or MEMBER if managing themselves)
     const userRole = user.role.name;
     const isMember = userRole === 'MEMBER';
 
@@ -61,7 +61,7 @@ export class WorkoutLogsService {
           'Members can only create workout logs for themselves',
         );
       }
-    } else if (userRole !== 'GYM_OWNER' && userRole !== 'TRAINER') {
+    } else if (userRole !== 'ADMIN' && userRole !== 'TRAINER') {
       throw new ForbiddenException(
         'Only gym owners, trainers, or members (if allowed) can create workout logs',
       );
@@ -136,7 +136,7 @@ export class WorkoutLogsService {
     }
 
     const userRole = user.role.name;
-    const isOwner = userRole === 'GYM_OWNER';
+    const isOwner = userRole === 'ADMIN';
     const isTrainer = userRole === 'TRAINER';
     const isMember = userRole === 'MEMBER';
 
@@ -164,7 +164,7 @@ export class WorkoutLogsService {
       );
     }
 
-    if (updateWorkoutLogDto.trainerId && userRole === 'GYM_OWNER') {
+    if (updateWorkoutLogDto.trainerId && userRole === 'ADMIN') {
       const trainer = await this.trainersRepo.findOne({
         where: { id: updateWorkoutLogDto.trainerId },
       });
@@ -196,7 +196,7 @@ export class WorkoutLogsService {
     }
 
     const userRole = user.role.name;
-    const isOwner = userRole === 'GYM_OWNER';
+    const isOwner = userRole === 'ADMIN';
     const isTrainer = userRole === 'TRAINER';
     const isMember = userRole === 'MEMBER';
 
@@ -252,15 +252,15 @@ export class WorkoutLogsService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    // Check if user has permission (GYM_OWNER or TRAINER)
+    // Check if user has permission (ADMIN or TRAINER)
     const userRole = user.role.name;
-    if (userRole !== 'GYM_OWNER' && userRole !== 'TRAINER') {
+    if (userRole !== 'ADMIN' && userRole !== 'TRAINER') {
       throw new ForbiddenException(
         'Only gym owners and trainers can view workout logs',
       );
     }
 
-    if (userRole === 'GYM_OWNER') {
+    if (userRole === 'ADMIN') {
       // Gym owners can see all workout logs
       return this.workoutLogsRepo.find({
         relations: ['member', 'trainer'],

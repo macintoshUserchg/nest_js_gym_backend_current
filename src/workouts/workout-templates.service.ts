@@ -35,7 +35,7 @@ export class WorkoutTemplatesService {
 
   async create(dto: CreateWorkoutTemplateDto, user: User) {
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     if (!isAdmin && !isTrainer) {
@@ -68,7 +68,7 @@ export class WorkoutTemplatesService {
 
   async findAll(user: User, filters?: FilterTemplatesDto) {
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     const queryBuilder = this.workoutTemplateRepository
@@ -143,7 +143,7 @@ export class WorkoutTemplatesService {
 
     // Check access
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     if (!isAdmin) {
@@ -177,7 +177,7 @@ export class WorkoutTemplatesService {
     const original = await this.findOne(id, user);
 
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     if (!isAdmin && !isTrainer) {
@@ -327,7 +327,7 @@ export class WorkoutTemplatesService {
   async remove(id: string, user: User) {
     const template = await this.findOne(id, user);
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     if (!isAdmin && isTrainer && user.trainerId && template.trainerId !== parseInt(user.trainerId)) {
@@ -347,7 +347,7 @@ export class WorkoutTemplatesService {
 
   private validateTrainerAccess(trainerId: number, user: User) {
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
 
     if (!isAdmin && user.trainerId && trainerId !== parseInt(user.trainerId)) {
       throw new ForbiddenException('Access denied');

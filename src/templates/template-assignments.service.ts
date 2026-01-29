@@ -36,7 +36,7 @@ export class TemplateAssignmentsService {
 
   async create(dto: CreateTemplateAssignmentDto, user: User) {
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     // Validate template exists
@@ -97,7 +97,7 @@ export class TemplateAssignmentsService {
 
   async findAll(user: User, filters?: FilterTemplateAssignmentsDto) {
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
     const isMember = userRole === 'MEMBER';
 
@@ -185,7 +185,7 @@ export class TemplateAssignmentsService {
 
     // Members can update progress only for their own assignments
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     if (!isAdmin && isTrainer) {
@@ -260,7 +260,7 @@ export class TemplateAssignmentsService {
 
   async getAnalytics(user: User) {
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
 
     if (!isAdmin) {
       throw new ForbiddenException('Only admins can view analytics');
@@ -316,7 +316,7 @@ export class TemplateAssignmentsService {
 
   private validateAccess(assignment: TemplateAssignment, user: User) {
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
     const isMember = userRole === 'MEMBER';
 

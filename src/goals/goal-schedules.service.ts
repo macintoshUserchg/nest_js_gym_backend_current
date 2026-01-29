@@ -27,7 +27,7 @@ export class GoalSchedulesService {
 
   async create(dto: CreateGoalScheduleDto, user: User) {
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     // Validate member access
@@ -65,7 +65,7 @@ export class GoalSchedulesService {
     }
 
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     // Validate member access
@@ -106,7 +106,7 @@ export class GoalSchedulesService {
 
   async findAll(user: User, filters?: FilterGoalsDto) {
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
     const isMember = userRole === 'MEMBER';
 
@@ -201,7 +201,7 @@ export class GoalSchedulesService {
   ) {
     const goalSchedule = await this.findOne(id, user);
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     // Check permission to update
@@ -301,7 +301,7 @@ export class GoalSchedulesService {
   async remove(id: string, user: User) {
     const goalSchedule = await this.findOne(id, user);
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
     // Only creator or admin can delete
@@ -323,7 +323,7 @@ export class GoalSchedulesService {
 
   private validateAccess(goalSchedule: GoalSchedule, user: User) {
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
     const isMember = userRole === 'MEMBER';
 
@@ -344,7 +344,7 @@ export class GoalSchedulesService {
 
   private validateAdminOrAssignedTrainer(goalSchedule: GoalSchedule, user: User) {
     const userRole = user.role?.name;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'GYM_OWNER' || userRole === 'SUPERADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
 
     if (!isAdmin) {
       if (userRole === 'TRAINER' && user.trainerId) {
