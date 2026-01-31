@@ -3,7 +3,7 @@
 **Date:** 2026-01-29
 **Backend:** NestJS 11.0.1 + TypeORM + PostgreSQL
 **API Version:** v1
-**Base URL:** `http://localhost:3001`
+**Base URL:** `http://localhost:3000`
 
 ---
 
@@ -30,14 +30,14 @@
 # Required Environment Variables
 JWT_SECRET="your-jwt-secret-key-min-32-chars"
 JWT_EXPIRES_IN="1d"
-PORT=3001
+PORT=3000
 POSTGRES_URL="postgresql://user:password@host:5432/database"
 ```
 
 ### Base URL
 
 ```
-Development: http://localhost:3001
+Development: http://localhost:3000
 Production:  https://api.yourgym.com
 ```
 
@@ -106,7 +106,7 @@ Include the token in the `Authorization` header for all protected endpoints:
 ```dart
 // Dart/Flutter Example
 class ApiClient {
-  final String baseUrl = 'http://localhost:3001';
+  final String baseUrl = 'http://localhost:3000';
   String? accessToken;
 
   Future<dynamic> get(String endpoint) async {
@@ -663,7 +663,7 @@ Examples: member.id = 123, trainer.id = 1
 All amounts are in **cents** (not decimal):
 
 ```json
-// Example: $49.99
+// Example: ₹49.99
 "amount": 4999
 ```
 
@@ -1003,20 +1003,20 @@ bool canManageMembers(User user) {
 
 #### Login
 ```bash
-curl -X POST http://localhost:3001/auth/login \
+curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email": "admin@example.com", "password": "password123"}'
 ```
 
 #### Get Members (with auth)
 ```bash
-curl -X GET http://localhost:3001/members \
+curl -X GET http://localhost:3000/members \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 #### Create Member
 ```bash
-curl -X POST http://localhost:3001/members \
+curl -X POST http://localhost:3000/members \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
   -d '{
@@ -1029,7 +1029,7 @@ curl -X POST http://localhost:3001/members \
 
 #### Create Workout Template
 ```bash
-curl -X POST http://localhost:3001/workout-templates \
+curl -X POST http://localhost:3000/workout-templates \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
   -d '{
@@ -1053,7 +1053,7 @@ curl -X POST http://localhost:3001/workout-templates \
 
 #### Get Notifications
 ```bash
-curl -X GET http://localhost:3001/notifications/unread \
+curl -X GET http://localhost:3000/notifications/unread \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -1066,7 +1066,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class ApiClient {
-  final String baseUrl = 'http://localhost:3001';
+  final String baseUrl = 'http://localhost:3000';
   String? accessToken;
 
   ApiClient({this.accessToken});
@@ -1237,7 +1237,7 @@ class NotificationService {
 ## Quick Reference
 ### Base URL
 ```
-http://localhost:3001
+http://localhost:3000
 ```
 ### Auth Header Format
 ```
@@ -1253,7 +1253,7 @@ xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 ### Amount Format (cents)
 ```
-$49.99 → 4999
+₹49.99 → 4999
 ```
 ### Pagination Params
 ```
@@ -1270,7 +1270,7 @@ $49.99 → 4999
 }
 ---
 ## Additional Resources
-- **Swagger UI:** http://localhost:3001/api
+- **Swagger UI:** http://localhost:3000/api
 - **API Version:** v1
 - **Protocol:** REST over HTTP
 - **Authentication:** JWT (Bearer token)

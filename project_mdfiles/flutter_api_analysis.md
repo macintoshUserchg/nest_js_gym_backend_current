@@ -3,7 +3,7 @@
 **Document Version:** 1.0  
 **Date:** 2026-01-29  
 **Analyzed API:** NestJS 11.0.1 + TypeORM + PostgreSQL  
-**Base URL:** `http://localhost:3001`
+**Base URL:** `http://localhost:3000`
 
 ---
 
@@ -87,7 +87,7 @@ The Flutter Gym Management App API is a **RESTful architecture** built on **Nest
 - **Protocol:** REST over HTTP/HTTPS
 - **Data Format:** JSON
 - **Authentication:** JWT (Bearer Token)
-- **Base URL:** `http://localhost:3001`
+- **Base URL:** `http://localhost:3000`
 - **No explicit versioning** - backwards compatibility through route prefix `/api`
 
 ### 2.3 Common Headers Pattern
@@ -147,7 +147,7 @@ The JWT token contains:
 ```env
 JWT_SECRET="your-jwt-secret-key-min-32-chars"
 JWT_EXPIRES_IN="1d"
-PORT=3001
+PORT=3000
 POSTGRES_URL="postgresql://user:password@host:5432/database"
 ```
 
@@ -368,12 +368,12 @@ final DateTime date = DateTime.parse(dateOnly);
 **All amounts stored in cents** to prevent floating-point precision issues:
 
 ```json
-// $49.99
+// ₹49.99
 "amount": 4999
 
 // Flutter conversion
-final double dollars = cents / 100.0;
-final int cents = (dollars * 100).round();
+final double rupees = cents / 100.0;
+final int cents = (rupees * 100).round();
 ```
 
 ### 5.4 Identifier Types
@@ -876,7 +876,7 @@ class ApiClient {
   String? accessToken;
 
   ApiClient({
-    this.baseUrl = 'http://localhost:3001',
+    this.baseUrl = 'http://localhost:3000',
     this.accessToken,
   });
 
@@ -1469,8 +1469,8 @@ class Notification {
 **Recommendation:** Add explicit versioning for better long-term maintainability
 
 ```
-Current:  http://localhost:3001/members
-Proposed: http://localhost:3001/api/v1/members
+Current:  http://localhost:3000/members
+Proposed: http://localhost:3000/api/v1/members
 ```
 
 ### 10.2 Real-time Notifications

@@ -1534,36 +1534,69 @@ class FitnessFirstEliteSeeder {
     console.log('Seeding notifications...');
     const notificationRepository = this.dataSource.getRepository(Notification);
 
+    // Get user IDs by role using QueryBuilder
+    const superadminUserId = await this.dataSource
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .innerJoin('user.role', 'role')
+      .where('role.name = :roleName', { roleName: 'SUPERADMIN' })
+      .getOne()
+      .then((u) => u?.userId);
+
+    const adminUserId = await this.dataSource
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .innerJoin('user.role', 'role')
+      .where('role.name = :roleName', { roleName: 'ADMIN' })
+      .getOne()
+      .then((u) => u?.userId);
+
+    const trainerUserId = await this.dataSource
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .innerJoin('user.role', 'role')
+      .where('role.name = :roleName', { roleName: 'TRAINER' })
+      .getOne()
+      .then((u) => u?.userId);
+
+    const memberUserId = await this.dataSource
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .innerJoin('user.role', 'role')
+      .where('role.name = :roleName', { roleName: 'MEMBER' })
+      .getOne()
+      .then((u) => u?.userId);
+
     const notifications = [
       {
-        user: users.find((u) => u.role.name === 'SUPERADMIN'),
+        userId: superadminUserId,
         title: 'Elite System Upgrade',
         message:
           'Fitness First Elite system has been upgraded with new premium features.',
         is_read: false,
       },
       {
-        user: users.find((u) => u.role.name === 'ADMIN'),
+        userId: adminUserId,
         title: 'New Elite Member Registration',
         message:
           'A new premium member has registered and is pending your approval.',
         is_read: true,
       },
       {
-        user: users.find((u) => u.role.name === 'TRAINER'),
+        userId: trainerUserId,
         title: 'Elite Class Schedule Update',
         message:
           'Your premium yoga class schedule has been updated for next week.',
         is_read: false,
       },
       {
-        user: users.find((u) => u.role.name === 'MEMBER'),
+        userId: memberUserId,
         title: 'Elite Membership Renewal',
         message:
           'Your Elite membership expires in 5 days. Renew now for continued access to premium facilities.',
         is_read: false,
       },
-    ].filter(Boolean);
+    ].filter((n) => n.userId);
 
     const savedNotifications = await notificationRepository.save(
       notifications as any,
@@ -1576,9 +1609,42 @@ class FitnessFirstEliteSeeder {
     console.log('Seeding audit logs...');
     const auditLogRepository = this.dataSource.getRepository(AuditLog);
 
+    // Get user IDs by role using QueryBuilder
+    const superadminUserId = await this.dataSource
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .innerJoin('user.role', 'role')
+      .where('role.name = :roleName', { roleName: 'SUPERADMIN' })
+      .getOne()
+      .then((u) => u?.userId);
+
+    const adminUserId = await this.dataSource
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .innerJoin('user.role', 'role')
+      .where('role.name = :roleName', { roleName: 'ADMIN' })
+      .getOne()
+      .then((u) => u?.userId);
+
+    const trainerUserId = await this.dataSource
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .innerJoin('user.role', 'role')
+      .where('role.name = :roleName', { roleName: 'TRAINER' })
+      .getOne()
+      .then((u) => u?.userId);
+
+    const memberUserId = await this.dataSource
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .innerJoin('user.role', 'role')
+      .where('role.name = :roleName', { roleName: 'MEMBER' })
+      .getOne()
+      .then((u) => u?.userId);
+
     const auditLogs = [
       {
-        user: users.find((u) => u.role.name === 'SUPERADMIN'),
+        userId: superadminUserId,
         action: 'CREATE',
         entity_type: 'Gym',
         entity_id: 'gym-fitness-first-elite',
@@ -1590,7 +1656,7 @@ class FitnessFirstEliteSeeder {
         },
       },
       {
-        user: users.find((u) => u.role.name === 'ADMIN'),
+        userId: adminUserId,
         action: 'UPDATE',
         entity_type: 'Member',
         entity_id: 'member-elite-1',
@@ -1598,7 +1664,7 @@ class FitnessFirstEliteSeeder {
         new_values: { status: 'active', tier: 'VIP' },
       },
       {
-        user: users.find((u) => u.role.name === 'TRAINER'),
+        userId: trainerUserId,
         action: 'CREATE',
         entity_type: 'Class',
         entity_id: 'class-elite-yoga',
@@ -1610,14 +1676,14 @@ class FitnessFirstEliteSeeder {
         },
       },
       {
-        user: users.find((u) => u.role.name === 'MEMBER'),
+        userId: memberUserId,
         action: 'UPDATE',
         entity_type: 'Profile',
         entity_id: 'member-profile-elite',
         previous_values: { phone: '+1-555-8001' },
         new_values: { phone: '+1-555-8013', emergencyContact: 'Updated' },
       },
-    ].filter(Boolean);
+    ].filter((log) => log.userId);
 
     const savedAuditLogs = await auditLogRepository.save(auditLogs as any);
     console.log(`Seeded ${savedAuditLogs.length} audit logs`);
