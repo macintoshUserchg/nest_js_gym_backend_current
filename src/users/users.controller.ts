@@ -107,6 +107,55 @@ export class UsersController {
 
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  @ApiOperation({
+    summary: 'Change user password',
+    description:
+      'Changes the password for the currently authenticated user. Requires the current password for verification.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Password has been successfully changed.',
+    examples: {
+      success: {
+        summary: 'Password changed successfully',
+        value: {
+          message: 'Password changed successfully',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid current password.',
+    examples: {
+      invalidPassword: {
+        summary: 'Current password is incorrect',
+        value: {
+          statusCode: 400,
+          message: 'Current password is incorrect',
+          error: 'Bad Request',
+        },
+      },
+    },
+  })
+  async changePassword(
+    @Request() req,
+    @Body()
+    body: {
+      currentPassword: string;
+      newPassword: string;
+    },
+  ) {
+    return this.usersService.changePassword(
+      req.user.userId,
+      body.currentPassword,
+      body.newPassword,
+    );
+  }
+
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
   @Get('profile')
   @ApiOperation({
     summary: 'Get current user profile',

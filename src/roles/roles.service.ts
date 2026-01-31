@@ -33,4 +33,20 @@ export class RolesService {
     }
     return role;
   }
+
+  async create(createRoleDto: any) {
+    const role = this.rolesRepo.create(createRoleDto);
+    return this.rolesRepo.save(role);
+  }
+
+  async update(id: string, updateRoleDto: any) {
+    await this.rolesRepo.update({ id }, updateRoleDto);
+    return this.findById(id);
+  }
+
+  async remove(id: string) {
+    const role = await this.findById(id);
+    await this.rolesRepo.remove(role);
+    return { success: true, message: 'Role deleted successfully' };
+  }
 }

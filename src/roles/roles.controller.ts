@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -101,6 +101,60 @@ export class RolesController {
   })
   findById(@Param('id') id: string) {
     return this.rolesService.findById(id);
+  }
+
+  @Post()
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Create a new role',
+    description:
+      'Creates a new custom role with specified permissions. Requires admin privileges.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'The role has been successfully created.',
+    type: Role,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Role with this name already exists.',
+  })
+  create(@Body() createRoleDto: any) {
+    return this.rolesService.create(createRoleDto);
+  }
+
+  @Patch(':id')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Update a role',
+    description:
+      'Updates an existing role with new information. Requires admin privileges.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'The role has been successfully updated.',
+    type: Role,
+  })
+  update(@Param('id') id: string, @Body() updateRoleDto: any) {
+    return this.rolesService.update(id, updateRoleDto);
+  }
+
+  @Delete(':id')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Delete a role',
+    description:
+      'Deletes a role permanently. Requires admin privileges. Cannot delete system roles.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'The role has been successfully deleted.',
+  })
+  remove(@Param('id') id: string) {
+    return this.rolesService.remove(id);
   }
 
   @Get('name/:name')

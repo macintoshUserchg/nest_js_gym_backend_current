@@ -173,6 +173,25 @@ export class WorkoutTemplatesService {
     });
   }
 
+
+  async update(id: string, dto: UpdateWorkoutTemplateDto, user: User) {
+    const template = await this.findOne(id, user);
+    
+    const userRole = user.role?.name;
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
+    const isTrainer = userRole === 'TRAINER';
+
+    if (!isAdmin && isTrainer && user.trainerId && template.trainerId !== parseInt(user.trainerId)) {
+      throw new ForbiddenException('You can only update your own templates');
+    }
+
+    // Update template fields only (exercises not included in Update DTO)
+    Object.assign(template, dto);
+    const savedTemplate = await this.workoutTemplateRepository.save(template);
+
+    return this.findOne(savedTemplate.template_id, user);
+  }
+
   async copyTemplate(id: string, dto: CopyWorkoutTemplateDto, user: User) {
     const original = await this.findOne(id, user);
 

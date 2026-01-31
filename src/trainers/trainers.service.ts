@@ -117,7 +117,7 @@ export class TrainersService {
   async findOne(id: number) {
     const trainer = await this.trainersRepo.findOne({
       where: { id },
-      relations: ['branch', 'classes'],
+      relations: ['branch'],
     });
     if (!trainer) {
       throw new NotFoundException(`Trainer with ID ${id} not found`);

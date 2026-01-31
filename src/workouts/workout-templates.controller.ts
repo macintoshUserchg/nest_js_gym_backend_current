@@ -127,6 +127,17 @@ export class WorkoutTemplatesController {
     );
   }
 
+  @Patch(':id')
+  @Roles(UserRole.TRAINER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Update a workout template (trainer/admin only)' })
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateWorkoutTemplateDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.templatesService.update(id, dto, user);
+  }
+
   @Post(':id/substitute')
   @ApiOperation({ summary: 'Record exercise substitution' })
   recordSubstitution(

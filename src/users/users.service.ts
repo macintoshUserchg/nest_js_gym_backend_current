@@ -1,4 +1,4 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../entities/users.entity';
@@ -97,12 +97,40 @@ export class UsersService {
     return this.usersRepo.find({ relations: ['role'] });
   }
 
-  async update(id: string, updateUserDto: any) {
-    await this.usersRepo.update(id, updateUserDto);
-    return this.findById(id);
+  async update(userId: string, updateUserDto: any) {
+    await this.usersRepo.update({ userId }, updateUserDto);
+    return this.findById(userId);
   }
 
   async remove(id: string) {
     return this.usersRepo.delete(id);
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.findById(userId);
+    
+    // Get the full user with password hash
+    const userWithPassword = await this.usersRepo.findOne({
+      where: { userId },
+    });
+
+    if (!userWithPassword) {
+      throw new NotFoundException('User not found');
+    }
+
+    const bcrypt = require('bcrypt');
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      userWithPassword.passwordHash,
+    );
+
+    if (!isPasswordValid) {
+      throw new NotFoundException('Current password is incorrect');
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    await this.usersRepo.update({ userId }, { passwordHash: hashedNewPassword });
+
+    return { message: 'Password changed successfully' };
   }
 }

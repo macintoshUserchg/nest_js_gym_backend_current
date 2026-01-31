@@ -126,6 +126,17 @@ export class DietTemplatesController {
     );
   }
 
+  @Patch(':id')
+  @Roles(UserRole.TRAINER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Update a diet template (trainer/admin only)' })
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateDietTemplateDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.templatesService.update(id, dto, user);
+  }
+
   @Post(':id/substitute')
   @ApiOperation({ summary: 'Record meal substitution' })
   recordSubstitution(

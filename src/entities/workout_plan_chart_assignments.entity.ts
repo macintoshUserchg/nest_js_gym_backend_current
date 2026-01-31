@@ -44,7 +44,7 @@ export class WorkoutPlanChartAssignment {
   @ManyToOne(() => User)
   assigned_by: User;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'uuid' })
   assigned_by_user_id: string;
 
   @Column({ type: 'date' })

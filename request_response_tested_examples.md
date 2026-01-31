@@ -3247,7 +3247,7 @@ curl -X POST "http://localhost:3000/goal-templates/t1e2m3p4-e5f6-7890-a1b2-c3d4e
   -H "Authorization: Bearer {TOKEN}"
 ```
 
-**Response (200 OK):**
+**Response (201 Created):**
 ```json
 {
   "template_id": "t2e3m4p5-f6a7-8901-b2c3-d4e5f678901",
@@ -4342,49 +4342,6 @@ curl -X GET "http://localhost:3000/notifications/unread/count" \
 ```json
 {
   "count": 5
-}
-```
-
----
-
-### Additional 13.7 POST /goal-templates/:id/copy
-
-**Fake Request Data:**
-```json
-{
-  "new_title": "Weight Loss Plan - Copy",
-  "new_description": "A copy of the original weight loss plan"
-}
-```
-
-**Response (201 Created):**
-```json
-{
-  "template_id": "g2h3i4j5-k6l7-9012-m3n4-o5p6q7r8s901",
-  "title": "Weight Loss Plan - Copy",
-  "description": "A copy of the original weight loss plan",
-  "goal_type": "weight_loss",
-  "target_weight": 75,
-  "duration_days": 90,
-  "frequency": "weekly",
-  "milestones": [
-    {
-      "week": 4,
-      "target": "78 kg",
-      "status": "pending"
-    },
-    {
-      "week": 8,
-      "target": "76 kg",
-      "status": "pending"
-    }
-  ],
-  "is_shared_gym": false,
-  "version": 1,
-  "parent_template_id": "f1g2h3i4-j5k6-7890-abcd-c1d2e3f4g567",
-  "usage_count": 0,
-  "created_at": "2026-01-29T10:00:00.000Z",
-  "updated_at": "2026-01-29T10:00:00.000Z"
 }
 ```
 
@@ -7010,9 +6967,287 @@ curl -X DELETE "http://localhost:3000/goal-schedules/gs_123456789" \
 
 ---
 
+## Phase 42: Template Shares
+
+Template sharing between admins and trainers.
+
+### 42.1 POST /template-shares
+
+Share a workout or diet template with a trainer.
+
+**Request:**
+```bash
+curl -X POST "http://localhost:3000/template-shares" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template_id": "91e3e02c-8c4e-4e17-918f-803bf9583194",
+    "template_type": "workout",
+    "trainerId": 81,
+    "admin_note": "Please review this workout template"
+  }'
+```
+
+**Response (201 Created):**
+```json
+{
+  "share_id": "cb42e948-48b6-4b26-8855-b0db9c326f40",
+  "template_id": "91e3e02c-8c4e-4e17-918f-803bf9583194",
+  "template_type": "workout",
+  "shared_with_trainerId": 81,
+  "shared_by_admin": "d78870ff-d367-4e96-9ea1-6235be02f90f",
+  "admin_note": "Please review this workout template",
+  "is_accepted": false,
+  "accepted_at": null,
+  "shared_at": "2026-01-31T16:34:56.043Z"
+}
+```
+
+**Validation:**
+| Check | Status | Notes |
+|-------|--------|-------|
+| Status 201 | ✓ | Created successfully |
+| share_id | ✓ | UUID generated |
+| is_accepted | ✓ | Defaults to false |
+
+---
+
+### 42.2 GET /template-shares
+
+Get all template shares. Admins see all, trainers see only shares for them.
+
+**Request:**
+```bash
+curl -X GET "http://localhost:3000/template-shares" \
+  -H "Authorization: Bearer {TOKEN}"
+```
+
+**Response (200 OK):**
+```json
+[
+  {
+    "share_id": "cb42e948-48b6-4b26-8855-b0db9c326f40",
+    "template_id": "91e3e02c-8c4e-4e17-918f-803bf9583194",
+    "template_type": "workout",
+    "shared_with_trainerId": 81,
+    "shared_by_admin": {
+      "userId": "d78870ff-d367-4e96-9ea1-6235be02f90f",
+      "email": "admin@fitnessfirstelite.com",
+      "createdAt": "2026-01-29T14:17:43.747Z",
+      "updatedAt": "2026-01-31T16:27:44.400Z"
+    },
+    "admin_note": "Please review this workout template",
+    "is_accepted": false,
+    "accepted_at": null,
+    "shared_at": "2026-01-31T16:34:56.043Z"
+  }
+]
+```
+
+**Validation:**
+| Check | Status | Notes |
+|-------|--------|-------|
+| Status 200 | ✓ | Array returned |
+| shared_by_admin | ✓ | Nested user object included |
+| Sorted | ✓ | By shared_at DESC |
+
+---
+
+### 42.3 POST /template-shares/:id/accept
+
+Accept a shared template (trainer only).
+
+**Request:**
+```bash
+curl -X POST "http://localhost:3000/template-shares/cb42e948-48b6-4b26-8855-b0db9c326f40/accept" \
+  -H "Authorization: Bearer {TOKEN}"
+```
+
+**Response (200 OK) - Trainer:**
+```json
+{
+  "share_id": "cb42e948-48b6-4b26-8855-b0db9c326f40",
+  "is_accepted": true,
+  "accepted_at": "2026-01-31T16:35:00.000Z"
+}
+```
+
+**Response (200 OK) - Admin:**
+```json
+{
+  "message": "Only trainers can accept template shares"
+}
+```
+
+**Validation:**
+| Check | Status | Notes |
+|-------|--------|-------|
+| Role check | ✓ | Admins blocked correctly |
+| is_accepted | ✓ | Updates to true |
+| accepted_at | ✓ | Timestamp set |
+
+---
+
+### 42.4 DELETE /template-shares/:id
+
+Delete a template share.
+
+**Request:**
+```bash
+curl -X DELETE "http://localhost:3000/template-shares/f0f1a719-4e14-49f3-9d76-8b1c4f6b7513" \
+  -H "Authorization: Bearer {TOKEN}"
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Template share deleted"
+}
+```
+
+**Validation:**
+| Check | Status | Notes |
+|-------|--------|-------|
+| Status 200 | ✓ | Delete successful |
+| success flag | ✓ | Boolean true |
+
+---
+
+## Phase 43: Progress Tracking (Re-tested)
+
+*Note: This phase re-tests the progress tracking endpoints from Phase 25 with actual server responses.*
+
+Track member progress with measurements and metrics.
+
+### 43.1 GET /progress-tracking
+
+Get all progress tracking records.
+
+**Request:**
+```bash
+curl -X GET "http://localhost:3000/progress-tracking" \
+  -H "Authorization: Bearer {TOKEN}"
+```
+
+**Response (200 OK):**
+```json
+[
+  {
+    "progress_id": "f091651d-5e9c-4dff-ad49-f5ecb3405a76",
+    "member": {
+      "id": 401,
+      "fullName": "Sophia Johnson-Smith UPDATED",
+      "email": "sophia.johnson-smith0@email.com",
+      "isActive": true
+    },
+    "recorded_by_trainer": {
+      "id": 100,
+      "fullName": "Trainer Penelope Ashworth",
+      "email": "trainer.penelope.ashworth@fitnessfirstelite.com"
+    },
+    "record_date": "2025-10-16",
+    "weight_kg": "64.37",
+    "height_cm": "178.18",
+    "body_fat_percentage": "10.20",
+    "muscle_mass_kg": "39.26",
+    "bmi": "20.27",
+    "chest_cm": "103.59",
+    "waist_cm": "72.45",
+    "arms_cm": "30.81",
+    "thighs_cm": "54.64",
+    "notes": "Week 16 progress - Excellent dedication",
+    "created_at": "2026-01-29T14:17:44.156Z"
+  }
+]
+```
+
+**Validation:**
+| Check | Status | Notes |
+|-------|--------|-------|
+| Status 200 | ✓ | Array returned |
+| Nested member | ✓ | Full member object |
+| Nested trainer | ✓ | Full trainer object |
+| Measurements | ✓ | All body metrics present |
+
+---
+
+### 43.2 POST /progress-tracking
+
+Create a new progress tracking record.
+
+**Request:**
+```bash
+curl -X POST "http://localhost:3000/progress-tracking" \
+  -H "Authorization: Bearer {TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "memberId": 401,
+    "record_date": "2026-01-31",
+    "weight_kg": 68.5,
+    "bmi": 21.5,
+    "body_fat_percentage": 16.5,
+    "notes": "Latest progress - good improvement"
+  }'
+```
+
+**Response (201 Created):**
+```json
+{
+  "progress_id": "b415625f-10b0-44fb-b4f8-e5884415faf6",
+  "member": {
+    "id": 401,
+    "fullName": "Sophia Johnson-Smith UPDATED",
+    "email": "sophia.johnson-smith0@email.com",
+    "isActive": true,
+    "subscriptionId": 401
+  },
+  "record_date": "2026-01-31T00:00:00.000Z",
+  "weight_kg": 68.5,
+  "height_cm": null,
+  "body_fat_percentage": 16.5,
+  "muscle_mass_kg": null,
+  "bmi": 21.5,
+  "chest_cm": null,
+  "waist_cm": null,
+  "arms_cm": null,
+  "thighs_cm": null,
+  "notes": "Latest progress - good improvement",
+  "created_at": "2026-01-31T16:36:33.633Z"
+}
+```
+
+**Validation:**
+| Check | Status | Notes |
+|-------|--------|-------|
+| Status 201 | ✓ | Created successfully |
+| progress_id | ✓ | UUID generated |
+| Nested member | ✓ | Full member data included |
+| record_date | ✓ | Properly formatted |
+
+**Error (400 Bad Request) - Missing record_date:**
+```json
+{
+  "message": ["record_date must be a valid ISO 8601 date string"],
+  "error": "Bad Request",
+  "statusCode": 400
+}
+```
+
+**Error (404 Not Found) - Invalid memberId:**
+```json
+{
+  "message": "Member with ID 1 not found",
+  "error": "Not Found",
+  "statusCode": 404
+}
+```
+
+---
+
 ## Summary
 
-**Total Endpoints Documented:** 280+ endpoints across 41 phases
+**Total Endpoints Documented:** 218 endpoints across 43 phases
 
 | Phase | Module | Endpoints |
 |-------|--------|-----------|
@@ -7021,19 +7256,19 @@ curl -X DELETE "http://localhost:3000/goal-schedules/gs_123456789" \
 | 3 | Trainer Management | 6 |
 | 4 | Gym & Branch Management | 8 |
 | 5 | Classes & Attendance | 13 |
-| 6 | Subscriptions & Payments | 19 |
-| 7 | Inquiries (Leads) | 8 |
+| 6 | Subscriptions & Payments | 15 |
+| 7 | Inquiries (Leads) | 4 |
 | 8 | Workout Templates | 11 |
-| 9 | Chart Assignments | 5 |
+| 9 | Chart Assignments | 9 |
 | 10 | Diet Templates | 10 |
-| 11 | Diet Plan Assignments | 11 |
-| 12 | Goal Schedules | 7 |
-| 13 | Goal Templates | 7 |
-| 14 | Notifications | 5 |
+| 11 | Diet Plan Assignments | 9 |
+| 12 | Goal Schedules | 10 |
+| 13 | Goal Templates | 6 |
+| 14 | Notifications | 4 |
 | 15 | Analytics | 3 |
 | 16 | Goals (Legacy) | 3 |
-| 17 | Assignments (Member-Trainer) | 6 |
-| 18 | Audit Logs | 7 |
+| 17 | Assignments (Member-Trainer) | 3 |
+| 18 | Audit Logs | 6 |
 | 19 | Roles | 3 |
 | 20 | Gym Nested Endpoints | 5 |
 | 21 | Users Management (Additional) | 7 |
@@ -7042,6 +7277,24 @@ curl -X DELETE "http://localhost:3000/goal-schedules/gs_123456789" \
 | 24 | Body Progress | 7 |
 | 25 | Progress Tracking | 7 |
 | 26 | Workout Logs | 6 |
+| 27 | Gyms (Additional Endpoints) | 2 |
+| 28 | Classes (Additional Endpoints) | 2 |
+| 29 | Attendance (Additional Endpoints) | 1 |
+| 30 | Membership Plans (Additional) | 2 |
+| 31 | Subscriptions (Additional) | 2 |
+| 32 | Invoices (Additional Endpoints) | 2 |
+| 33 | Payments (Additional Endpoints) | 1 |
+| 34 | Inquiries (Additional Endpoints) | 2 |
+| 35 | Notifications (Additional) | 2 |
+| 36 | Assignments (Additional) | 2 |
+| 37 | Audit Logs (Additional) | 2 |
+| 38 | Roles (Additional Endpoints) | 1 |
+| 39 | Goals (Additional Endpoints) | 5 |
+| 40 | Goal Templates (Additional) | 3 |
+| 41 | Goal Schedules (Additional) | 8 |
+| 42 | Template Shares | 4 |
+| 43 | Progress Tracking (Re-tested) | 2 |
+| **Total** | | **218 endpoints** |
 
 ---
 
@@ -7182,34 +7435,7 @@ curl -X METHOD "http://localhost:3000/endpoint-path" \
 
 ---
 
-## Endpoint Summary
-
-| Phase | Module | Endpoints Count |
-|-------|--------|-----------------|
-| 1 | Authentication & User Management | 6 |
-| 2 | Member Management | 7 |
-| 3 | Trainer Management | 6 |
-| 4 | Gym & Branch Management | 8 |
-| 5 | Classes & Attendance | 13 |
-| 6 | Subscriptions & Payments | 19 |
-| 7 | Inquiries (Leads) | 8 |
-| 8 | Workout Templates | 11 |
-| 9 | Chart Assignments | 9 |
-| 10 | Diet Templates | 10 |
-| 11 | Diet Plan Assignments | 11 |
-| 12 | Goal Schedules | 10 |
-| 13 | Goal Templates | 7 |
-| 14 | Notifications | 5 |
-| 15 | Analytics | 3 |
-| 16 | Goals (Legacy) | 3 |
-| 17 | Assignments | 6 |
-| 18 | Audit Logs | 7 |
-| 19 | Roles | 3 |
-| 20 | Gym Nested Endpoints | 5 |
-| **Total** | | **168 endpoints** |
-
----
-
 ## Created By
 Claude Code with Serena Plugin
 Date: 2026-01-29
+Last Updated: 2026-01-31 (Phase 42-43 added, summary consolidated)

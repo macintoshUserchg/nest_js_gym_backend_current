@@ -51,6 +51,9 @@ import { DietPlanAssignment } from './entities/diet_plan_assignments.entity';
 import { DietPlanAssignmentsModule } from './diet-plans/diet-assignments.module';
 import { WorkoutPlanChartAssignment } from './entities/workout_plan_chart_assignments.entity';
 import { WorkoutPlanChartAssignmentsModule } from './workouts/workout-plan-chart-assignments.module';
+import { GoalSchedulesModule } from './goals/goal-schedules.module';
+import { ProgressTrackingModule } from './progress-tracking/progress-tracking.module';
+import { TemplateSharesModule } from './templates/template-shares.module';
 
 @Module({
   imports: [
@@ -108,6 +111,9 @@ import { WorkoutPlanChartAssignmentsModule } from './workouts/workout-plan-chart
     NotificationsModule,
     DietPlanAssignmentsModule,
     WorkoutPlanChartAssignmentsModule,
+    GoalSchedulesModule,
+    ProgressTrackingModule,
+    TemplateSharesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
