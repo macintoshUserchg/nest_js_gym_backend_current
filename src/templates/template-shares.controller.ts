@@ -35,17 +35,24 @@ export class TemplateShareController {
   @ApiResponse({
     status: 201,
     description: 'Template share created successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        share_id: { type: 'string', example: '550e8400-e29b-41d4-a716-446655440000' },
-        template_id: { type: 'string', example: 'w1a2b3c4-d5e6-7890-f1a2-b3c4d5e6f789' },
-        template_type: { type: 'string', enum: ['workout', 'diet'] },
-        shared_with_trainerId: { type: 'number', example: 81 },
-        shared_by_adminId: { type: 'string', example: 'd78870ff-d367-4e96-9ea1-6235be02f90f' },
-        admin_note: { type: 'string' },
-        is_accepted: { type: 'boolean', example: false },
-        created_at: { type: 'string', format: 'date-time' },
+    content: {
+      'application/json': {
+        examples: {
+          success: {
+            summary: 'Template share created',
+            value: {
+              share_id: 'cb42e948-48b6-4b26-8855-b0db9c326f40',
+              template_id: '91e3e02c-8c4e-4e17-918f-803bf9583194',
+              template_type: 'workout',
+              shared_with_trainerId: 81,
+              shared_by_admin: 'd78870ff-d367-4e96-9ea1-6235be02f90f',
+              admin_note: 'Please review this workout template',
+              is_accepted: false,
+              accepted_at: null,
+              shared_at: '2026-01-31T16:34:56.043Z',
+            },
+          },
+        },
       },
     },
   })
@@ -80,12 +87,38 @@ export class TemplateShareController {
   @ApiOperation({
     summary: 'Get all template shares',
     description:
-      'Retrieves all template shares. Admins can see all shares, trainers can only see shares directed to them.',
+      'Retrieves all template shares. Admins see all shares with full admin details, trainers see only shares directed to them.',
   })
   @ApiResponse({
     status: 200,
-    description: 'List of template shares',
-    type: [Object],
+    description: 'List of template shares with admin details',
+    content: {
+      'application/json': {
+        examples: {
+          success: {
+            summary: 'List of template shares',
+            value: [
+              {
+                share_id: 'cb42e948-48b6-4b26-8855-b0db9c326f40',
+                template_id: '91e3e02c-8c4e-4e17-918f-803bf9583194',
+                template_type: 'workout',
+                shared_with_trainerId: 81,
+                shared_by_admin: {
+                  userId: 'd78870ff-d367-4e96-9ea1-6235be02f90f',
+                  email: 'admin@fitnessfirstelite.com',
+                  createdAt: '2026-01-29T14:17:43.747Z',
+                  updatedAt: '2026-01-31T16:27:44.400Z',
+                },
+                admin_note: 'Please review this workout template',
+                is_accepted: false,
+                accepted_at: null,
+                shared_at: '2026-01-31T16:34:56.043Z',
+              },
+            ],
+          },
+        },
+      },
+    },
   })
   findAll(@CurrentUser() user: User) {
     // If user is a trainer, only show shares for them
@@ -102,11 +135,31 @@ export class TemplateShareController {
   @ApiParam({
     name: 'id',
     description: 'Share ID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    example: 'cb42e948-48b6-4b26-8855-b0db9c326f40',
   })
   @ApiResponse({
     status: 200,
     description: 'Template share accepted',
+    content: {
+      'application/json': {
+        examples: {
+          trainer: {
+            summary: 'Trainer accepted',
+            value: {
+              share_id: 'cb42e948-48b6-4b26-8855-b0db9c326f40',
+              is_accepted: true,
+              accepted_at: '2026-01-31T16:35:00.000Z',
+            },
+          },
+          admin: {
+            summary: 'Admin cannot accept',
+            value: {
+              message: 'Only trainers can accept template shares',
+            },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 404,
@@ -131,11 +184,28 @@ export class TemplateShareController {
   @ApiParam({
     name: 'id',
     description: 'Share ID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    example: 'f0f1a719-4e14-49f3-9d76-8b1c4f6b7513',
   })
   @ApiResponse({
     status: 200,
     description: 'Template share deleted',
+    content: {
+      'application/json': {
+        examples: {
+          success: {
+            summary: 'Share deleted',
+            value: {
+              success: true,
+              message: 'Template share deleted',
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Share not found',
   })
   remove(@Param('id') id: string) {
     return this.templateSharesService.remove(id);
