@@ -314,6 +314,10 @@ class FitnessFirstEliteSeeder {
     // Level 2: Direct children of users
     if (userIds.length > 0) {
       await safeDelete(
+        `DELETE FROM "template_shares" WHERE "sharedByAdminUserId" IN (${userIdsStr})`,
+        'template_shares',
+      );
+      await safeDelete(
         `DELETE FROM "audit_logs" WHERE "userUserId" IN (${userIdsStr})`,
         'audit_logs',
       );
@@ -323,13 +327,7 @@ class FitnessFirstEliteSeeder {
       );
     }
 
-    // Level 3: Member subscriptions must be deleted BEFORE classes (due to selectedClassIds FK dependency)
-    await safeDelete(
-      `DELETE FROM "member_subscriptions"`,
-      'member_subscriptions',
-    );
-
-    // Level 4: Classes and inquiries (depend on branches)
+    // Level 3: Classes and inquiries (depend on branches)
     if (branchIds.length > 0) {
       await safeDelete(
         `DELETE FROM "classes" WHERE "branchBranchId" IN (${branchIdsStr})`,
@@ -341,27 +339,28 @@ class FitnessFirstEliteSeeder {
       );
     }
 
-    // Level 5: Members (cascade deletes subscriptions)
-    if (branchIds.length > 0) {
+    // Level 5: Break circular dependency between members and member_subscriptions
+    // First, set all subscriptionId to NULL in members table
+    if (memberIds.length > 0) {
       await safeDelete(
-        `DELETE FROM "members" WHERE "branchBranchId" IN (${branchIdsStr})`,
-        'members',
+        `UPDATE "members" SET "subscriptionId" = NULL WHERE "id" IN (${memberIdsStr})`,
+        'members_subscriptionId_null',
       );
     }
+    
+    // NOW delete member_subscriptions (circular reference broken)
+    await safeDelete(
+      `DELETE FROM "member_subscriptions"`,
+      'member_subscriptions',
+    );
 
-    // Level 6: Trainers
+    // Level 7: Trainers
     if (branchIds.length > 0) {
       await safeDelete(
         `DELETE FROM "trainers" WHERE "branchBranchId" IN (${branchIdsStr})`,
         'trainers',
       );
     }
-
-    // Level 7: Users
-    await safeDelete(
-      `DELETE FROM "users" WHERE "gymGymId" = '${fitnessFirstGym.gymId}'`,
-      'users',
-    );
 
     // Level 8: Membership plans (must delete before branches)
     if (branchIds.length > 0) {
@@ -371,13 +370,19 @@ class FitnessFirstEliteSeeder {
       );
     }
 
-    // Level 9: Branches (must delete before gym)
+    // Level 9: Users
+    await safeDelete(
+      `DELETE FROM "users" WHERE "gymGymId" = '${fitnessFirstGym.gymId}'`,
+      'users',
+    );
+
+    // Level 10: Branches (must delete before gym)
     await safeDelete(
       `DELETE FROM "branches" WHERE "gymGymId" = '${fitnessFirstGym.gymId}'`,
       'branches',
     );
 
-    // Level 10: Gym
+    // Level 11: Gym
     await safeDelete(
       `DELETE FROM "gyms" WHERE "gymId" = '${fitnessFirstGym.gymId}'`,
       'gym',
