@@ -2,6 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Related Documentation
+- **Postman Collection Populator**: See `.claude/CLAUDE.md` for the subagent system configuration (auth credentials, entity schemas for faker generation)
+
 ## Project Overview
 
 This is a **production-ready multi-tenant gym management system** built with NestJS 11, TypeScript 5.7, and PostgreSQL (TypeORM). The system supports multiple gym chains with branch-level operations, comprehensive member/trainer management, subscriptions, classes, attendance tracking, financial management (invoices/payments), lead management, analytics, and advanced fitness tracking (diet plans, workout plans, progress monitoring).

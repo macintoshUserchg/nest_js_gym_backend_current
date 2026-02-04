@@ -162,6 +162,54 @@ src/
 
 ---
 
+## Postman Collection Auto-Populator
+
+### Overview
+A subagent pipeline system that auto-populates Postman collections with fake request bodies (Faker.js) and real API responses.
+
+### Commands
+
+#### Pipeline Commands
+- `/run-single <endpoint>` - Test single endpoint with dependency resolution
+- `/populate-all` - Run all endpoints in dependency order
+
+#### Info Commands
+- `/status` - Check server status
+- `/endpoints` - Show all available commands
+- `/token` - Get fresh JWT token
+
+#### For API Testing
+Use the **api-tester** skill for comprehensive API testing and validation.
+
+### Recent Fixes
+
+**Feb 4, 2026 - Command Cleanup**
+1. **Removed 8 redundant quick test commands** - Simplified to 5 commands (3 info + 2 pipeline)
+2. **Updated guide_run-single.md** - References api-tester skill for testing workflows
+3. **Updated .claude/CLAUDE.md** - Reflects simplified command structure
+4. **Remaining commands**: `/run-single`, `/populate-all`, `/status`, `/endpoints`, `/token`
+
+**Feb 3, 2026 - Initial Fixes**
+1. **Created `scripts/update-collection.js`** - Properly updates Postman collections
+2. **Fixed endpoint names** - All 226+ endpoints now match actual collection names
+3. **Fixed shell escaping** - Use Node.js to write JSON files (avoids `!` issues)
+4. **Fixed response parsing** - Proper status code extraction and JSON cleaning
+
+### Key Files
+- `postman/dep-graph.json` - Dependency graph with 226 endpoints
+- `scripts/update-collection.js` - Collection update script
+- `postman/populated-collection.json` - Output collection for Postman Desktop
+- `guide_run-single.md` - Comprehensive user guide (21KB)
+
+### User Guide
+See `guide_run-single.md` in project root for:
+- Complete pipeline flow diagram (7 steps)
+- File structure explanation (which collection to import)
+- Troubleshooting common issues
+- Quick reference for all commands
+
+See memory: `postman-collection-populator-setup` for full details.
+
 ## Serena MCP Configuration
 
 **To activate Serena in new Claude Code sessions:**

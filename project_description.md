@@ -2,7 +2,7 @@
 
 ## Complete Project Description
 
-**Date:** 2026-01-29
+**Date:** 2026-02-03
 **Version:** 2.0 (Enhanced with Templates, Goals & Role-Based Access)
 **Framework:** NestJS 11.0.1 + TypeScript 5.7.3
 **Database:** PostgreSQL (Neon Cloud) + TypeORM 0.3.24
@@ -54,7 +54,7 @@ A comprehensive, production-ready multi-tenant gym management system built with 
 
 ## Architecture Overview
 
-### Modular Structure (32 Feature Modules)
+### Modular Structure (31 Feature Modules)
 
 ```
 src/
@@ -67,11 +67,11 @@ src/
 │   ├── strategies/jwt.strategy.ts
 │   ├── guards/
 │   │   ├── jwt-auth.guard.ts
-│   │   ├── roles.guard.ts       # NEW: Role-based access
-│   │   └── branch-access.guard.ts # NEW: Multi-tenant access
+│   │   ├── roles.guard.ts       # Role-based access
+│   │   └── branch-access.guard.ts # Multi-tenant access
 │   └── decorators/
 │       ├── current-user.decorator.ts
-│       └── roles.decorator.ts   # NEW: @Roles() decorator
+│       └── roles.decorator.ts   # @Roles() decorator
 ├── users/                       # User management
 ├── roles/                       # Role definitions
 ├── gyms/                        # Gym organization management
@@ -88,31 +88,36 @@ src/
 ├── payments/                    # Payments
 ├── analytics/                   # Dashboards
 ├── audit-logs/                  # Audit logging
-├── goals/                       # Fitness goals (legacy)
-├── goal-schedules/              # NEW: Goal scheduling system
+├── goals/                       # Goals management
+│   ├── goals.module.ts
+│   ├── goals.service.ts
+│   ├── goals.controller.ts
 │   ├── goal-schedules.module.ts
 │   ├── goal-schedules.service.ts
 │   ├── goal-schedules.controller.ts
 │   ├── goal-templates.module.ts
 │   ├── goal-templates.service.ts
 │   └── goal-templates.controller.ts
-├── workout-templates/           # NEW: Workout template system
+├── workouts/                    # Workout templates & assignments
+│   ├── workouts.module.ts
+│   ├── workouts.service.ts
+│   ├── workouts.controller.ts
 │   ├── workout-templates.module.ts
 │   ├── workout-templates.service.ts
 │   ├── workout-templates.controller.ts
 │   ├── workout-plan-chart-assignments.module.ts
 │   ├── workout-plan-chart-assignments.service.ts
 │   └── workout-plan-chart-assignments.controller.ts
-├── diet-plans/                  # Diet management
+├── diet-plans/                  # Diet plans & templates
 │   ├── diet-plans.module.ts
 │   ├── diet-plans.service.ts
 │   ├── diet-plans.controller.ts
-│   ├── diet-templates.module.ts      # NEW
-│   ├── diet-templates.service.ts     # NEW
-│   ├── diet-templates.controller.ts  # NEW
-│   ├── diet-assignments.module.ts    # NEW
-│   ├── diet-assignments.service.ts   # NEW
-│   └── diet-assignments.controller.ts# NEW
+│   ├── diet-templates.module.ts
+│   ├── diet-templates.service.ts
+│   ├── diet-templates.controller.ts
+│   ├── diet-assignments.module.ts
+│   ├── diet-assignments.service.ts
+│   └── diet-assignments.controller.ts
 ├── workout-logs/                # Workout history
 ├── body-progress/               # Body measurements
 ├── progress-tracking/           # Progress monitoring
@@ -121,19 +126,24 @@ src/
 │   ├── notifications.module.ts
 │   ├── notifications.service.ts
 │   └── notifications.controller.ts
-├── templates/                   # NEW: Template assignments
-│   └── template-assignments.module.ts
+├── templates/                   # Template assignments & shares
+│   ├── template-assignments.module.ts
+│   ├── template-assignments.service.ts
+│   ├── template-assignments.controller.ts
+│   ├── template-shares.module.ts
+│   ├── template-shares.service.ts
+│   └── template-shares.controller.ts
 ├── common/
 │   └── enums/
-│       ├── permissions.enum.ts  # NEW: Permissions & UserRole
+│       ├── permissions.enum.ts  # Permissions & UserRole
 │       └── gender.enum.ts
-├── entities/                    # TypeORM entities (35+ entities)
+├── entities/                    # TypeORM entities (35 entities)
 └── database/                    # Database configuration
 ```
 
 ---
 
-## Entity Architecture (35+ Entities)
+## Entity Architecture (35 Entities)
 
 ### Core Entities (Inherited from v1)
 
@@ -244,10 +254,10 @@ export class GoalTemplate {
 export class GoalScheduleMilestone {
   @PrimaryGeneratedColumn('uuid') milestone_id: string;
   @ManyToOne(() => GoalSchedule, { onDelete: 'CASCADE' }) schedule: GoalSchedule;
-  @Column({ length: 50 }) period_label: string; // "Week 1", "Month 1"
+  @Column({ length: 50 }) period_label: string;
   @Column({ type: 'int', default: 1 }) sequence_order: number;
   @Column({ type: 'decimal', precision: 10, scale: 2 }) target_value: number;
-  @Column({ length: 50 }) unit: string; // kg, reps, sessions, etc.
+  @Column({ length: 50 }) unit: string;
   @Column({ type: 'text', nullable: true }) description?: string;
   @Column({ type: 'enum', enum: ['high', 'medium', 'low'], default: 'medium' }) priority: string;
   @Column({ type: 'enum', enum: ['pending', 'in_progress', 'completed', 'missed'], default: 'pending' }) status: string;
@@ -293,6 +303,7 @@ export enum PlanType {
 @Entity('workout_templates')
 export class WorkoutTemplate {
   @PrimaryGeneratedColumn('uuid') template_id: string;
+  @Column({ type: 'int', nullable: true }) trainerId?: number;
   @ManyToOne(() => Trainer, { nullable: true }) trainer?: Trainer;
   @ManyToOne(() => Branch, { nullable: true }) branch?: Branch;
   @Column({ length: 100 }) title: string;
@@ -364,6 +375,7 @@ export class WorkoutTemplateExercise {
 @Entity('diet_templates')
 export class DietTemplate {
   @PrimaryGeneratedColumn('uuid') template_id: string;
+  @Column({ type: 'int', nullable: true }) trainerId?: number;
   @ManyToOne(() => Trainer, { nullable: true }) trainer?: Trainer;
   @ManyToOne(() => Branch, { nullable: true }) branch?: Branch;
   @Column({ length: 100 }) title: string;
@@ -805,7 +817,7 @@ create(@Body() dto: CreateWorkoutTemplateDto, @CurrentUser() user: User) {
 | POST | `/auth/login` | User login | Public |
 | POST | `/auth/logout` | User logout | JWT |
 
-### Goal Schedules (NEW)
+### Goal Schedules
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
@@ -820,7 +832,7 @@ create(@Body() dto: CreateWorkoutTemplateDto, @CurrentUser() user: User) {
 | POST | `/goal-schedules/:id/complete` | Mark complete | TRAINER, ADMIN |
 | DELETE | `/goal-schedules/:id` | Delete schedule | TRAINER, ADMIN |
 
-### Goal Templates (NEW)
+### Goal Templates
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
@@ -831,7 +843,7 @@ create(@Body() dto: CreateWorkoutTemplateDto, @CurrentUser() user: User) {
 | POST | `/goal-templates/:id/copy` | Copy template | TRAINER, ADMIN |
 | DELETE | `/goal-templates/:id` | Delete template | Owner, ADMIN |
 
-### Workout Templates (NEW)
+### Workout Templates
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
@@ -847,7 +859,7 @@ create(@Body() dto: CreateWorkoutTemplateDto, @CurrentUser() user: User) {
 | POST | `/workout-templates/:id/substitute` | Record substitution | MEMBER |
 | DELETE | `/workout-templates/:id` | Delete template | Owner, ADMIN |
 
-### Chart Assignments (NEW)
+### Chart Assignments
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
@@ -861,7 +873,7 @@ create(@Body() dto: CreateWorkoutTemplateDto, @CurrentUser() user: User) {
 | PATCH | `/chart-assignments/:id/cancel` | Cancel assignment | ADMIN, TRAINER |
 | DELETE | `/chart-assignments/:id` | Delete assignment | ADMIN |
 
-### Diet Templates (NEW)
+### Diet Templates
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
@@ -876,7 +888,7 @@ create(@Body() dto: CreateWorkoutTemplateDto, @CurrentUser() user: User) {
 | POST | `/diet-templates/:id/assign` | Assign to member | TRAINER, ADMIN |
 | DELETE | `/diet-templates/:id` | Delete template | Owner, ADMIN |
 
-### Diet Plan Assignments (NEW)
+### Diet Plan Assignments
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
@@ -1028,7 +1040,7 @@ New notification methods:
   original_exercise: "Bench Press",
   substituted_exercise: "Push-ups",
   reason: "Equipment unavailable",
-  date: "2026-01-29T10:00:00Z"
+  date: "2026-02-03T10:00:00Z"
 }
 
 // Diet template substitutions
@@ -1036,7 +1048,7 @@ New notification methods:
   original_meal: "Chicken Breast",
   substituted_meal: "Turkey Slices",
   reason: "Dietary preference",
-  date: "2026-01-29T12:00:00Z"
+  date: "2026-02-03T12:00:00Z"
 }
 ```
 
@@ -1150,7 +1162,7 @@ async create(dto: CreateDto, user: User) {
 
 ## Database Summary
 
-### Total Entities: 35+
+### Total Entities: 35
 
 | Category | Count | Examples |
 |----------|-------|----------|
@@ -1181,14 +1193,14 @@ async create(dto: CreateDto, user: User) {
 
 | Category | Files | Status |
 |----------|-------|--------|
-| Entities | 35+ | Implemented |
+| Entities | 35 | Implemented |
 | Enums | 2 | Implemented (permissions, gender) |
 | Guards | 3 | Implemented (JwtAuth, Roles, BranchAccess) |
 | Decorators | 2 | Implemented (@Roles, @CurrentUser) |
-| Services | 25+ | Implemented |
-| Controllers | 25+ | Implemented |
+| Services | 31 | Implemented |
+| Controllers | 31 | Implemented |
 | DTOs | 40+ | Implemented |
-| Modules | 32 | Implemented |
+| Modules | 31 | Implemented |
 
 ---
 

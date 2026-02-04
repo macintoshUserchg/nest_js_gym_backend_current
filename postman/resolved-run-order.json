@@ -1,0 +1,6 @@
+{
+  "supportEndpoints": [
+    "User login"
+  ],
+  "target": "Get all gyms"
+}
