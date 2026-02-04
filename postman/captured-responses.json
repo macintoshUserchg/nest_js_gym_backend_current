@@ -5,103 +5,94 @@
     "role": "ADMIN"
   },
   "Create a new gym": {
-    "gymId": "d1b33afb-3e8e-4a1e-8eb6-495510b6bfdd",
-    "name": "Brekke and Sons",
-    "email": "Ethel_Parisian@yahoo.com",
-    "phone": "580-321-1105",
-    "logoUrl": null,
-    "address": "75143 Thompson Loop",
-    "location": "Fort Darian",
-    "state": "South Carolina",
-    "latitude": "31.89150000",
-    "longitude": "17.04030000",
-    "branches": [
-      {
-        "branchId": "174b0081-ca5a-42c5-b54d-c9a7b7e24efb",
-        "name": "Brekke and Sons - Main Branch",
-        "email": "Ethel_Parisian@yahoo.com",
-        "phone": "580-321-1105",
-        "address": "75143 Thompson Loop",
-        "location": "Fort Darian",
-        "state": "South Carolina",
-        "mainBranch": true,
-        "latitude": "31.89150000",
-        "longitude": "17.04030000",
-        "createdAt": "2026-02-04T13:25:32.810Z",
-        "updatedAt": "2026-02-04T13:25:32.810Z"
-      }
-    ],
-    "createdAt": "2026-02-04T13:25:32.786Z",
-    "updatedAt": "2026-02-04T13:25:32.786Z"
+    "gymId": "4e289654-bbe0-4fca-86c1-5f191cb61ebe",
+    "name": "Fitness First Elite",
+    "existing": true
   },
-  "Get gym dashboard analytics": {
-    "gym": {
-      "id": "d1b33afb-3e8e-4a1e-8eb6-495510b6bfdd",
-      "name": "Brekke and Sons",
-      "branchId": "174b0081-ca5a-42c5-b54d-c9a7b7e24efb",
-      "branchName": "Brekke and Sons - Main Branch"
-    },
-    "today": {
-      "payments": {
-        "online": 0,
-        "cash": 0
+  "Create a branch for a gym": {
+    "branchId": "48e41979-bfac-4ab4-89e8-bd9f2398a040",
+    "mainBranch": true,
+    "existing": true
+  },
+  "Get all membership plans": {
+    "id": 1,
+    "name": "Elite Basic - Downtown",
+    "existing": true
+  },
+  "Create a new member": {
+    "id": 101,
+    "fullName": "Cornelius Dickens",
+    "email": "Kip_Hermann46@yahoo.com",
+    "phone": "755.776.8035 x28205",
+    "gender": "other",
+    "dateOfBirth": "1995-06-15",
+    "addressLine1": "145 Ellen Lock",
+    "addressLine2": "Suite 805",
+    "city": "Aracelyfield",
+    "state": "Oklahoma",
+    "postalCode": "09658",
+    "avatarUrl": "https://zealous-agreement.com/",
+    "attachmentUrl": "https://assured-creator.biz",
+    "emergencyContactName": "Lynne Reinger",
+    "emergencyContactPhone": "1-792-693-1178",
+    "isActive": true,
+    "freezeMember": false,
+    "createdAt": "2026-02-04T16:24:16.381Z",
+    "updatedAt": "2026-02-04T16:24:16.381Z",
+    "subscriptionId": 101,
+    "branchBranchId": "48e41979-bfac-4ab4-89e8-bd9f2398a040",
+    "is_managed_by_member": true,
+    "subscription": {
+      "id": 101,
+      "member": {
+        "id": 101,
+        "fullName": "Cornelius Dickens",
+        "email": "Kip_Hermann46@yahoo.com",
+        "phone": "755.776.8035 x28205",
+        "gender": "other",
+        "dateOfBirth": "1995-06-15",
+        "addressLine1": "145 Ellen Lock",
+        "addressLine2": "Suite 805",
+        "city": "Aracelyfield",
+        "state": "Oklahoma",
+        "postalCode": "09658",
+        "avatarUrl": "https://zealous-agreement.com/",
+        "attachmentUrl": "https://assured-creator.biz",
+        "emergencyContactName": "Lynne Reinger",
+        "emergencyContactPhone": "1-792-693-1178",
+        "isActive": true,
+        "freezeMember": false,
+        "createdAt": "2026-02-04T16:24:16.381Z",
+        "updatedAt": "2026-02-04T16:24:16.381Z",
+        "subscriptionId": 101,
+        "branchBranchId": "48e41979-bfac-4ab4-89e8-bd9f2398a040",
+        "is_managed_by_member": true
       },
-      "attendance": 0,
-      "admissions": 0,
-      "renewals": 0,
-      "duesPaid": 0
-    },
-    "members": {
-      "total": 0,
-      "active": {
-        "current_active": 0,
-        "lastMonth_active": 0,
-        "change": {
-          "percent": 0,
-          "type": "nochange"
-        }
+      "plan": {
+        "id": 1,
+        "name": "Elite Basic - Downtown",
+        "price": 8999,
+        "durationInDays": 30,
+        "description": "Access to premium gym facilities and basic classes"
       },
-      "expiring": {
-        "today": 0,
-        "next10Days": 0,
-        "member_id": []
-      },
-      "birthdays": {
-        "today": 0,
-        "member_id": []
-      },
-      "dues": {
-        "count": 0,
-        "totalAmount": 0,
-        "members_id": []
-      }
+      "startDate": "2026-02-04T16:24:16.381Z",
+      "endDate": "2026-03-06T16:24:16.381Z",
+      "isActive": true,
+      "selectedClassIds": []
     },
-    "resources": {
-      "trainers": {
-        "count": 0,
-        "trainers_id": []
-      },
-      "classes": {
-        "count": 0,
-        "classes_id": []
-      }
-    },
-    "revenue": {
-      "current": 0,
-      "lastMonth": 0,
-      "change": {
-        "percent": 0,
-        "type": "nochange"
-      }
-    },
-    "memberGrowth": {
-      "current": 0,
-      "lastMonth": 0,
-      "change": {
-        "percent": 0,
-        "type": "nochange"
-      }
-    },
-    "recentPayments": []
+    "branch": {
+      "branchId": "48e41979-bfac-4ab4-89e8-bd9f2398a040",
+      "name": "Fitness First Elite - Downtown",
+      "email": "downtown@fitnessfirstelite.com",
+      "phone": "+1-555-0101",
+      "address": "123 Elite Fitness Drive, Wellness City, WC 90210",
+      "location": "Downtown",
+      "state": "California",
+      "mainBranch": true,
+      "latitude": null,
+      "longitude": null,
+      "createdAt": "2026-02-04T13:45:14.622Z",
+      "updatedAt": "2026-02-04T13:45:14.622Z"
+    }
   }
 }
