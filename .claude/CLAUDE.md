@@ -51,6 +51,37 @@ Use the **api-tester** skill for:
 }
 ```
 
+### Token Caching
+
+The pipeline implements JWT token caching to avoid unnecessary logins:
+
+**Cache File**: `postman/auth-cache.json`
+- Stores JWT token with 24-hour expiration
+- Survives cleanup steps (unlike captured-responses.json)
+- Automatically updated after each successful login
+
+**Cache Structure**:
+```json
+{
+  "token": "eyJhbGci...",
+  "userid": "uuid",
+  "email": "admin@...",
+  "role": "ADMIN",
+  "cached_at": "2026-02-04T18:09:00.000Z",
+  "expires_at": "2026-02-05T18:09:00.000Z"
+}
+```
+
+**Cache Behavior**:
+- On pipeline start: Check if cached token exists and is unexpired
+- If valid: Restore to captured-responses.json, skip login
+- If invalid/missing: Run normal login flow, update cache
+
+**Helper Scripts**:
+- `scripts/check-auth-cache.js` - Validates cache and returns exit code 0 if valid
+- `scripts/update-auth-cache.js` - Updates cache after successful login
+- `scripts/restore-token-to-captured.js` - Restores cached token to captured-responses.json format
+
 ---
 
 ## Public vs Protected

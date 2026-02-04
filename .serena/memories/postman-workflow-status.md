@@ -64,5 +64,46 @@ Use full descriptive names from dep-graph.json:
 - `postman/captured-responses.json` - Runtime state for dependent endpoints
 
 ## Next Steps
+- Run `/run-single` with data reuse enabled (automatic for Gyms, Branches, Trainers)
+- Use `--interactive` flag for prompt-based data selection
 - Run `/populate-all` to populate all 285+ endpoints
 - Import `postman/populated-collection.json` into Postman Desktop
+
+---
+
+## Pipeline Enhancements (Feb 4, 2026)
+
+### Data Reuse System
+The pipeline now supports intelligent data reuse:
+
+**Entities with Reuse Enabled:**
+- Gym (default: query)
+- Branch (default: query)
+- Trainer (default: query)
+- WorkoutTemplate (default: query)
+- DietTemplate (default: query)
+- GoalTemplate (default: query)
+
+**Entities with Create Default:**
+- Member (default: create - always create new for testing)
+- Class (default: create)
+
+### New Runtime State Files
+- `postman/existing-data.json` - Cached query results (gitignored)
+- `postman/user-choice.json` - User interaction choices (gitignored)
+- `postman/entity-registry.json` - Entity metadata (29 entities)
+
+### Interactive Mode
+Use `--interactive` flag with `/run-single` to enable prompts:
+- Shows available records when multiple exist
+- User selects which record to reuse
+- Falls back to faker if no existing data
+
+### Example Usage
+```bash
+# Silent mode - reuses first available gym
+/run-single "Create a branch for a gym"
+
+# Interactive mode - prompts user to choose gym
+/run-single "Get gym dashboard analytics" --interactive
+```

@@ -4,23 +4,44 @@
 
 Runs a SINGLE endpoint from your Postman collection. Automatically resolves dependencies, silently runs support endpoints, generates faker body, hits your target, and writes request + response into the collection.
 
-Usage: `/run-single <endpoint name>`
+Usage: `/run-single <endpoint name> [-d "description"]`
 
-Example: `/run-single Create a new member`
+The `-d` flag accepts natural language guidance for the subagents:
+- **Data reuse hints**: "reuse existing branches", "don't create new gyms"
+- **Behavioral guidance**: "use realistic values only", "avoid edge cases"
+
+Examples:
+- `/run-single "Create Member"` - normal execution
+- `/run-single "Create Member" -d "reuse existing branches, don't create new gyms"`
+- `/run-single "Create Member" -d "use realistic values only"`
 
 ---
 
 You are the single-endpoint orchestrator. You coordinate the full pipeline to test one endpoint.
 
-## Step 1: Get endpoint name
-If the user passed an endpoint name as argument (after `/run-single`), use it.
-If not, ask them which endpoint they want to run from postman/dep-graph.json.
+## Step 1: Get endpoint name and optional description
+Parse the user's input:
 
-## Step 2: Clean up runtime state
+1. **Extract endpoint name**: The first argument (after `/run-single`) is the endpoint name. If not provided, ask them which endpoint they want to run from postman/dep-graph.json.
+
+2. **Extract description (optional)**: Look for `-d` or `--description` flag followed by a quoted string.
+   - If found, write the description to `postman/user-description.json`:
+     ```bash
+     cat > postman/user-description.json << EOF
+     {"description": "<description text>"}
+     EOF
+     ```
+   - If not found, continue without creating user-description.json
+
+The subagents (silent-runner, faker-injector, endpoint-runner) will automatically read user-description.json if it exists and apply the guidance.
+
+## Step 2: Clean up runtime state (PRESERVE auth cache)
 Run:
 ```bash
-rm -f postman/captured-responses.json postman/current-body.json postman/current-response.json postman/current-response-clean.json postman/resolved-run-order.json
+rm -f postman/captured-responses.json postman/current-body.json postman/current-response.json postman/current-response-clean.json postman/resolved-run-order.json postman/user-description.json
 ```
+
+**NOTE**: `postman/auth-cache.json` is NOT deleted — this preserves the cached JWT token across runs.
 
 ## Step 3: Resolve dependencies
 Use the dependency-resolver subagent. First, read postman/dep-graph.json to understand the graph.

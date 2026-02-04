@@ -71,6 +71,215 @@ function findEndpointByName(items, name) {
 }
 
 /**
+ * Strip query parameters from GET request URLs
+ * This prevents hardcoded filters that don't match actual data
+ */
+function stripQueryParams(endpoint) {
+  if (!endpoint.request?.method === 'GET') {
+    return endpoint;
+  }
+
+  const url = endpoint.request.url;
+  if (!url) return endpoint;
+
+  // Get the raw URL
+  const rawUrl = typeof url === 'string' ? url : url.raw;
+  if (!rawUrl) return endpoint;
+
+  // Strip query parameters
+  const urlWithoutQuery = rawUrl.split('?')[0];
+
+  // Update the URL
+  if (typeof endpoint.request.url === 'string') {
+    endpoint.request.url = urlWithoutQuery;
+  } else {
+    endpoint.request.url.raw = urlWithoutQuery;
+    if (endpoint.request.url.query) {
+      endpoint.request.url.query = [];
+    }
+  }
+
+  return endpoint;
+}
+
+/**
+ * Replace hardcoded IDs in URL paths with Postman variables
+ * This makes paths dynamic and usable with real data
+ */
+function replaceHardcodedPathParams(endpoint) {
+  if (!endpoint.request?.url) return endpoint;
+
+  let rawUrl = typeof endpoint.request.url === 'string'
+    ? endpoint.request.url
+    : endpoint.request.url.raw;
+
+  if (!rawUrl) return endpoint;
+
+  // Path parameter to variable mappings based on common patterns
+  const replacements = [
+    // Gym-related paths
+    { pattern: /\/gyms\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/gyms/{{gymId}}' },
+    { pattern: /\/gyms\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/gyms/{{gymId}}' },
+
+    // Branch-related paths
+    { pattern: /\/branches\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/branches/{{branchId}}' },
+    { pattern: /\/branches\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/branches/{{branchId}}' },
+
+    // Class-related paths
+    { pattern: /\/classes\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/classes/{{classId}}' },
+    { pattern: /\/classes\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/classes/{{classId}}' },
+
+    // Member-related paths (auto-increment IDs)
+    { pattern: /\/members\/\d+(?=\/|\?|$)/g, replacement: '/members/{{memberId}}' },
+
+    // Trainer-related paths (auto-increment IDs)
+    { pattern: /\/trainers\/\d+(?=\/|\?|$)/g, replacement: '/trainers/{{trainerId}}' },
+
+    // Assignment-related paths
+    { pattern: /\/assignments\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/assignments/{{assignmentId}}' },
+    { pattern: /\/assignments\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/assignments/{{assignmentId}}' },
+
+    // Subscription-related paths (auto-increment)
+    { pattern: /\/subscriptions\/\d+(?=\/|\?|$)/g, replacement: '/subscriptions/{{subscriptionId}}' },
+
+    // Invoice-related paths
+    { pattern: /\/invoices\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/invoices/{{invoiceId}}' },
+    { pattern: /\/invoices\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/invoices/{{invoiceId}}' },
+
+    // Payment-related paths
+    { pattern: /\/payments\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/payments/{{paymentId}}' },
+    { pattern: /\/payments\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/payments/{{paymentId}}' },
+
+    // Attendance-related paths
+    { pattern: /\/attendance\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/attendance/{{attendanceId}}' },
+    { pattern: /\/attendance\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/attendance/{{attendanceId}}' },
+
+    // Inquiry-related paths (auto-increment)
+    { pattern: /\/inquiries\/\d+(?=\/|\?|$)/g, replacement: '/inquiries/{{inquiryId}}' },
+
+    // Diet plan-related paths
+    { pattern: /\/diet-plans\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/diet-plans/{{dietPlanId}}' },
+    { pattern: /\/diet-plans\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/diet-plans/{{dietPlanId}}' },
+
+    // Workout-related paths
+    { pattern: /\/workouts\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/workouts/{{workoutPlanId}}' },
+    { pattern: /\/workouts\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, replacement: '/workouts/{{workoutPlanId}}' },
+  ];
+
+  // Apply all replacements
+  for (const { pattern, replacement } of replacements) {
+    rawUrl = rawUrl.replace(pattern, replacement);
+  }
+
+  // Update the URL
+  if (typeof endpoint.request.url === 'string') {
+    endpoint.request.url = rawUrl;
+  } else {
+    endpoint.request.url.raw = rawUrl;
+  }
+
+  return endpoint;
+}
+
+/**
+ * Recursively clean an object by removing fields with hardcoded IDs
+ */
+function cleanObject(obj, uuidPattern, suspiciousValues) {
+  if (!obj || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => cleanObject(item, uuidPattern, suspiciousValues));
+  }
+
+  const cleaned = {};
+  for (const [key, value] of Object.entries(obj)) {
+    // Skip fields with hardcoded UUIDs
+    if (typeof value === 'string' && uuidPattern.test(value)) {
+      continue;
+    }
+
+    // Skip known suspicious hardcoded values
+    if (suspiciousValues.includes(value)) {
+      continue;
+    }
+
+    // Skip auto-increment IDs that look like foreign keys (id fields)
+    if ((key.endsWith('Id') || key.endsWith('_id')) && typeof value === 'number' && value > 0) {
+      // Keep the value - it might be legitimate
+    }
+
+    // Recursively clean nested objects
+    cleaned[key] = cleanObject(value, uuidPattern, suspiciousValues);
+  }
+
+  return cleaned;
+}
+
+/**
+ * Remove hardcoded IDs and suspicious values from request bodies
+ */
+function removeHardcodedIdsFromBody(endpoint) {
+  if (!endpoint.request?.body?.raw) return endpoint;
+
+  try {
+    let body = JSON.parse(endpoint.request.body.raw);
+
+    // UUID pattern for detection
+    const uuidPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$|^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+
+    // Known suspicious hardcoded values from the raw collection
+    const suspiciousValues = [
+      '123e4567-e89b-12d3-a456-426614174000',
+      '03375eab-ff06-2b0b-cfc6-e717a9c9ae1a',
+      '91e3e02c-8c4e-4e17-918f-803bf9583194',
+      '3c08ed00-e120-47f7-9a2a-ba381681e67e',
+      '00000000-0000-0000-0000-000000000000',
+      'ffffffff-ffff-ffff-ffff-ffffffffffff'
+    ];
+
+    // Clean the body
+    const cleanedBody = cleanObject(body, uuidPattern, suspiciousValues);
+
+    // Update if changes were made
+    if (JSON.stringify(cleanedBody) !== JSON.stringify(body)) {
+      endpoint.request.body.raw = JSON.stringify(cleanedBody, null, 2);
+    }
+  } catch (e) {
+    // Body isn't JSON, skip
+  }
+
+  return endpoint;
+}
+
+/**
+ * Remove suspicious hardcoded enum values that don't match actual data
+ * (This is now integrated into removeHardcodedIdsFromBody)
+ */
+function removeSuspiciousEnumValues(endpoint) {
+  // This functionality is now integrated into removeHardcodedIdsFromBody
+  return endpoint;
+}
+
+/**
+ * Clean all garbage values from endpoint URLs and request bodies
+ * This is the main entry point for all cleaning operations
+ */
+function cleanGarbageData(endpoint) {
+  // 1. Strip query parameters from GET requests
+  stripQueryParams(endpoint);
+
+  // 2. Replace hardcoded path parameters with Postman variables
+  replaceHardcodedPathParams(endpoint);
+
+  // 3. Remove hardcoded IDs from request bodies
+  removeHardcodedIdsFromBody(endpoint);
+
+  return endpoint;
+}
+
+/**
  * Update the request body of an endpoint
  */
 function updateRequestBody(endpoint, bodyContent) {
@@ -143,6 +352,7 @@ if (!endpoint) {
 }
 
 // Update the endpoint
+cleanGarbageData(endpoint);
 updateRequestBody(endpoint, bodyContent);
 addResponseExample(endpoint, responseData);
 
@@ -167,4 +377,12 @@ function listEndpoints(items, depth) {
   }
 }
 
-module.exports = { findEndpointByName, updateRequestBody, addResponseExample };
+module.exports = {
+  findEndpointByName,
+  updateRequestBody,
+  addResponseExample,
+  cleanGarbageData,
+  stripQueryParams,
+  replaceHardcodedPathParams,
+  removeHardcodedIdsFromBody
+};

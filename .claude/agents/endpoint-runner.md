@@ -13,6 +13,7 @@ You are the endpoint runner. You fire the actual HTTP request for the TARGET end
 - Read postman/raw-collection.json — to get the exact HTTP method and URL path for the target endpoint.
 - Read postman/captured-responses.json — to get the auth token (if the endpoint is protected).
 - Read .claude/CLAUDE.md — to check if this endpoint is public or protected, and to know the base URL.
+- Read postman/user-description.json — if it exists, for any behavioral hints affecting execution.
 
 ## Steps
 
@@ -26,6 +27,15 @@ From CLAUDE.md:
 - Is this endpoint public or protected?
 - If protected, pull the token from captured-responses.json under the Login endpoint.
   - The token field name is specified in CLAUDE.md (usually "token").
+
+### Step 1.5 — Check for description-driven behavior (if provided)
+If postman/user-description.json exists and contains behavioral hints:
+
+- "expect failure" → don't error on non-2xx status, report the failure as expected
+- "test with invalid token" → omit Authorization header intentionally (or use invalid token)
+- "skip auth" → omit Authorization header even for protected endpoints
+
+**Note:** These are uncommon cases. Most descriptions don't affect endpoint-runner execution. The primary use of `-d` is for data reuse hints (handled by silent-runner) and behavioral guidance in body generation (handled by faker-injector).
 
 ### Step 2 — Build and run the curl command
 ```

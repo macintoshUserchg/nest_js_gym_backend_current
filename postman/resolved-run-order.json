@@ -1,6 +1,7 @@
 {
   "supportEndpoints": [
-    "User login"
+    "User login",
+    "Create a new gym"
   ],
-  "target": "Get all gyms"
+  "target": "Get gym dashboard analytics"
 }

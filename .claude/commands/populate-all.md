@@ -10,11 +10,13 @@ Usage: `/populate-all`
 
 You are the full-collection orchestrator. You run EVERY endpoint in dep-graph.json, in the correct order, and populate the collection with request + response for all of them.
 
-## Step 1: Clean up runtime state
+## Step 1: Clean up runtime state (PRESERVE auth cache)
 Run:
 ```bash
 rm -f postman/captured-responses.json postman/current-body.json postman/current-response.json postman/resolved-run-order.json
 ```
+
+**NOTE**: `postman/auth-cache.json` is NOT deleted — this preserves the cached JWT token across runs.
 
 ## Step 2: Read the dependency graph
 Read postman/dep-graph.json to get all endpoints and their dependencies.

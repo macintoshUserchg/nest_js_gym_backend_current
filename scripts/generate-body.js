@@ -23,14 +23,16 @@
 const { faker } = require('@faker-js/faker');
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 // --- Parse CLI args ---
 const itemIndex = process.argv.indexOf('--item');
 const schemaIndex = process.argv.indexOf('--schema');
+const interactiveIndex = process.argv.indexOf('--interactive') !== -1 || process.argv.indexOf('-i') !== -1;
 
 if (itemIndex === -1 || !process.argv[itemIndex + 1]) {
   console.error('ERROR: Missing --item flag.');
-  console.error('Usage: node scripts/generate-body.js --item "Create Post" --schema \'{"field":"rule"}\'');
+  console.error('Usage: node scripts/generate-body.js --item "Create Post" --schema \'{"field":"rule"}\' [--interactive]');
   process.exit(1);
 }
 if (schemaIndex === -1 || !process.argv[schemaIndex + 1]) {
@@ -39,6 +41,7 @@ if (schemaIndex === -1 || !process.argv[schemaIndex + 1]) {
 }
 
 const itemName = process.argv[itemIndex + 1];
+const isInteractive = interactiveIndex;
 let schema;
 try {
   schema = JSON.parse(process.argv[schemaIndex + 1]);
@@ -57,6 +60,82 @@ if (fs.existsSync(capturedPath)) {
   } catch (e) {
     console.error('WARNING: captured-responses.json exists but is not valid JSON. Treating as empty.');
   }
+}
+
+// --- Read existing data (for data reuse) ---
+const existingDataPath = path.resolve(__dirname, '../postman/existing-data.json');
+let existingData = {};
+if (fs.existsSync(existingDataPath)) {
+  try {
+    existingData = JSON.parse(fs.readFileSync(existingDataPath, 'utf-8'));
+  } catch (e) {
+    console.warn('WARNING: existing-data.json exists but is not valid JSON. Data reuse disabled.');
+  }
+}
+
+// --- Read entity registry (for data reuse metadata) ---
+const registryPath = path.resolve(__dirname, '../postman/entity-registry.json');
+let entityRegistry = { entities: {}, defaultReuse: {} };
+if (fs.existsSync(registryPath)) {
+  try {
+    entityRegistry = JSON.parse(fs.readFileSync(registryPath, 'utf-8'));
+  } catch (e) {
+    console.warn('WARNING: entity-registry.json exists but is not valid JSON.');
+  }
+}
+
+// --- Helper to find entity by collection endpoint ---
+function getEntityByCollectionEndpoint(endpointName) {
+  for (const [entityName, config] of Object.entries(entityRegistry.entities)) {
+    if (config.collectionEndpoint === endpointName) {
+      return { name: entityName, ...config };
+    }
+  }
+  return null;
+}
+
+// --- Helper to get existing data for an entity ---
+function getExistingDataForEntity(entityName) {
+  if (!existingData[entityName]) {
+    return [];
+  }
+  return Array.isArray(existingData[entityName]) ? existingData[entityName] : [existingData[entityName]];
+}
+
+// --- Helper to prompt user for data reuse (interactive mode) ---
+function promptForReuse(entityName, options) {
+  try {
+    const entityConfig = entityRegistry.entities[entityName];
+    const displayField = entityConfig?.displayField || 'name';
+    const idField = entityConfig?.idField || 'id';
+
+    // Build options with idField for display
+    const optionsWithId = options.map(opt => ({
+      ...opt,
+      idField,
+      [displayField]: opt[displayField] || opt.name || '(unnamed)'
+    }));
+
+    const optionsJson = JSON.stringify(optionsWithId);
+    const question = `Found ${options.length} existing ${entityName}(s). Use one or create new?`;
+
+    execSync(
+      `node scripts/interactive-prompt.js --question "${question}" --options '${optionsJson}' --entity "${entityName}" --display "${displayField}"`,
+      { stdio: 'inherit' }
+    );
+
+    // Read user choice
+    const choicePath = path.resolve(__dirname, '../postman/user-choice.json');
+    if (fs.existsSync(choicePath)) {
+      const choice = JSON.parse(fs.readFileSync(choicePath, 'utf-8'));
+      if (choice.action === 'reuse') {
+        return choice.data;
+      }
+    }
+  } catch (e) {
+    console.warn('Interactive prompt failed, falling back to create new.');
+  }
+  return null;
 }
 
 // --- Resolve a single schema rule to a value ---
@@ -134,10 +213,65 @@ function resolveRule(rule) {
   return rule;
 }
 
+// --- Resolve a single schema rule with data reuse support ---
+function resolveRuleWithReuse(rule, fieldName) {
+  if (typeof rule !== 'string') {
+    return resolveRule(rule);
+  }
+
+  // Check if this is a ref to a collection endpoint (data reuse opportunity)
+  if (rule.startsWith('ref:')) {
+    const refPath = rule.slice(4); // e.g. "Get all gyms.gymId"
+    const dotIndex = refPath.lastIndexOf('.');
+    if (dotIndex === -1) {
+      return resolveRule(rule); // Invalid format, fall back to original
+    }
+
+    const endpoint = refPath.slice(0, dotIndex);
+    const field = refPath.slice(dotIndex + 1);
+
+    // Check if this ref points to a collection endpoint
+    const entity = getEntityByCollectionEndpoint(endpoint);
+    if (entity) {
+      // This is a collection endpoint - check for existing data
+      const existingRecords = getExistingDataForEntity(entity.name);
+
+      if (existingRecords.length > 0) {
+        const defaultReuse = entityRegistry.defaultReuse[entity.name] || 'query';
+
+        // Skip reuse if default strategy is 'create'
+        if (defaultReuse === 'create') {
+          console.log(`ℹ️  [${fieldName}] Default strategy for ${entity.name} is 'create', will generate new data`);
+          return resolveRule(rule);
+        }
+
+        // Interactive mode: prompt user if multiple records
+        if (isInteractive && existingRecords.length > 1) {
+          const selected = promptForReuse(entity.name, existingRecords);
+          if (selected) {
+            const idField = entity.idField;
+            console.log(`♻️  [${fieldName}] Reusing existing ${entity.name}: ${selected[entity.displayField] || selected.name}`);
+            return selected[field] || selected[idField];
+          }
+        }
+
+        // Silent mode or single record: use first available
+        const first = existingRecords[0];
+        const idField = entity.idField;
+        console.log(`♻️  [${fieldName}] Reusing existing ${entity.name}: ${first[entity.displayField] || first.name} (${idField}: ${first[idField]})`);
+        return first[field] || first[idField];
+      }
+    }
+  }
+
+  // Fall back to original resolveRule
+  return resolveRule(rule);
+}
+
 // --- Generate the body ---
 const body = {};
 for (const [key, rule] of Object.entries(schema)) {
-  body[key] = resolveRule(rule);
+  body[key] = resolveRuleWithReuse(rule, key);
 }
 
 // --- Write output ---

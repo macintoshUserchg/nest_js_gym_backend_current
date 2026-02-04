@@ -12,6 +12,7 @@ You are the faker injector. Your job is ONE thing: generate the request body for
 - Read postman/captured-responses.json — this has real IDs and tokens from the support endpoints that silent-runner already ran. You WILL need these.
 - Read .claude/CLAUDE.md — for the DB schema, enums, constraints, and field rules.
 - Read postman/raw-collection.json — to see what fields the target endpoint's body expects.
+- Read postman/user-description.json — if it exists, for behavioral guidance from the user.
 
 ## Your job
 
@@ -37,6 +38,27 @@ Rules to follow:
 - For ENUM fields, get the allowed values from CLAUDE.md and use enum: syntax
 - Respect constraints (e.g. max length) — use appropriate faker methods
 - Do NOT make up fields that don't exist in the schema
+
+### Step 2.5 — Apply user description (if provided)
+If postman/user-description.json exists:
+1. Read the description
+2. Apply behavioral guidance to your schema mapping:
+
+**Guidance examples:**
+- "use realistic values only" → avoid extreme/outlier faker values
+  - Instead of `faker:number.int({ min: 1, max: 1000000 })`, use smaller ranges like `{ min: 1, max: 1000 }`
+  - Instead of arbitrary long strings, use reasonable lengths (e.g., 10-50 chars for names)
+  - Use realistic phone numbers, not random 10-digit numbers
+
+- "prefer simple values" → use shorter strings, smaller numbers
+  - Use `faker:lorem.word()` instead of `faker:lorem.sentence()`
+  - Use smaller integer ranges
+
+- "avoid edge cases" → skip boundary values, unusual enum combinations
+  - Don't pick the most extreme enum values unless common
+  - Avoid dates far in the past/future
+
+**Important:** These are HINTS, not requirements. If the schema requires something specific, the schema wins. For example, if a field requires a value in a specific range, you must respect that range.
 
 ### Step 3 — Run the generator
 ```

@@ -14,6 +14,46 @@ You are the silent runner. The user does not care about these endpoints — they
 - Read postman/raw-collection.json — to get the actual HTTP method, URL, and body schema for each endpoint.
 - Read postman/captured-responses.json — if it exists. It has responses from previously run endpoints (like tokens or IDs you'll need).
 
+## Step -0.5 — Read user description (if provided)
+Check if postman/user-description.json exists:
+```bash
+if [ -f postman/user-description.json ]; then
+  # Read the description
+  DESCRIPTION=$(cat postman/user-description.json | jq -r '.description')
+  echo "User guidance: $DESCRIPTION"
+fi
+```
+
+If a description was provided, interpret the natural language guidance for data reuse:
+- "don't create new gyms" → when you encounter "Create Gym" endpoint, try to reuse existing gym data instead
+- "reuse existing branches" → when you encounter "Create Branch" endpoint, try to reuse existing branch data
+- "prefer existing data" → always try data-reuse-service first before hitting Create endpoints
+- "always create fresh" → skip data-reuse-service, always hit the Create endpoint
+
+**This is GUIDANCE, not strict requirements.** If the user's guidance conflicts with what's needed for the target endpoint to work, prioritize making the target work.
+
+## Step 0 — Check for cached token (SKIP login if valid)
+
+Before running any support endpoints, check if we have a valid cached token.
+
+Run:
+```bash
+node scripts/check-auth-cache.js
+```
+
+If exit code is 0 (valid token):
+1. Restore the token to captured-responses.json:
+   ```bash
+   node scripts/restore-token-to-captured.js
+   ```
+2. REMOVE "User login" from the supportEndpoints list (modify the array in memory)
+3. Report: "Using cached auth token (expires at <timestamp>)"
+4. Skip to Step 1 (run remaining support endpoints)
+
+If exit code is 1 (invalid/missing token):
+- Report: "No valid cached token, will login"
+- Continue to Step 1 with full supportEndpoints list (will run "User login")
+
 ## For EACH endpoint in supportEndpoints (run them in the EXACT order given, do NOT skip or reorder):
 
 ### Step 1 — Figure out the body schema
@@ -27,6 +67,50 @@ Map each body field to a faker rule using this syntax:
 - static:somevalue → uses the literal string
 
 Do NOT include fields that are auto-generated (like id, createdAt).
+
+### Step 1.5 — Check for existing data (BEFORE generating faker bodies)
+
+Before generating a faker body for a "Create" endpoint, check if we can reuse existing data:
+
+1. **Check if this is a Create endpoint** — Look at postman/entity-registry.json to see if the endpoint name matches any `createEndpoint` field.
+
+2. **Apply user description guidance (if provided)**:
+   - If description contains "don't create new <entity>" → force reuse behavior (skip creation)
+   - If description contains "reuse existing <entity>" → force reuse behavior
+   - If description contains "always create fresh" → skip data-reuse-service, go directly to Step 2
+   - Otherwise, follow the defaultReuse strategy from entity-registry.json
+
+3. **Run data-reuse-service** — If reusing is allowed:
+   ```
+   TOKEN=<token-from-captured-responses>
+   node scripts/data-reuse-service.js --entity "<EntityName>" --token "$TOKEN"
+   ```
+
+4. **Check existing-data.json** — If the service found existing records:
+   - Read the defaultReuse strategy from entity-registry.json for this entity.
+   - If `defaultReuse` is "query" and records exist → **Skip to Step 7** (reuse existing data)
+   - If `defaultReuse` is "create" → Continue to Step 2 (generate new data)
+
+5. **When reusing existing data**:
+   - Take the first record from existing-data.json for this entity.
+   - Add it to captured-responses.json as if the endpoint had been run.
+   - Skip to the next support endpoint (do NOT hit the Create endpoint).
+
+6. **When creating new data**:
+   - Continue to Step 2 (generate faker body as normal).
+
+**Example of reuse flow with user guidance:**
+```
+User description: "reuse existing branches, don't create new gyms"
+
+Endpoint: "Create a Gym"
+Description check: Contains "don't create new gyms" → force reuse
+Action: Run data-reuse-service for Gym, reuse existing gym if found
+
+Endpoint: "Create a branch for a gym"
+Description check: Contains "reuse existing branches" → force reuse
+Action: Run data-reuse-service for Branch, reuse existing branch if found
+```
 
 ### Step 2 — Special case: Login endpoint
 If the current endpoint is the Login/Auth endpoint:
@@ -74,7 +158,8 @@ If status code is NOT 2xx (200, 201, etc.):
 If status code IS 2xx:
   Parse the response body as JSON.
 
-### Step 6 — Capture the response
+### Step 6 — Capture the response AND UPDATE TOKEN CACHE
+
 Read postman/captured-responses.json (or start with {} if it doesn't exist).
 ADD this endpoint's response to it:
 ```
@@ -86,6 +171,13 @@ ADD this endpoint's response to it:
 ```
 Write the updated object back to postman/captured-responses.json.
 Do NOT overwrite — APPEND the new entry.
+
+**IF this endpoint is "User login"**: Also update the token cache:
+```bash
+node scripts/update-auth-cache.js
+```
+
+This updates postman/auth-cache.json with the new token and 24-hour expiration.
 
 ## When all support endpoints are done
 Say: "All support endpoints ran successfully. Ready for target." and stop.

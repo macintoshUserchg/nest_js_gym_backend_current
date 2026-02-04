@@ -1,0 +1,294 @@
+{
+  "entities": {
+    "Gym": {
+      "collectionEndpoint": "Get all gyms",
+      "createEndpoint": "Create a new gym",
+      "idField": "gymId",
+      "displayField": "name",
+      "uniqueFields": ["email", "name"],
+      "queryEndpoint": "Get a gym by ID"
+    },
+    "Branch": {
+      "collectionEndpoint": "Get all branches",
+      "createEndpoint": "Create a branch for a gym",
+      "idField": "branchId",
+      "displayField": "name",
+      "parentEntity": "Gym",
+      "parentField": "gymGymId",
+      "uniqueFields": ["name", "email"],
+      "queryEndpoint": "Get a branch by ID"
+    },
+    "Member": {
+      "collectionEndpoint": "Get all members",
+      "createEndpoint": "Create a new member",
+      "idField": "id",
+      "displayField": "fullName",
+      "parentEntity": "Branch",
+      "parentField": "branchBranchId",
+      "uniqueFields": ["email"],
+      "queryEndpoint": "Get a member by ID"
+    },
+    "Trainer": {
+      "collectionEndpoint": "Get all trainers",
+      "createEndpoint": "Create a new trainer",
+      "idField": "id",
+      "displayField": "fullName",
+      "parentEntity": "Branch",
+      "parentField": "branchBranchId",
+      "uniqueFields": ["email"],
+      "queryEndpoint": "Get a trainer by ID"
+    },
+    "Role": {
+      "collectionEndpoint": "Get all roles",
+      "createEndpoint": "Create a new role",
+      "idField": "id",
+      "displayField": "name",
+      "uniqueFields": ["name"],
+      "queryEndpoint": "Get role by ID"
+    },
+    "User": {
+      "collectionEndpoint": "Get all users",
+      "createEndpoint": "Create a new user",
+      "idField": "userId",
+      "displayField": "email",
+      "uniqueFields": ["email"],
+      "queryEndpoint": "Get a user by ID"
+    },
+    "Class": {
+      "collectionEndpoint": "Get all classes",
+      "createEndpoint": "Create a new class",
+      "idField": "class_id",
+      "displayField": "name",
+      "parentEntity": "Branch",
+      "parentField": "branchBranchId",
+      "uniqueFields": ["name"],
+      "queryEndpoint": "Get a class by ID"
+    },
+    "MembershipPlan": {
+      "collectionEndpoint": "Get all membership plans",
+      "createEndpoint": "Create a new membership plan",
+      "idField": "id",
+      "displayField": "name",
+      "parentEntity": "Branch",
+      "parentField": "branchBranchId",
+      "uniqueFields": ["name"],
+      "queryEndpoint": "Get a membership plan by ID"
+    },
+    "MemberSubscription": {
+      "collectionEndpoint": "Get all subscriptions",
+      "createEndpoint": "Create a new membership subscription",
+      "idField": "id",
+      "displayField": "id",
+      "parentEntity": "Member",
+      "parentField": "memberId",
+      "uniqueFields": ["subscriptionId"],
+      "queryEndpoint": "Get a subscription by ID"
+    },
+    "MemberTrainerAssignment": {
+      "collectionEndpoint": "Get all assignments",
+      "createEndpoint": "Assign a member to a trainer",
+      "idField": "assignment_id",
+      "displayField": "id",
+      "uniqueFields": [],
+      "queryEndpoint": "Get an assignment by ID"
+    },
+    "Attendance": {
+      "collectionEndpoint": "Get all attendance records",
+      "createEndpoint": "Mark attendance (check-in)",
+      "idField": "id",
+      "displayField": "id",
+      "parentEntity": "Member",
+      "parentField": "memberId",
+      "uniqueFields": [],
+      "queryEndpoint": "Get attendance record by ID"
+    },
+    "Inquiry": {
+      "collectionEndpoint": "Get all inquiries (Admin)",
+      "createEndpoint": "Create a new inquiry (Public)",
+      "idField": "id",
+      "displayField": "fullName",
+      "uniqueFields": ["email"],
+      "queryEndpoint": "Get inquiry by ID"
+    },
+    "Invoice": {
+      "collectionEndpoint": "Get all invoices",
+      "createEndpoint": "Create invoice",
+      "idField": "invoice_id",
+      "displayField": "invoice_id",
+      "parentEntity": "Member",
+      "parentField": "memberId",
+      "uniqueFields": [],
+      "queryEndpoint": "Get invoice by ID"
+    },
+    "PaymentTransaction": {
+      "collectionEndpoint": "Get all payments",
+      "createEndpoint": "Record payment",
+      "idField": "transaction_id",
+      "displayField": "transaction_id",
+      "parentEntity": "Invoice",
+      "parentField": "invoiceId",
+      "uniqueFields": [],
+      "queryEndpoint": "Get a payment by ID"
+    },
+    "DietPlan": {
+      "collectionEndpoint": "Get all diet plans",
+      "createEndpoint": "Create a new diet plan",
+      "idField": "plan_id",
+      "displayField": "title",
+      "parentEntity": "Member",
+      "parentField": "memberId",
+      "uniqueFields": [],
+      "queryEndpoint": "Get a diet plan by ID"
+    },
+    "DietPlanMeal": {
+      "collectionEndpoint": "Get meals for a diet plan",
+      "createEndpoint": "Add a meal to a diet plan",
+      "idField": "meal_id",
+      "displayField": "meal_name",
+      "parentEntity": "DietPlan",
+      "parentField": "dietPlanPlanId",
+      "uniqueFields": [],
+      "queryEndpoint": null
+    },
+    "DietTemplate": {
+      "collectionEndpoint": "Get all diet templates",
+      "createEndpoint": "Create a diet template (trainer/admin only)",
+      "idField": "template_id",
+      "displayField": "title",
+      "parentEntity": "Trainer",
+      "parentField": "trainerId",
+      "uniqueFields": [],
+      "queryEndpoint": "Get a diet template by ID"
+    },
+    "DietPlanAssignment": {
+      "collectionEndpoint": "Get all diet assignments",
+      "createEndpoint": "Assign diet plan to a member (trainer/admin only)",
+      "idField": "assignment_id",
+      "displayField": "id",
+      "parentEntity": "Member",
+      "parentField": "memberId",
+      "uniqueFields": [],
+      "queryEndpoint": "Get a diet assignment by ID"
+    },
+    "WorkoutPlan": {
+      "collectionEndpoint": "Get all workout plans",
+      "createEndpoint": "Create a workout plan for a member",
+      "idField": "plan_id",
+      "displayField": "title",
+      "parentEntity": "Member",
+      "parentField": "memberId",
+      "uniqueFields": [],
+      "queryEndpoint": "Get a workout plan by ID"
+    },
+    "WorkoutPlanExercise": {
+      "collectionEndpoint": "Get exercises for a workout plan",
+      "createEndpoint": "Add an exercise to a workout plan",
+      "idField": "exercise_id",
+      "displayField": "exercise_name",
+      "parentEntity": "WorkoutPlan",
+      "parentField": "workoutPlanPlanId",
+      "uniqueFields": [],
+      "queryEndpoint": null
+    },
+    "WorkoutTemplate": {
+      "collectionEndpoint": "Get all workout templates",
+      "createEndpoint": "Create a workout template (trainer/admin only)",
+      "idField": "template_id",
+      "displayField": "title",
+      "parentEntity": "Trainer",
+      "parentField": "trainerId",
+      "uniqueFields": [],
+      "queryEndpoint": "Get a workout template by ID"
+    },
+    "WorkoutTemplateExercise": {
+      "collectionEndpoint": "Get exercises for a workout template",
+      "createEndpoint": "Add an exercise to a workout template",
+      "idField": "exercise_id",
+      "displayField": "exercise_name",
+      "parentEntity": "WorkoutTemplate",
+      "parentField": "templateTemplateId",
+      "uniqueFields": [],
+      "queryEndpoint": null
+    },
+    "WorkoutPlanChartAssignment": {
+      "collectionEndpoint": "Get all template assignments",
+      "createEndpoint": "Create a template assignment",
+      "idField": "assignment_id",
+      "displayField": "id",
+      "parentEntity": "Member",
+      "parentField": "memberId",
+      "uniqueFields": [],
+      "queryEndpoint": "Get a template assignment by ID"
+    },
+    "BodyProgress": {
+      "collectionEndpoint": "Get all body progress records",
+      "createEndpoint": "Create a new body progress record",
+      "idField": "id",
+      "displayField": "id",
+      "parentEntity": "Member",
+      "parentField": "memberId",
+      "uniqueFields": [],
+      "queryEndpoint": "Get body progress record by ID"
+    },
+    "Goal": {
+      "collectionEndpoint": "Get all goals",
+      "createEndpoint": "Create a new goal",
+      "idField": "id",
+      "displayField": "goal_type",
+      "parentEntity": "Member",
+      "parentField": "memberId",
+      "uniqueFields": [],
+      "queryEndpoint": "Get a goal by ID"
+    },
+    "GoalTemplate": {
+      "collectionEndpoint": "Get all goal templates",
+      "createEndpoint": "Create a goal template",
+      "idField": "template_id",
+      "displayField": "title",
+      "parentEntity": "Trainer",
+      "parentField": "trainerId",
+      "uniqueFields": [],
+      "queryEndpoint": "Get a goal template by ID"
+    },
+    "GoalSchedule": {
+      "collectionEndpoint": "Get all goal schedules",
+      "createEndpoint": "Create a goal schedule for a member",
+      "idField": "schedule_id",
+      "displayField": "title",
+      "parentEntity": "Member",
+      "parentField": "memberId",
+      "uniqueFields": [],
+      "queryEndpoint": "Get a goal schedule by ID"
+    },
+    "ExerciseLibrary": {
+      "collectionEndpoint": "Get all exercises",
+      "createEndpoint": "Create a new exercise",
+      "idField": "exercise_id",
+      "displayField": "exercise_name",
+      "uniqueFields": ["exercise_name"],
+      "queryEndpoint": "Get an exercise by ID"
+    },
+    "TemplateShare": {
+      "collectionEndpoint": "Get all shared templates",
+      "createEndpoint": "Share a template",
+      "idField": "share_id",
+      "displayField": "id",
+      "uniqueFields": [],
+      "queryEndpoint": "Get a shared template by ID"
+    }
+  },
+  "defaultReuse": {
+    "Gym": "query",
+    "Branch": "query",
+    "Member": "create",
+    "Trainer": "query",
+    "Role": "query",
+    "Class": "create",
+    "MembershipPlan": "create",
+    "Inquiry": "create",
+    "ExerciseLibrary": "query",
+    "WorkoutTemplate": "query",
+    "DietTemplate": "query",
+    "GoalTemplate": "query"
+  }
+}

@@ -255,8 +255,110 @@ Use the **api-tester** skill for comprehensive API testing:
 
 ## Setup Date
 February 3, 2026
+
 ## Last Updated
-February 4, 2026 - Fixed bash permission issues with `!` character in passwords
+February 4, 2026 - Pipeline enhancements: Data reuse, interactive prompts, entity registry
+
+---
+
+## Pipeline Enhancements (Feb 4, 2026 - Data Reuse & Interactive Mode)
+
+### New Features Implemented
+
+#### 1. Entity Registry (`postman/entity-registry.json`)
+- **29 entities** with complete metadata
+- Collection endpoints, create endpoints, ID fields, display fields
+- Parent-child relationships (e.g., Branch → Gym, Member → Branch)
+- Unique fields for lookups
+- Default reuse strategies (query vs create)
+
+#### 2. Data Reuse Service (`scripts/data-reuse-service.js`)
+- Queries existing data from live API before creating new records
+- Reads entity-registry.json to find collection endpoints
+- Hits API with JWT token, stores results in `existing-data.json`
+- Supports `--refresh` flag to re-query (avoid stale cache)
+
+```bash
+node scripts/data-reuse-service.js --entity "Gym" --token "$TOKEN"
+node scripts/data-reuse-service.js --entity "Branch" --token "$TOKEN" --refresh
+```
+
+#### 3. Interactive Prompt System (`scripts/interactive-prompt.js`)
+- Prompts user for data reuse decisions when multiple options exist
+- Shows entity names with IDs
+- Writes choice to `user-choice.json`
+
+```bash
+node scripts/interactive-prompt.js --question "Use existing gym?" --options '[...]' --entity "Gym"
+```
+
+#### 4. Enhanced Generate-Body (`scripts/generate-body.js`)
+- Added `--interactive` / `-i` flag
+- Loads `existing-data.json` and `entity-registry.json`
+- New `resolveRuleWithReuse()` function:
+  - Checks for existing data before using faker
+  - Prompts user in interactive mode (multiple records)
+  - Uses first record in silent mode
+  - Respects `defaultReuse` strategy from entity-registry.json
+
+#### 5. Updated Silent Runner Agent (`.claude/agents/silent-runner.md`)
+- Added **Step 1.5: Check for existing data**
+- Runs data-reuse-service for Create endpoints
+- Reuses existing data if `defaultReuse` is "query"
+- Skips API call if suitable data found
+
+#### 6. Gitignore Updates
+Added runtime state files:
+- `postman/existing-data.json` - Cached query results
+- `postman/user-choice.json` - User interaction choices
+- `postman/interactions.log` - Interaction history
+
+### How It Works
+
+**Silent Mode (default):**
+- Automatically reuses existing data (Gym, Branch, Trainer, etc.)
+- Uses first available record
+- No prompts
+
+**Interactive Mode (`--interactive` or `-i`):**
+- Prompts user when multiple records exist
+- User can choose to reuse or create new
+
+**Backward Compatible:**
+- All features opt-in via flags
+- Default behavior unchanged (falls back to faker if no existing data)
+
+### Usage Examples
+
+#### Silent Mode (Reuse Existing Data)
+```bash
+# Automatically reuses "Fitness First Elite" gym
+/run-single "Create a branch for a gym"
+```
+
+#### Interactive Mode (Prompt for Choice)
+```bash
+# Prompts user which gym to use
+/run-single "Get gym dashboard analytics" --interactive
+```
+
+### New Files Created
+1. `postman/entity-registry.json` - Entity metadata (29 entities)
+2. `scripts/data-reuse-service.js` - Query existing data
+3. `scripts/interactive-prompt.js` - User prompts
+
+### Files Modified
+1. `scripts/generate-body.js` - Added data reuse + --interactive flag
+2. `.claude/agents/silent-runner.md` - Added Step 1.5
+3. `.gitignore` - Added runtime state files
+
+### Key Benefits
+- ✅ **Data Reuse** - Reuses existing gyms/branches/trainers instead of creating duplicates
+- ✅ **Interactive Mode** - User control over data selection
+- ✅ **Faster Execution** - Skips unnecessary API calls when data exists
+- ✅ **Backward Compatible** - All changes opt-in, default behavior preserved
+
+---
 
 ## Workflow Status: ✅ WORKING
 
