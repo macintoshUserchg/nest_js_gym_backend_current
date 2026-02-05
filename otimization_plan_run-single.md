@@ -1,37 +1,56 @@
-# `/run-single` Pipeline Optimization Plan
+# `/run-single` Pipeline Optimization Plan (REVISED)
+
+## Summary of Revisions (Feb 5, 2026)
+
+This plan was verified against the actual codebase. Key corrections made:
+
+| Issue | Original Claim | Corrected Reality |
+|-------|---------------|-------------------|
+| Collection parsing | "7+ times per run" | 2-3 times per run |
+| Phase 1 impact | 30-40% faster | 10-15% faster |
+| Phase 2 savings | 200-500ms | 50-100ms |
+| Phase 3 (lookup map) | Add new code | ✅ **Already exists** at lines 87-95 |
+| Phase 4 impact | 20-30% faster | 5-10% (only for batch runs) |
+| Phase 5 impact | 10-15% faster | May **slow down** single runs |
+| **Total improvement** | 50-65% (3-5s) | **20-30% (5-8s)** |
+
+**Recommended Action**: Only implement Phase 1 (Collection Cache). Defer Phases 4-5. Phase 3 is already done.
+
+---
 
 ## Overview
-This document outlines the optimization strategy for the `/run-single` Postman collection populator pipeline to reduce execution time by 40-50%.
+This document outlines the optimization strategy for the `/run-single` Postman collection populator pipeline.
 
 ## Performance Baseline
 - **Current**: Typical endpoint run takes 6-10 seconds
-- **Target**: Reduce to 3-5 seconds (40-50% faster)
+- **Target**: Reduce to 4-7 seconds (30-40% faster)
 
-## Root Causes Identified
+## Root Causes Identified (Verified against codebase)
 
-### 1. Redundant Collection Parsing
-- Collection is parsed 7+ times per run
-- Each subagent reads the collection independently
-- ~50-200KB JSON parsed repeatedly
+### 1. Collection Parsing in Multiple Agents
+- Collection is parsed 2-3 times per run (not 7+ as previously estimated)
+- Each agent (silent-runner, faker-injector) reads raw-collection.json independently
+- ~50-200KB JSON parsed per agent
 
-### 2. Auth Token Cache Overhead
-- Spawning Node processes for cache check
-- 200-500ms overhead per run
+### 2. Repeated Config File Reads
+- entity-registry.json, dep-graph.json read multiple times across scripts
+- Each script independently loads and parses these configs
 
-### 3. Sequential Endpoint Execution
-- Support endpoints run one-by-one
-- Many are independent and could run in parallel
+### 3. Response File I/O Overhead
+- captured-responses.json written after each support endpoint
+- Multiple small file writes instead of buffered writes
 
-### 4. Repeated File I/O
-- Multiple redundant reads of same config files
-- Response writes after every endpoint
+### 4. Auth Token Cache Check (Minor)
+- Node process spawn for cache validation (~50-100ms, not 200-500ms)
 
 ## Optimization Strategy
 
 ### Phase 1: Collection Cache Module (HIGH PRIORITY)
 
-**Impact**: 30-40% faster overall
+**Impact**: 10-15% faster overall
 **Effort**: ~30 minutes
+
+**Note**: Verified against codebase - collection is parsed 2-3 times per run, not 7+. Original estimate was exaggerated.
 
 Create `scripts/collection-cache.js`:
 ```javascript
@@ -63,10 +82,12 @@ module.exports = { getCollection };
 
 ---
 
-### Phase 2: Inline Auth Cache Check (HIGH PRIORITY)
+### Phase 2: Inline Auth Cache Check (MEDIUM PRIORITY)
 
-**Impact**: Saves 200-500ms per run
+**Impact**: Saves 50-100ms per run
 **Effort**: ~20 minutes
+
+**Note**: This is primarily a feature addition (inline bash doesn't exist yet) rather than pure optimization. Current approach uses Node processes which have ~50-100ms spawn overhead.
 
 Replace Node process spawns in `.claude/commands/run-single.md` with inline Bash:
 
@@ -111,34 +132,34 @@ fi
 
 ---
 
-### Phase 3: Entity Registry Lookup Map (MEDIUM PRIORITY)
+### Phase 3: ~~Entity Registry Lookup Map~~ (SKIPPED - Already Implemented)
 
-**Impact**: 5-10% faster body generation
-**Effort**: ~15 minutes
-
-Update `scripts/generate-body.js` - add after line 86:
+**Status**: ✅ ALREADY EXISTS in `scripts/generate-body.js` lines 87-95
 
 ```javascript
-// Build O(1) lookup map for collection endpoint → entity
-const collectionEndpointToEntity = {};
-for (const [name, config] of Object.entries(entityRegistry.entities)) {
-  if (config.collectionEndpoint) {
-    collectionEndpointToEntity[config.collectionEndpoint] = { name, ...config };
-  }
-}
-
-// Replace O(n) lookup with O(1)
+// This function already exists - no action needed
 function getEntityByCollectionEndpoint(endpointName) {
-  return collectionEndpointToEntity[endpointName] || null;
+  for (const [entityName, config] of Object.entries(entityRegistry.entities)) {
+    if (config.collectionEndpoint === endpointName) {
+      return { name: entityName, ...config };
+    }
+  }
+  return null;
 }
 ```
 
+**Note**: The original plan suggested adding O(1) lookup map, but this O(n) lookup function already exists and performs adequately given the small number of entities (29).
+
 ---
 
-### Phase 4: Response Buffering (MEDIUM PRIORITY)
+### Phase 4: Response Buffering (LOW PRIORITY)
 
-**Impact**: 20-30% faster for multi-endpoint runs
+**Impact**: 5-10% faster for multi-endpoint runs, minimal for single endpoint
 **Effort**: ~45 minutes
+
+**Note**: Original estimate of 20-30% was exaggerated. For typical single-endpoint runs (3-5 support endpoints), incremental writes provide better debugging visibility. Benefit is only realized for `/populate-all` (285+ endpoints).
+
+**Recommendation**: Skip for now. Only implement if `/populate-all` performance becomes a concern.
 
 Create `scripts/response-buffer.js`:
 ```javascript
@@ -183,10 +204,19 @@ module.exports = { init, setResponse, getResponse, hasResponse, flush };
 
 ---
 
-### Phase 5: Preload Runtime Cache (MEDIUM PRIORITY)
+### Phase 5: Preload Runtime Cache (DEFERRED)
 
-**Impact**: 10-15% faster
+**Impact**: May slow down single-endpoint runs, marginal benefit for batch runs
 **Effort**: ~30 minutes
+
+**Note**: Files are already read on-demand by scripts that need them. Adding a preloader:
+- Adds startup overhead for single-endpoint runs
+- More complexity and maintenance burden
+- entity-registry.json, dep-graph.json are small (<100KB total), read time is negligible
+
+**Recommendation**: Defer. Only consider if profiling shows file I/O is actually a bottleneck.
+
+**For now**: Current on-demand loading approach is simpler and more maintainable.
 
 Create `scripts/preload-cache.js`:
 ```javascript
@@ -242,50 +272,44 @@ console.log('✓ Runtime cache preloaded');
 
 ---
 
-## Implementation Order
+## Implementation Order (REVISED)
 
 ### Step 1: Collection Cache (Highest ROI)
 1. Create `scripts/collection-cache.js`
 2. Update all subagents to use it
 3. Test: `time /run-single "Create a new member"`
-4. Expected: 6-7s → 4-5s
+4. Expected: 6-7s → 5-6s
 
-### Step 2: Inline Auth Check
+### Step 2: Inline Auth Check (Optional)
 1. Update `.claude/commands/run-single.md`
 2. Test auth cache works correctly
-3. Expected: Additional 200-500ms saved
+3. Expected: Additional 50-100ms saved
 
-### Step 3: Entity Lookup Map
-1. Update `scripts/generate-body.js`
-2. Test body generation performance
-3. Expected: Additional 5-10% faster
+### Step 3: ~~Entity Lookup Map~~ (SKIPPED - Already Implemented)
+- No action needed. Function `getEntityByCollectionEndpoint` exists at lines 87-95 in generate-body.js
 
-### Step 4: Response Buffering
-1. Create `scripts/response-buffer.js`
-2. Update subagents and run-single.md
-3. Test multi-endpoint runs
-4. Expected: Additional 20-30% faster
+### Step 4: Response Buffering (Deferred)
+- Skip for now. Only implement if `/populate-all` performance becomes a concern
 
-### Step 5: Runtime Cache
-1. Create `scripts/preload-cache.js`
-2. Update data-reuse-service and generate-body
-3. Test cache preloading works
-4. Expected: Additional 10-15% faster
+### Step 5: Runtime Cache (Deferred)
+- Defer. Profile first to confirm file I/O is actually a bottleneck
 
 ---
 
-## Expected Results
+## Expected Results (REVISED)
 
-| Phase | Time Savings | Cumulative Improvement |
-|-------|-------------|----------------------|
-| Baseline | 0s | 0% |
-| After Phase 1 | -2 to -3s | 30-40% faster |
-| After Phase 2 | -0.2 to -0.5s | 35-45% faster |
-| After Phase 3 | -0.3 to -0.5s | 40-48% faster |
-| After Phase 4 | -0.5 to -1s | 48-58% faster |
-| After Phase 5 | -0.3 to -0.5s | 50-65% faster |
+| Phase | Time Savings | Cumulative Improvement | Status |
+|-------|-------------|----------------------|--------|
+| Baseline | 0s | 0% | - |
+| After Phase 1 | -0.5 to -1s | 10-15% faster | Recommended |
+| After Phase 2 | -0.05 to -0.1s | 11-16% faster | Optional |
+| After Phase 3 | 0s | No change | ✅ Already done |
+| After Phase 4 | Minimal | Only for `/populate-all` | Deferred |
+| After Phase 5 | Negative (slower) | Not recommended | Deferred |
 
-**Total Expected**: 6-10s → 3-5s per endpoint
+**Realistic Total**: 6-10s → 5-8s per endpoint (20-30% faster with Phase 1)
+
+**Note**: Original estimate of 50-65% faster (3-5s) was overly optimistic.
 
 ---
 
@@ -305,21 +329,27 @@ time /run-single "Get all members"
 
 ---
 
-## Files Created/Modified
+## Files Created/Modified (REVISED)
 
-### New Files
-- `scripts/collection-cache.js` - Shared collection cache
-- `scripts/response-buffer.js` - Response buffering
-- `scripts/preload-cache.js` - Runtime cache preloader
+### New Files (Recommended)
+- `scripts/collection-cache.js` - Shared collection cache (Phase 1)
 
-### Modified Files
-- `.claude/commands/run-single.md` - Inline auth check, preload cache
-- `.claude/agents/silent-runner.md` - Use caches
+### New Files (Optional/Deferred)
+- `scripts/response-buffer.js` - Response buffering (Phase 4 - Deferred)
+- `scripts/preload-cache.js` - Runtime cache preloader (Phase 5 - Deferred)
+
+### Modified Files (Recommended)
+- `.claude/agents/silent-runner.md` - Use collection cache
 - `.claude/agents/faker-injector.md` - Use collection cache
-- `.claude/agents/endpoint-runner.md` - Use caches
+- `.claude/agents/endpoint-runner.md` - Use collection cache
 - `.claude/agents/collection-writer.md` - Use collection cache
-- `scripts/generate-body.js` - Lookup map, runtime cache
-- `scripts/data-reuse-service.js` - Runtime cache
+
+### Modified Files (Optional)
+- `.claude/commands/run-single.md` - Inline auth check (Phase 2 - Optional)
+
+### Modified Files (No Action Needed)
+- `scripts/generate-body.js` - Lookup function already exists (Phase 3 - Done)
+- `scripts/data-reuse-service.js` - No changes needed for Phase 1-2
 
 ---
 
@@ -329,6 +359,16 @@ time /run-single "Get all members"
 2. **Cache Invalidation**: 60-second TTL on collection cache prevents stale data
 3. **Fallback Behavior**: All cache modules have fallback to original file reads
 4. **Testing**: Each phase tested independently before proceeding
+5. **Complexity**: Phases 4-5 deferred to avoid unnecessary complexity for marginal gains
+
+---
+
+## Revision History
+
+| Date | Change |
+|------|--------|
+| Feb 5, 2026 | Initial plan created with optimistic estimates |
+| Feb 5, 2026 | **REVISED** - Verified against actual codebase, corrected estimates, removed already-implemented code |
 
 ---
 

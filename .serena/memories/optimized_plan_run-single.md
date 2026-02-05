@@ -1,50 +1,63 @@
-# `/run-single` Pipeline Optimization Plan
+# `/run-single` Pipeline Optimization Plan (REVISED Feb 5, 2026)
 
-## Overview
-Optimize the `/run-single` Postman collection populator pipeline to reduce execution time by 40-50%.
+## Summary of Revisions
+Verified against actual codebase. Key corrections:
+
+| Issue | Original Claim | Corrected Reality |
+|-------|---------------|-------------------|
+| Collection parsing | "7+ times per run" | 2-3 times per run |
+| Phase 1 impact | 30-40% faster | 10-15% faster |
+| Phase 2 savings | 200-500ms | 50-100ms |
+| Phase 3 (lookup map) | Add new code | ✅ Already exists at lines 87-95 |
+| Phase 4 impact | 20-30% faster | 5-10% (only for batch runs) |
+| Phase 5 impact | 10-15% faster | May slow down single runs |
+| **Total improvement** | 50-65% (3-5s) | **20-30% (5-8s)** |
 
 ## Performance Baseline
 - **Current**: 6-10 seconds per endpoint
-- **Target**: 3-5 seconds per endpoint
+- **Target**: 5-8 seconds per endpoint (realistic)
 
-## Five Optimization Phases
+## Optimization Phases
 
-### Phase 1: Collection Cache Module (30-40% faster)
-Create `scripts/collection-cache.js` with 60-second TTL. Update all subagents to use cached collection instead of parsing JSON 7+ times per run.
+### Phase 1: Collection Cache Module (RECOMMENDED)
+- **Impact**: 10-15% faster
+- **Effort**: ~30 minutes
+- Create `scripts/collection-cache.js` with 60-second TTL
+- Update all subagents to use cached collection
 
-### Phase 2: Inline Auth Cache Check (saves 200-500ms)
-Replace Node process spawns in `.claude/commands/run-single.md` with inline Bash logic for token validation.
+### Phase 2: Inline Auth Cache Check (OPTIONAL)
+- **Impact**: Saves 50-100ms
+- **Effort**: ~20 minutes
+- Replace Node process spawns with inline Bash
+- Note: This is a feature addition, not pure optimization
 
-### Phase 3: Entity Registry Lookup Map (5-10% faster)
-Update `scripts/generate-body.js` to build O(1) lookup map instead of O(n) loops.
+### Phase 3: Entity Lookup Map (DONE - Already Implemented)
+- **Status**: ✅ Function exists at `scripts/generate-body.js` lines 87-95
+- No action needed
 
-### Phase 4: Response Buffering (20-30% faster)
-Create `scripts/response-buffer.js` to buffer writes in memory, flush once at end.
+### Phase 4: Response Buffering (DEFERRED)
+- **Impact**: 5-10% for batch runs only
+- **Effort**: ~45 minutes
+- Skip for now. Only implement if `/populate-all` performance becomes a concern
 
-### Phase 5: Preload Runtime Cache (10-15% faster)
-Create `scripts/preload-cache.js` to load all configs once at pipeline start.
+### Phase 5: Preload Runtime Cache (DEFERRED)
+- **Impact**: May slow down single-endpoint runs
+- **Effort**: ~30 minutes
+- Defer. Current on-demand loading is simpler and more maintainable
 
-## Implementation Order
-1. Collection cache (highest ROI)
-2. Inline auth check
-3. Entity lookup map
-4. Response buffering
-5. Runtime cache preloader
+## Recommended Implementation
 
-## New Files
-- `scripts/collection-cache.js`
-- `scripts/response-buffer.js`
-- `scripts/preload-cache.js`
+**Only implement Phase 1** (Collection Cache) - best ROI with minimal complexity.
 
-## Modified Files
-- `.claude/commands/run-single.md`
-- `.claude/agents/silent-runner.md`
-- `.claude/agents/faker-injector.md`
-- `.claude/agents/endpoint-runner.md`
-- `.claude/agents/collection-writer.md`
-- `scripts/generate-body.js`
-- `scripts/data-reuse-service.js`
+## New Files (Recommended)
+- `scripts/collection-cache.js` - Shared collection cache
 
-## Expected Result: 50-65% faster overall (6-10s → 3-5s)
+## Modified Files (Recommended)
+- `.claude/agents/silent-runner.md` - Use collection cache
+- `.claude/agents/faker-injector.md` - Use collection cache
+- `.claude/agents/endpoint-runner.md` - Use collection cache
+- `.claude/agents/collection-writer.md` - Use collection cache
+
+## Expected Result: 20-30% faster overall (6-10s → 5-8s)
 
 See `otimization_plan_run-single.md` in root for full details.

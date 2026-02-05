@@ -119,11 +119,10 @@ Show results in this organized format:
 
 ```
 ╔══════════════════════════════════════════════════════════════════════╗
-║                    Available Commands (5)                           ║
+║                    Available Commands (4)                           ║
 ╚══════════════════════════════════════════════════════════════════════╝
 
 /run-single <endpoint>  - Full subagent pipeline for one endpoint
-/populate-all           - Run all endpoints in dependency order
 /status                 - Check server status
 /token                  - Get fresh JWT token
 /endpoints              - Show this command list

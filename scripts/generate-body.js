@@ -24,6 +24,8 @@ const { faker } = require('@faker-js/faker');
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { getEntityRegistry, getEntityByCollectionEndpoint: getCachedEntityByEndpoint } = require('./config-cache');
+const { getResponse: getCapturedResponse, getAll } = require('./captured-responses-cache');
 
 // --- Parse CLI args ---
 const itemIndex = process.argv.indexOf('--item');
@@ -51,15 +53,13 @@ try {
   process.exit(1);
 }
 
-// --- Read captured responses (for ref: lookups) ---
-const capturedPath = path.resolve(__dirname, '../postman/captured-responses.json');
+// --- Read captured responses (using in-memory cache for performance) ---
+// OPTIMIZED: Uses captured-responses-cache instead of reading file every time
 let captured = {};
-if (fs.existsSync(capturedPath)) {
-  try {
-    captured = JSON.parse(fs.readFileSync(capturedPath, 'utf-8'));
-  } catch (e) {
-    console.error('WARNING: captured-responses.json exists but is not valid JSON. Treating as empty.');
-  }
+try {
+  captured = getAll() || {};
+} catch (e) {
+  console.error('WARNING: Failed to load captured responses from cache. Treating as empty.');
 }
 
 // --- Read existing data (for data reuse) ---
@@ -73,26 +73,16 @@ if (fs.existsSync(existingDataPath)) {
   }
 }
 
-// --- Read entity registry (for data reuse metadata) ---
-const registryPath = path.resolve(__dirname, '../postman/entity-registry.json');
+// --- Read entity registry (using config cache for performance) ---
+// OPTIMIZED: Uses config cache instead of reading file every time
 let entityRegistry = { entities: {}, defaultReuse: {} };
-if (fs.existsSync(registryPath)) {
-  try {
-    entityRegistry = JSON.parse(fs.readFileSync(registryPath, 'utf-8'));
-  } catch (e) {
-    console.warn('WARNING: entity-registry.json exists but is not valid JSON.');
-  }
+try {
+  entityRegistry = getEntityRegistry();
+} catch (e) {
+  console.warn('WARNING: Failed to load entity registry from cache:', e.message);
 }
 
-// --- Helper to find entity by collection endpoint ---
-function getEntityByCollectionEndpoint(endpointName) {
-  for (const [entityName, config] of Object.entries(entityRegistry.entities)) {
-    if (config.collectionEndpoint === endpointName) {
-      return { name: entityName, ...config };
-    }
-  }
-  return null;
-}
+// Note: getEntityByCollectionEndpoint is imported from config-cache.js (O(1) lookup)
 
 // --- Helper to get existing data for an entity ---
 function getExistingDataForEntity(entityName) {
@@ -231,7 +221,7 @@ function resolveRuleWithReuse(rule, fieldName) {
     const field = refPath.slice(dotIndex + 1);
 
     // Check if this ref points to a collection endpoint
-    const entity = getEntityByCollectionEndpoint(endpoint);
+    const entity = getCachedEntityByEndpoint(endpoint);
     if (entity) {
       // This is a collection endpoint - check for existing data
       const existingRecords = getExistingDataForEntity(entity.name);

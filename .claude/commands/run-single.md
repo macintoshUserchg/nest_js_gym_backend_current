@@ -64,7 +64,7 @@ For EACH endpoint in supportEndpoints (in order):
 
 For the User login endpoint, use static credentials from .claude/CLAUDE.md:
 ```json
-{"email":"admin@fitnessfirstelite.com","password":"Admin123"}
+{"email":"admin@fitnessfirstelite.com","password":"Admin123!"}
 ```
 
 If any support endpoint fails, STOP and report the error.
@@ -81,17 +81,17 @@ Generate the body using node scripts/generate-body.js with:
 **IMPORTANT**: When writing JSON to current-body.json, use a file approach to avoid shell escaping issues with special characters:
 ```bash
 # DON'T use echo or printf (shell will escape ! characters)
-echo '{"password":"Admin123"}' > postman/current-body.json  # WRONG
+echo '{"password":"Admin123!"}' > postman/current-body.json  # WRONG
 
 # DO use a temp file approach to avoid shell escaping
 cat > /tmp/body.json << 'EOF'
-{"email":"admin@test.com","password":"Admin123"}
+{"email":"admin@test.com","password":"Admin123!"}
 EOF
 cp /tmp/body.json postman/current-body.json
 
 # OR use heredoc directly
 cat > postman/current-body.json << 'EOF'
-{"email":"admin@test.com","password":"Admin123"}
+{"email":"admin@test.com","password":"Admin123!"}
 EOF
 ```
 

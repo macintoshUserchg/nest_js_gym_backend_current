@@ -19,6 +19,8 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { findEndpointByName: findEndpointCached } = require('./collection-cache');
+const { getEntityRegistry } = require('./config-cache');
 
 // --- Parse CLI args ---
 const entityArg = process.argv.indexOf('--entity');
@@ -41,14 +43,16 @@ if (!token) {
   process.exit(1);
 }
 
-// --- Read entity registry ---
-const registryPath = path.resolve(__dirname, '../postman/entity-registry.json');
-if (!fs.existsSync(registryPath)) {
-  console.error('ERROR: postman/entity-registry.json not found.');
+// --- Read entity registry (using config cache for performance) ---
+// OPTIMIZED: Uses config cache instead of reading file every time
+let registry;
+try {
+  registry = getEntityRegistry();
+} catch (e) {
+  console.error('ERROR: Failed to load entity registry:', e.message);
   process.exit(1);
 }
 
-const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
 const entityConfig = registry.entities[entity];
 
 if (!entityConfig) {
@@ -58,13 +62,14 @@ if (!entityConfig) {
 }
 
 // --- Check existing cache (unless --refresh flag) ---
+// FIXED: Single read instead of double read (was reading again at line 125)
 const existingDataPath = path.resolve(__dirname, '../postman/existing-data.json');
 let existingData = {};
 
-if (fs.existsSync(existingDataPath) && !refresh) {
+if (fs.existsSync(existingDataPath)) {
   try {
     existingData = JSON.parse(fs.readFileSync(existingDataPath, 'utf8'));
-    if (existingData[entity] && existingData[entity].length > 0) {
+    if (!refresh && existingData[entity] && existingData[entity].length > 0) {
       console.log(`ℹ️  Using cached ${entity} data (${existingData[entity].length} records).`);
       console.log(`   Run with --refresh to query fresh data from API.`);
       console.log(JSON.stringify(existingData, null, 2));
@@ -72,36 +77,17 @@ if (fs.existsSync(existingDataPath) && !refresh) {
     }
   } catch (e) {
     console.warn('WARNING: existing-data.json exists but is invalid. Re-fetching...');
+    existingData = {};
   }
 }
 
-// --- Find the collection endpoint in the raw Postman collection ---
-const collectionPath = path.resolve(__dirname, '../postman/raw-collection.json');
-if (!fs.existsSync(collectionPath)) {
-  console.error('ERROR: postman/raw-collection.json not found.');
-  process.exit(1);
-}
-
-const collection = JSON.parse(fs.readFileSync(collectionPath, 'utf8'));
-
-function findEndpointByName(items, name) {
-  for (const item of items) {
-    if (item.name === name && item.request) {
-      return item;
-    }
-    if (item.item) {
-      const found = findEndpointByName(item.item, name);
-      if (found) return found;
-    }
-  }
-  return null;
-}
-
+// --- Find the collection endpoint using cached index ---
 const collectionEndpointName = entityConfig.collectionEndpoint;
-const endpoint = findEndpointByName(collection.item, collectionEndpointName);
+const endpoint = findEndpointCached(collectionEndpointName);
 
 if (!endpoint) {
-  console.error(`ERROR: Collection endpoint "${collectionEndpointName}" not found in raw-collection.json`);
+  console.error(`ERROR: Collection endpoint "${collectionEndpointName}" not found in collection`);
+  console.error('Available endpoints:', Object.keys(require('./collection-cache').buildEndpointIndex()).join(', '));
   process.exit(1);
 }
 
@@ -139,13 +125,7 @@ try {
   const count = Array.isArray(data) ? data.length : 1;
 
   // --- Store existing data ---
-  if (fs.existsSync(existingDataPath)) {
-    try {
-      existingData = JSON.parse(fs.readFileSync(existingDataPath, 'utf8'));
-    } catch (e) {
-      existingData = {};
-    }
-  }
+  // FIXED: Reuse existingData from single read above (no duplicate file read)
 
   existingData[entity] = data;
   fs.writeFileSync(existingDataPath, JSON.stringify(existingData, null, 2));

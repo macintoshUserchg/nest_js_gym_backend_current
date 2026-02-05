@@ -9,6 +9,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { getCollection, findEndpointByName: findEndpointCached } = require('./collection-cache');
 
 // Parse CLI arguments
 const args = process.argv.slice(2);
@@ -31,9 +32,6 @@ if (!targetName) {
 }
 
 // File paths
-const collectionPath = fs.existsSync('postman/populated-collection.json')
-  ? 'postman/populated-collection.json'
-  : 'postman/raw-collection.json';
 const bodyPath = 'postman/current-body.json';
 const responsePath = 'postman/current-response-clean.json';
 const outputPath = 'postman/populated-collection.json';
@@ -42,32 +40,13 @@ const outputPath = 'postman/populated-collection.json';
 let collection, bodyContent, responseData;
 
 try {
-  collection = JSON.parse(fs.readFileSync(collectionPath, 'utf8'));
+  // Use cached collection (loads once, cached for 60s)
+  collection = getCollection();
   bodyContent = JSON.parse(fs.readFileSync(bodyPath, 'utf8'));
   responseData = JSON.parse(fs.readFileSync(responsePath, 'utf8'));
 } catch (error) {
   console.error(`Error reading files: ${error.message}`);
   process.exit(1);
-}
-
-/**
- * Recursively search for an endpoint by name
- * Handles nested folder structures in Postman collections
- */
-function findEndpointByName(items, name) {
-  for (const item of items) {
-    // Check if this is the target endpoint
-    if (item.name === name && item.request) {
-      return item;
-    }
-
-    // Recursively search in nested items (folders)
-    if (item.item && Array.isArray(item.item)) {
-      const found = findEndpointByName(item.item, name);
-      if (found) return found;
-    }
-  }
-  return null;
 }
 
 /**
@@ -533,8 +512,8 @@ function replacePathParamsWithActualValues(endpoint, targetName, capturedRespons
   return endpoint;
 }
 
-// Find the endpoint
-const endpoint = findEndpointByName(collection.item, targetName);
+// Find the endpoint using cached index (O(1) lookup)
+const endpoint = findEndpointCached(targetName);
 
 if (!endpoint) {
   console.error(`Error: Endpoint "${targetName}" not found in collection`);
@@ -579,7 +558,6 @@ function listEndpoints(items, depth) {
 }
 
 module.exports = {
-  findEndpointByName,
   updateRequestBody,
   addResponseExample,
   cleanGarbageData,
