@@ -166,3 +166,155 @@ e3dbae4 fix: add Role entity registration and complete infrastructure tests
 **Blockers:** None
 
 **Session End:** February 6, 2026, 07:40 UTC
+
+
+## Session: February 6, 2026 - Gym CRUD Features (Batch #13-15)
+
+### Assigned Features
+- Feature #13: Create gym with duplicate email fails
+- Feature #14: Update gym with valid data
+- Feature #15: Delete gym cascades to branches
+
+### Completed Features (3/3)
+
+#### Feature #13: Create gym with duplicate email fails ✅
+**Status:** PASSING
+**Completed:** 2026-02-06
+
+**Implementation:**
+- Added ConflictException handling in gyms.service.ts
+- Catches QueryFailedError for duplicate key violations
+- Returns 409 Conflict with message "A gym with this email already exists"
+- Import added: ConflictException from '@nestjs/common'
+- Import added: QueryFailedError from 'typeorm'
+
+**Verification Steps Completed:**
+1. ✅ Created first gym with email 'test_feature_13_<timestamp>@gym.com'
+2. ✅ Verified first gym created successfully (201)
+3. ✅ Sent POST request to create second gym with same email
+4. ✅ Verified response status is 409 Conflict
+5. ✅ Verified error message mentions duplicate/unique constraint
+6. ✅ Verified second gym was not created in database
+7. ✅ Cleanup: Deleted test gym
+
+**Test Script:** test-feature-13.js
+
+---
+
+#### Feature #14: Update gym with valid data ✅
+**Status:** PASSING
+**Completed:** 2026-02-06
+
+**Implementation:**
+- No changes needed - existing update functionality works correctly
+- Uses Object.assign() for partial updates in gyms.service.ts
+- TypeORM handles field updates correctly
+
+**Verification Steps Completed:**
+1. ✅ Created a test gym via POST /gyms
+2. ✅ Sent PATCH request to /gyms/<id> with updated data (new name, phone, address)
+3. ✅ Verified response status is 200 OK
+4. ✅ Verified response contains updated gym data
+5. ✅ Queried GET /gyms/<id> to confirm changes persist
+6. ✅ Verified only specified fields are updated (partial update works)
+7. ✅ Verified unspecified fields (location, state, email) remain unchanged
+8. ✅ Cleanup: Deleted test gym
+
+**Test Script:** test-feature-14.js
+
+---
+
+#### Feature #15: Delete gym cascades to branches ✅
+**Status:** PASSING
+**Completed:** 2026-02-06
+
+**Implementation:**
+- No changes needed - cascade delete already configured
+- Branch entity has `onDelete: 'CASCADE'` on gym relationship
+- TypeORM handles cascade deletion at database level
+
+**Verification Steps Completed:**
+1. ✅ Created a test gym via POST /gyms
+2. ✅ Created 3 branches under this gym via POST /branches
+3. ✅ Verified branches exist via GET /gyms/<gymId>/branches (4 branches: 3 created + 1 main)
+4. ✅ Sent DELETE request to /gyms/<id>
+5. ✅ Verified response status is 200 OK
+6. ✅ Queried GET /gyms/<gymId>/branches - returned 404 (gym not found)
+7. ✅ Verified all 3 branches were deleted (returned 404 when queried individually)
+8. ✅ Cascade delete confirmed working
+
+**Test Script:** test-feature-15.js
+
+---
+
+### Code Changes
+
+**File: src/gyms/gyms.service.ts**
+- Added imports: ConflictException, QueryFailedError
+- Wrapped create() method in try-catch block
+- Added duplicate key error handling
+- Returns appropriate 409 Conflict status for duplicate emails
+
+### Test Scripts Created
+
+1. **test-feature-13.js** - Tests duplicate email constraint
+2. **test-feature-14.js** - Tests partial gym updates
+3. **test-feature-15.js** - Tests cascade delete functionality
+
+All test scripts:
+- Login as superadmin
+- Create test data with unique timestamps
+- Verify all required behaviors
+- Cleanup test data after verification
+- Return appropriate exit codes
+
+---
+
+### Project Status
+
+**Infrastructure Features (0-5):** 5/5 passing ✅
+**Style Features (6-9):** 4/4 passing ✅
+**Gym CRUD Features (13-15):** 3/3 passing ✅
+
+**Overall Progress:** 12/459 features passing (2.6%)
+
+**Next Batch:**
+- Feature #16+: More gym/branch operations
+- User management features
+- Member management features
+
+---
+
+### Environment Details
+
+**Server Status:** Running on port 3000
+**Database:** PostgreSQL @ localhost:5432/gym_db
+**Test Accounts Available:** SUPERADMIN, ADMIN, TRAINER, MEMBER
+
+**Git Commit:** 534e1ab
+- feat: implement and verify features #13, #14, #15 - gym CRUD operations
+- Added ConflictException handling for duplicate emails
+- All features verified with automated tests
+
+---
+
+### Notes for Next Session
+
+**Completed This Session:**
+- ✅ Feature #13: Duplicate email constraint
+- ✅ Feature #14: Gym update with partial data
+- ✅ Feature #15: Cascade delete gym → branches
+
+**All 3 assigned features completed successfully.**
+
+**Next Features to Work On:**
+- Features #16+: Additional gym/branch operations
+- User profile management
+- Member registration and management
+- Trainer assignment features
+
+**Known Issues:** None
+
+**Blockers:** None
+
+**Session End:** February 6, 2026, 07:45 UTC
