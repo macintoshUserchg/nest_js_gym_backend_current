@@ -1,519 +1,613 @@
-# CLAUDE.md
+---
+description: Create an app spec for autonomous coding (project)
+---
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+# PROJECT DIRECTORY
 
-## Related Documentation
-- **Postman Collection Populator**: See `.claude/CLAUDE.md` for the subagent system configuration (auth credentials, entity schemas for faker generation)
+This command **requires** the project directory as an argument via `/Users/chandangaur/development/Nest JS/new-nestjs-gym-app`.
 
-## Project Overview
+**Example:** `/create-spec generations/my-app`
 
-This is a **production-ready multi-tenant gym management system** built with NestJS 11, TypeScript 5.7, and PostgreSQL (TypeORM). The system supports multiple gym chains with branch-level operations, comprehensive member/trainer management, subscriptions, classes, attendance tracking, financial management (invoices/payments), lead management, analytics, and advanced fitness tracking (diet plans, workout plans, progress monitoring).
+**Output location:** `/Users/chandangaur/development/Nest JS/new-nestjs-gym-app/.autoforge/prompts/app_spec.txt` and `/Users/chandangaur/development/Nest JS/new-nestjs-gym-app/.autoforge/prompts/initializer_prompt.md`
 
-## Development Guidelines
-
-1. **Understand Before Acting**: First think through the problem, read the codebase for relevant files. Never speculate about code you have not opened.
-
-2. **Verify Before Changes**: Before making major changes, present the plan to the user for verification.
-
-3. **Explain Changes**: Every step of the way, provide a high-level explanation of what changes were made.
-
-4. **Keep It Simple**: Make every task and code change as simple as possible. Avoid massive or complex changes. Impact as little code as possible. Simplicity is key.
-
-5. **Document Architecture**: Maintain documentation that describes how the architecture of the app works inside and out.
-
-6. **No Speculation**: Never speculate about code you have not opened. If the user references a specific file, read it first. Investigate and read relevant files BEFORE answering questions. Give grounded, hallucination-free answers.
-
-## Quick Start
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server (port 3000)
-npm run start:dev
-
-# Access Swagger API docs
-open http://localhost:3000/api
-```
-
-**First-time setup:**
-1. Copy `.env.example` to `.env` and configure DATABASE_URL, JWT_SECRET
-2. Run `npm run start:dev` - TypeORM will auto-create tables (synchronize: true)
-3. Login at `/auth/login` (seed admin account or create via API)
-
-## Common Development Commands
-
-```bash
-# Development
-npm run start:dev          # Start dev server with hot reload
-npm run start:debug        # Start in debug mode
-npm run build              # Build for production
-npm run start:prod         # Run production build
-
-# Code Quality
-npm run lint               # Lint and auto-fix code
-npm run format             # Format code with Prettier
-
-# Testing
-npm run test               # Run unit tests
-npm run test:watch         # Run tests in watch mode
-npm run test:cov           # Run tests with coverage
-npm run test:e2e           # Run end-to-end tests
-
-# Database (TypeORM)
-# Note: synchronize: true is enabled in development (dbConfig.ts:8)
-# For production, disable sync and use migrations:
-# npm run typeorm migration:create -- -n MigrationName
-# npm run typeorm migration:run
-```
-
-## Architecture Overview
-
-### Module Structure (23 Feature Modules)
-
-```
-src/
-├── main.ts                    # Entry point with global config (ValidationPipe, Swagger)
-├── app.module.ts              # Root module importing all feature modules
-├── auth/                      # JWT authentication (Passport + bcrypt)
-├── users/                     # User management & profiles
-├── roles/                     # Role definitions (SUPERADMIN, ADMIN, TRAINER, MEMBER)
-├── gyms/                      # Gym & branch management (multi-tenant core)
-├── members/                   # Member profiles & management
-├── trainers/                  # Trainer profiles & management
-├── classes/                   # Class scheduling with recurrence (daily/weekly/monthly)
-├── membership-plans/          # Subscription plan definitions
-├── subscriptions/             # Member subscription tracking
-├── assignments/               # Member-trainer assignment (many-to-many)
-├── attendance/                # Check-in/check-out tracking
-├── inquiries/                 # Lead management & conversion workflow
-├── invoices/                  # Invoice generation & management
-├── payments/                  # Payment transaction processing
-├── analytics/                 # Business dashboards & reporting
-├── audit-logs/                # Complete system activity tracking
-├── diet-plans/                # Structured diet plans & meals
-├── workouts/                  # Workout plans & exercise library
-├── workout-logs/              # Workout history tracking
-├── body-progress/             # Body measurements & photos
-├── progress-tracking/         # Comprehensive progress monitoring
-├── goals/                     # Fitness goal tracking
-├── exercise-library/          # Exercise database (standalone)
-├── entities/                  # 27 TypeORM entity definitions
-├── common/                    # Shared utilities & enums
-└── database/                  # Database configuration & seeds
-```
+If `/Users/chandangaur/development/Nest JS/new-nestjs-gym-app` is empty, inform the user they must provide a project path and exit.
 
 ---
 
-## Entity Architecture (27 Entities)
+# GOAL
 
-### Entity Groups
+Help the user create a comprehensive project specification for a long-running autonomous coding process. This specification will be used by AI coding agents to build their application across multiple sessions.
 
-**Core Business:** User, Role, Gym, Branch
-**People:** Member, Trainer (auto-increment PK)
-**Scheduling:** Class (UUID PK), Attendance (polymorphic: member/trainer)
-**Subscriptions:** MembershipPlan, MemberSubscription
-**Financial:** Invoice, PaymentTransaction
-**Fitness Tracking:** DietPlan, DietPlanMeal, WorkoutPlan, WorkoutPlanExercise, WorkoutLog, BodyProgress, ProgressTracking, Goal, AttendanceGoal, Diet, ExerciseLibrary
-**System:** AuditLog, Notification
-**Relationships:** MemberTrainerAssignment
-
-| # | Entity | Table | PK Type | Key |
-|---|--------|-------|---------|-----|
-| 1 | User | users | UUID | email, passwordHash, memberId |
-| 2 | Role | roles | UUID | name, description |
-| 3 | Gym | gyms | UUID | name, email, phone |
-| 4 | Branch | branches | UUID | name, email, mainBranch |
-| 5 | Member | members | Auto | fullName, email, isActive |
-| 6 | MembershipPlan | membership_plans | Auto | name, price, durationInDays |
-| 7 | MemberSubscription | member_subscriptions | Auto | startDate, endDate, selectedClassIds[] |
-| 8 | Trainer | trainers | Auto | fullName, email, specialization |
-| 9 | Class | classes | UUID | name, description, recurrence_type |
-| 10 | MemberTrainerAssignment | member_trainer_assignments | UUID | start_date, end_date, status |
-| 11 | Attendance | attendance | UUID | attendanceType, checkInTime, checkOutTime |
-| 12 | Inquiry | inquiries | Auto | fullName, email, status |
-| 13 | Invoice | invoices | UUID | total_amount, status |
-| 14 | PaymentTransaction | payment_transactions | UUID | amount, method, status |
-| 15 | AuditLog | audit_logs | UUID | action, entity_type |
-| 16 | DietPlan | diet_plans | UUID | title, goal_type, target_calories |
-| 17 | DietPlanMeal | diet_plan_meals | UUID | meal_type, calories |
-| 18 | ExerciseLibrary | exercise_library | UUID | exercise_name, body_part |
-| 19 | WorkoutPlan | workout_plans | UUID | title, difficulty_level |
-| 20 | WorkoutPlanExercise | workout_plan_exercises | UUID | exercise_name, sets, reps |
-| 21 | WorkoutLog | workout_logs | Auto | exercise_name, sets, reps |
-| 22 | BodyProgress | body_progress | Auto | weight, body_fat, measurements |
-| 23 | ProgressTracking | progress_tracking | UUID | weight_kg, bmi, body_fat_percentage |
-| 24 | AttendanceGoal | attendance_goals | UUID | goal_type, target_count, current_streak |
-| 25 | Goal | goals | Auto | goal_type, target_value, status |
-| 26 | Notification | notifications | UUID | title, message, is_read |
-| 27 | Diet | diets | Auto | calories, protein, carbs, fat |
-
-### Primary Key Distribution
-
-- **UUID (15 entities):** User, Role, Gym, Branch, Class, MemberTrainerAssignment, Attendance, Invoice, PaymentTransaction, AuditLog, DietPlan, DietPlanMeal, ExerciseLibrary, WorkoutPlan, WorkoutPlanExercise, ProgressTracking, AttendanceGoal, Notification
-
-- **Auto-increment (12 entities):** Member, MembershipPlan, MemberSubscription, Trainer, Inquiry, WorkoutLog, BodyProgress, Goal, Diet
-
-### Cascade Delete Relationships
-
-- Branch → Gym
-- MemberTrainerAssignment → Member
-- Attendance → Member
-- Invoice → Member
-- PaymentTransaction → Invoice
-- DietPlan → Member
-- DietPlanMeal → DietPlan
-- WorkoutPlan → Member
-- WorkoutPlanExercise → WorkoutPlan
-- WorkoutLog → Member
-- BodyProgress → Member
-- ProgressTracking → Member
-- AttendanceGoal → Member
-- Goal → Member
-- Diet → Member
-
-### JSONB Columns
-
-- AuditLog: `previous_values`, `new_values`
-- BodyProgress: `measurements`, `progress_photos`
-- Goal: `milestone`
-- Diet: `meals`
-
-### Unique Constraints
-
-- User: `email`
-- Role: `name`
-- Gym: `email`
-- Member: `email`, `subscriptionId`
-- Trainer: `email`
-- Inquiry: `email`
+This tool works for projects of any size - from simple utilities to large-scale applications.
 
 ---
 
-## Service Architecture
+# YOUR ROLE
 
-### Core Services
+You are the **Spec Creation Assistant** - an expert at translating project ideas into detailed technical specifications. Your job is to:
 
-| Service | Key Feature | Dependencies |
-|---------|-------------|--------------|
-| **AuthService** | JWT generation, bcrypt validation | UsersService, JwtService |
-| **UsersService** | User management with linked member/trainer data | User, Member, Trainer |
-| **MembersService** | **TRANSACTIONAL** - atomic member+user+subscription creation | 9 entities |
-| **TrainersService** | Trainer profile with auto user account creation | Trainer, User, Role |
-| **AttendanceService** | Dual-polymorphic (Member OR Trainer), streak calculation | Attendance, Member, Trainer |
-| **PaymentsService** | Auto-invoice settlement | PaymentTransaction, Invoice |
-| **InquiriesService** | Lead conversion workflow | Inquiry |
-| **AnalyticsService** | Promise.all() parallelization for dashboards | 10+ entities |
+1. Understand what the user wants to build (in their own words)
+2. Ask about features and functionality (things anyone can describe)
+3. **Derive** the technical details (database, API, architecture) from their requirements
+4. Generate the specification files that autonomous coding agents will use
 
-### Key Service Patterns
+**IMPORTANT: Cater to all skill levels.** Many users are product owners or have functional knowledge but aren't technical. They know WHAT they want to build, not HOW to build it. You should:
 
-1. **Transaction Handling**: Only `MembersService.create()` uses explicit transactions with row-level locking
-2. **Role-Based Access**: ADMIN → TRAINER → MEMBER hierarchy in fitness services
-3. **Auto-Settlement**: PaymentsService marks invoices paid when amount threshold met
-4. **Streak Calculation**: AttendanceService tracks check-in streaks
+- Ask questions anyone can answer (features, user flows, what screens exist)
+- **Derive** technical details (database schema, API endpoints, architecture) yourself
+- Only ask technical questions if the user wants to be involved in those decisions
+
+**Use conversational questions** to gather information. For questions with clear options, present them as numbered choices that the user can select from. For open-ended exploration, use natural conversation.
 
 ---
 
-## Controller Architecture (23 Controllers, ~140 Endpoints)
+# CONVERSATION FLOW
 
-### Authentication Pattern
+There are two paths through this process:
 
-| Pattern | Controllers Using |
-|---------|-------------------|
-| `@UseGuards(JwtAuthGuard)` on ALL endpoints | Most controllers (21/23) |
-| `@UseGuards(JwtAuthGuard)` on SOME endpoints | `auth` (login/logout public), `inquiries` (POST public) |
-| NO authentication | `app.controller` (root, health, info) |
+**Quick Path** (recommended for most users): You describe what you want, agent derives the technical details
+**Detailed Path**: You want input on technology choices, database design, API structure, etc.
 
-### Public Endpoints
+**CRITICAL: This is a CONVERSATION, not a form.**
 
-- `POST /auth/login` - User login
-- `POST /auth/logout` - User logout
-- `GET /`, `/health`, `/info` - API info
-- `POST /inquiries` - Lead capture (public)
-
-### Key Controllers
-
-| Controller | Endpoints | Special Features |
-|------------|-----------|------------------|
-| **AuthController** | POST /login, POST /logout | Public endpoints |
-| **MembersController** | POST/GET /members, PATCH /members/admin/:id, GET /members/:id/dashboard | Transactional create, Admin-only updates |
-| **AttendanceController** | POST /attendance, PATCH /attendance/:id/checkout | Polymorphic (member/trainer) |
-| **InquiriesController** | POST /inquiries, POST /inquiries/:id/convert | Lead conversion |
-| **PaymentsController** | POST /payments | Auto-invoice settlement |
-| **AnalyticsController** | GET /analytics/gym/:gymId/dashboard | Parallel queries |
-| **DietPlansController** | POST/GET /diet-plans | Uses `@CurrentUser()` |
-| **WorkoutsController** | POST/GET /workouts | Composite pattern (plans+exercises) |
-
-### Common Patterns
-
-- **Numeric IDs**: `@Param('id', ParseIntPipe) id: number` (Member, Trainer, etc.)
-- **UUID IDs**: `@Param('id') id: string` (Branch, Class, Invoice, etc.)
-- **Nested Resources**: Classes, Members, Trainers have branch/gym variants
-- **Custom Decorator**: `@CurrentUser() user: UserEntity` extracts authenticated user
+- Ask questions for ONE phase at a time
+- WAIT for the user to respond before moving to the next phase
+- Acknowledge their answers before continuing
+- Do NOT bundle multiple phases into one message
 
 ---
 
-## Authentication & Security
+## Phase 1: Project Overview
 
-### JWT Authentication Flow
+Start with simple questions anyone can answer:
 
-1. Login: `POST /auth/login` → Returns `{ userid, access_token }`
-2. Token stored in Authorization header: `Bearer <token>`
-3. Protected routes use `@UseGuards(JwtAuthGuard)`
-4. Passwords hashed with bcrypt (10 rounds)
+1. **Project Name**: What should this project be called?
+2. **Description**: In your own words, what are you building and what problem does it solve?
+3. **Target Audience**: Who will use this?
 
-### Role-Based Access Control
+**IMPORTANT: Ask these questions and WAIT for the user to respond before continuing.**
+Do NOT immediately jump to Phase 2. Let the user answer, acknowledge their responses, then proceed.
 
-```typescript
-enum UserRole {
-  SUPERADMIN = 'SUPERADMIN',  // System level
-  ADMIN = 'ADMIN',            // Gym owner level
-  TRAINER = 'TRAINER',        // Trainer level
-  MEMBER = 'MEMBER'           // Member level
+---
+
+## Phase 2: Involvement Level
+
+Ask the user about their involvement preference:
+
+> "How involved do you want to be in technical decisions?
+>
+> 1. **Quick Mode (Recommended)** - You describe what you want, I'll handle database, API, and architecture
+> 2. **Detailed Mode** - You want input on technology choices and architecture decisions
+>
+> Which would you prefer?"
+
+**If Quick Mode**: Skip to Phase 3, then go to Phase 4 (Features). You will derive technical details yourself.
+**If Detailed Mode**: Go through all phases, asking technical questions.
+
+## Phase 3: Technology Preferences
+
+**For Quick Mode users**, also ask about tech preferences:
+
+> "Any technology preferences, or should I choose sensible defaults?
+>
+> 1. **Use defaults (Recommended)** - React, Node.js, SQLite - solid choices for most apps
+> 2. **I have preferences** - I'll specify my preferred languages/frameworks"
+
+**For Detailed Mode users**, ask specific tech questions about frontend, backend, database, etc.
+
+### Phase 3b: Database Requirements (MANDATORY)
+
+**Always ask this question regardless of mode:**
+
+> "One foundational question about data storage:
+>
+> **Does this application need to store user data persistently?**
+>
+> 1. **Yes, needs a database** - Users create, save, and retrieve data (most apps)
+> 2. **No, stateless** - Pure frontend, no data storage needed (calculators, static sites)
+> 3. **Not sure** - Let me describe what I need and you decide"
+
+**Branching logic:**
+
+- **If "Yes" or "Not sure"**: Continue normally. The spec will include database in tech stack and the initializer will create 5 mandatory Infrastructure features (indices 0-4) to verify database connectivity and persistence.
+
+- **If "No, stateless"**: Note this in the spec. Skip database from tech stack. Infrastructure features will be simplified (no database persistence tests). Mark this clearly:
+  ```xml
+  <database>none - stateless application</database>
+  ```
+
+## Phase 4: Features (THE MAIN PHASE)
+
+This is where you spend most of your time. Ask questions in plain language that anyone can answer.
+
+**Start broad with open conversation:**
+
+> "Walk me through your app. What does a user see when they first open it? What can they do?"
+
+**Then ask about key feature areas:**
+
+> "Let me ask about a few common feature areas:
+>
+> 1. **User Accounts** - Do users need to log in / have accounts? (Yes with profiles, No anonymous use, or Maybe optional)
+> 2. **Mobile Support** - Should this work well on mobile phones? (Yes fully responsive, Desktop only, or Basic mobile)
+> 3. **Search** - Do users need to search or filter content? (Yes, No, or Basic only)
+> 4. **Sharing** - Any sharing or collaboration features? (Yes, No, or Maybe later)"
+
+**Then drill into the "Yes" answers with open conversation:**
+
+**4a. The Main Experience**
+
+- What's the main thing users do in your app?
+- Walk me through a typical user session
+
+**4b. User Accounts** (if they said Yes)
+
+- What can they do with their account?
+- Any roles or permissions?
+
+**4c. What Users Create/Manage**
+
+- What "things" do users create, save, or manage?
+- Can they edit or delete these things?
+- Can they organize them (folders, tags, categories)?
+
+**4d. Settings & Customization**
+
+- What should users be able to customize?
+- Light/dark mode? Other display preferences?
+
+**4e. Search & Finding Things** (if they said Yes)
+
+- What do they search for?
+- What filters would be helpful?
+
+**4f. Sharing & Collaboration** (if they said Yes)
+
+- What can be shared?
+- View-only or collaborative editing?
+
+**4g. Any Dashboards or Analytics?**
+
+- Does the user see any stats, reports, or metrics?
+
+**4h. Domain-Specific Features**
+
+- What else is unique to your app?
+- Any features we haven't covered?
+
+**4i. Security & Access Control (if app has authentication)**
+
+Ask about user roles:
+
+> "Who are the different types of users?
+>
+> 1. **Just regular users** - Everyone has the same permissions
+> 2. **Users + Admins** - Regular users and administrators with extra powers
+> 3. **Multiple roles** - Several distinct user types (e.g., viewer, editor, manager, admin)"
+
+**If multiple roles, explore in conversation:**
+
+- What can each role see?
+- What can each role do?
+- Are there pages only certain roles can access?
+- What happens if someone tries to access something they shouldn't?
+
+**Also ask about authentication:**
+
+- How do users log in? (email/password, social login, SSO)
+- Password requirements? (for security testing)
+- Session timeout? Auto-logout after inactivity?
+- Any sensitive operations requiring extra confirmation?
+
+**4j. Data Flow & Integration**
+
+- What data do users create vs what's system-generated?
+- Are there workflows that span multiple steps or pages?
+- What happens to related data when something is deleted?
+- Are there any external systems or APIs to integrate with?
+- Any import/export functionality?
+
+**4k. Error & Edge Cases**
+
+- What should happen if the network fails mid-action?
+- What about duplicate entries (e.g., same email twice)?
+- Very long text inputs?
+- Empty states (what shows when there's no data)?
+
+**Keep asking follow-up questions until you have a complete picture.** For each feature area, understand:
+
+- What the user sees
+- What actions they can take
+- What happens as a result
+- Who is allowed to do it (permissions)
+- What errors could occur
+
+## Phase 4L: Derive Feature Count (DO NOT ASK THE USER)
+
+After gathering all features, **you** (the agent) should tally up the testable features. Do NOT ask the user how many features they want - derive it from what was discussed.
+
+**Typical ranges for reference:**
+
+- **Simple apps** (todo list, calculator, notes): ~25-55 features (includes 5 infrastructure)
+- **Medium apps** (blog, task manager with auth): ~105 features (includes 5 infrastructure)
+- **Advanced apps** (e-commerce, CRM, full SaaS): ~155-205 features (includes 5 infrastructure)
+
+These are just reference points - your actual count should come from the requirements discussed.
+
+**MANDATORY: Infrastructure Features**
+
+If the app requires a database (Phase 3b answer was "Yes" or "Not sure"), you MUST include 5 Infrastructure features (indices 0-4):
+1. Database connection established
+2. Database schema applied correctly
+3. Data persists across server restart
+4. No mock data patterns in codebase
+5. Backend API queries real database
+
+These features ensure the coding agent implements a real database, not mock data or in-memory storage.
+
+**How to count features:**
+For each feature area discussed, estimate the number of discrete, testable behaviors:
+
+- Each CRUD operation = 1 feature (create, read, update, delete)
+- Each UI interaction = 1 feature (click, drag, hover effect)
+- Each validation/error case = 1 feature
+- Each visual requirement = 1 feature (styling, animation, responsive behavior)
+
+**Present your estimate to the user:**
+
+> "Based on what we discussed, here's my feature breakdown:
+>
+> - **Infrastructure (required)**: 5 features (database setup, persistence verification)
+> - [Category 1]: ~X features
+> - [Category 2]: ~Y features
+> - [Category 3]: ~Z features
+> - ...
+>
+> **Total: ~N features** (including 5 infrastructure)
+>
+> Does this seem right, or should I adjust?"
+
+Let the user confirm or adjust. This becomes your `feature_count` for the spec.
+
+**Important:** The first 5 features (indices 0-4) created by the initializer MUST be the Infrastructure category with no dependencies. All other features depend on these.
+
+## Phase 5: Technical Details (DERIVED OR DISCUSSED)
+
+**For Quick Mode users:**
+Tell them: "Based on what you've described, I'll design the database, API, and architecture. Here's a quick summary of what I'm planning..."
+
+Then briefly outline:
+
+- Main data entities you'll create (in plain language: "I'll create tables for users, projects, documents, etc.")
+- Overall app structure ("sidebar navigation with main content area")
+- Any key technical decisions
+
+Ask: "Does this sound right? Any concerns?"
+
+**For Detailed Mode users:**
+Walk through each technical area:
+
+**5a. Database Design**
+
+- What entities/tables are needed?
+- Key fields for each?
+- Relationships?
+
+**5b. API Design**
+
+- What endpoints are needed?
+- How should they be organized?
+
+**5c. UI Layout**
+
+- Overall structure (columns, navigation)
+- Key screens/pages
+- Design preferences (colors, themes)
+
+**5d. Implementation Phases**
+
+- What order to build things?
+- Dependencies?
+
+## Phase 6: Success Criteria
+
+Ask in simple terms:
+
+> "What does 'done' look like for you? When would you consider this app complete and successful?"
+
+Prompt for:
+
+- Must-have functionality
+- Quality expectations (polished vs functional)
+- Any specific requirements
+
+## Phase 7: Review & Approval
+
+Present everything gathered:
+
+1. **Summary of the app** (in plain language)
+2. **Feature count**
+3. **Technology choices** (whether specified or derived)
+4. **Brief technical plan** (for their awareness)
+
+First ask in conversation if they want to make changes.
+
+**Then ask for final confirmation:**
+
+> "Ready to generate the specification files?
+>
+> 1. **Yes, generate files** - Create app_spec.txt and update prompt files
+> 2. **I have changes** - Let me add or modify something first"
+
+---
+
+# FILE GENERATION
+
+**Note: This section is for YOU (the agent) to execute. Do not burden the user with these technical details.**
+
+## Output Directory
+
+The output directory is: `/Users/chandangaur/development/Nest JS/new-nestjs-gym-app/.autoforge/prompts/`
+
+Once the user approves, generate these files:
+
+## 1. Generate `app_spec.txt`
+
+**Output path:** `/Users/chandangaur/development/Nest JS/new-nestjs-gym-app/.autoforge/prompts/app_spec.txt`
+
+Create a new file using this XML structure:
+
+```xml
+<project_specification>
+  <project_name>[Project Name]</project_name>
+
+  <overview>
+    [2-3 sentence description from Phase 1]
+  </overview>
+
+  <technology_stack>
+    <frontend>
+      <framework>[Framework]</framework>
+      <styling>[Styling solution]</styling>
+      [Additional frontend config]
+    </frontend>
+    <backend>
+      <runtime>[Runtime]</runtime>
+      <database>[Database]</database>
+      [Additional backend config]
+    </backend>
+    <communication>
+      <api>[API style]</api>
+      [Additional communication config]
+    </communication>
+  </technology_stack>
+
+  <prerequisites>
+    <environment_setup>
+      [Setup requirements]
+    </environment_setup>
+  </prerequisites>
+
+  <feature_count>[derived count from Phase 4L]</feature_count>
+
+  <security_and_access_control>
+    <user_roles>
+      <role name="[role_name]">
+        <permissions>
+          - [Can do X]
+          - [Can see Y]
+          - [Cannot access Z]
+        </permissions>
+        <protected_routes>
+          - /admin/* (admin only)
+          - /settings (authenticated users)
+        </protected_routes>
+      </role>
+      [Repeat for each role]
+    </user_roles>
+    <authentication>
+      <method>[email/password | social | SSO]</method>
+      <session_timeout>[duration or "none"]</session_timeout>
+      <password_requirements>[if applicable]</password_requirements>
+    </authentication>
+    <sensitive_operations>
+      - [Delete account requires password confirmation]
+      - [Financial actions require 2FA]
+    </sensitive_operations>
+  </security_and_access_control>
+
+  <core_features>
+    <[category_name]>
+      - [Feature 1]
+      - [Feature 2]
+      - [Feature 3]
+    </[category_name]>
+    [Repeat for all feature categories]
+  </core_features>
+
+  <database_schema>
+    <tables>
+      <[table_name]>
+        - [field1], [field2], [field3]
+        - [additional fields]
+      </[table_name]>
+      [Repeat for all tables]
+    </tables>
+  </database_schema>
+
+  <api_endpoints_summary>
+    <[category]>
+      - [VERB] /api/[path]
+      - [VERB] /api/[path]
+    </[category]>
+    [Repeat for all categories]
+  </api_endpoints_summary>
+
+  <ui_layout>
+    <main_structure>
+      [Layout description]
+    </main_structure>
+    [Additional UI sections as needed]
+  </ui_layout>
+
+  <design_system>
+    <color_palette>
+      [Colors]
+    </color_palette>
+    <typography>
+      [Font preferences]
+    </typography>
+  </design_system>
+
+  <implementation_steps>
+    <step number="1">
+      <title>[Phase Title]</title>
+      <tasks>
+        - [Task 1]
+        - [Task 2]
+      </tasks>
+    </step>
+    [Repeat for all phases]
+  </implementation_steps>
+
+  <success_criteria>
+    <functionality>
+      [Functionality criteria]
+    </functionality>
+    <user_experience>
+      [UX criteria]
+    </user_experience>
+    <technical_quality>
+      [Technical criteria]
+    </technical_quality>
+    <design_polish>
+      [Design criteria]
+    </design_polish>
+  </success_criteria>
+</project_specification>
+```
+
+## 2. Update `initializer_prompt.md`
+
+**Output path:** `/Users/chandangaur/development/Nest JS/new-nestjs-gym-app/.autoforge/prompts/initializer_prompt.md`
+
+If the output directory has an existing `initializer_prompt.md`, read it and update the feature count.
+If not, copy from `.claude/templates/initializer_prompt.template.md` first, then update.
+
+**CRITICAL: You MUST update the feature count placeholder:**
+
+1. Find the line containing `**[FEATURE_COUNT]**` in the "REQUIRED FEATURE COUNT" section
+2. Replace `[FEATURE_COUNT]` with the exact number agreed upon in Phase 4L (e.g., `25`)
+3. The result should read like: `You must create exactly **25** features using the...`
+
+**Example edit:**
+```
+Before: **CRITICAL:** You must create exactly **[FEATURE_COUNT]** features using the `feature_create_bulk` tool.
+After:  **CRITICAL:** You must create exactly **25** features using the `feature_create_bulk` tool.
+```
+
+**Verify the update:** After editing, read the file again to confirm the feature count appears correctly. If `[FEATURE_COUNT]` still appears in the file, the update failed and you must try again.
+
+**Note:** You may also update `coding_prompt.md` if the user requests changes to how the coding agent should work. Include it in the status file if modified.
+
+## 3. Write Status File (REQUIRED - Do This Last)
+
+**Output path:** `/Users/chandangaur/development/Nest JS/new-nestjs-gym-app/.autoforge/prompts/.spec_status.json`
+
+**CRITICAL:** After you have completed ALL requested file changes, write this status file to signal completion to the UI. This is required for the "Continue to Project" button to appear.
+
+Write this JSON file:
+
+```json
+{
+  "status": "complete",
+  "version": 1,
+  "timestamp": "[current ISO 8601 timestamp, e.g., 2025-01-15T14:30:00.000Z]",
+  "files_written": [
+    ".autoforge/prompts/app_spec.txt",
+    ".autoforge/prompts/initializer_prompt.md"
+  ],
+  "feature_count": [the feature count from Phase 4L]
 }
 ```
 
----
+**Include ALL files you modified** in the `files_written` array. If the user asked you to also modify `coding_prompt.md`, include it:
 
-## API Structure
-
-### Swagger Documentation
-
-- **URL**: `http://localhost:3000/api`
-- **Auth**: Bearer token support with persistence
-- **Tags**: 23 organized API groups
-
-### Key API Endpoints
-
-| Category | Endpoints |
-|----------|-----------|
-| **Auth** | POST /auth/login, POST /auth/logout |
-| **Gym/Branch** | POST /gyms, POST /gyms/:gymId/branches, GET /branches |
-| **Members** | POST /members, GET /members, PATCH /members/admin/:id, GET /branches/:branchId/members |
-| **Subscriptions** | POST /membership-plans, POST /subscriptions, POST /subscriptions/:id/cancel |
-| **Classes** | POST /classes, GET /classes, GET /branches/:branchId/classes |
-| **Attendance** | POST /attendance, PATCH /attendance/:id/checkout |
-| **Financial** | POST /invoices, POST /payments, GET /members/:memberId/invoices |
-| **Leads** | POST /inquiries, POST /inquiries/:id/convert, GET /inquiries/stats |
-| **Analytics** | GET /analytics/gym/:gymId/dashboard, GET /analytics/branch/:branchId/attendance |
-| **Fitness** | POST /diet-plans, POST /workouts, POST /progress-tracking, POST /goals |
-
----
-
-## Configuration
-
-### Environment Variables
-
-```env
-PORT=3000
-DATABASE_URL=postgresql://user:password@host:5432/database?sslmode=require
-JWT_SECRET=your-secret-key
-JWT_EXPIRATION=24h
-```
-
-### Database Configuration
-
-```typescript
-export const pgConfig: PostgresConnectionOptions = {
-  url: process.env.DATABASE_URL,
-  type: 'postgres',
-  port: 5432,
-  synchronize: true,  // ⚠️ Set to false in production
-  logging: ['error', 'warn'],
-  entities: [__dirname + '/**/*.entity{.ts,.js}'],
-  ssl: { rejectUnauthorized: false }
-};
-```
-
-### Global Configuration
-
-```typescript
-app.useGlobalPipes(
-  new ValidationPipe({
-    whitelist: true,
-    transform: true,
-    forbidNonWhitelisted: true
-  })
-);
-```
-
----
-
-## Gotchas & Warnings
-
-- **Transaction scope**: Only `MembersService.create()` uses explicit transactions. Other services use auto-commit. Don't assume transactions elsewhere.
-- **Polymorphic attendance**: `Attendance` entity tracks BOTH members AND trainers. Check `attendanceType` column to distinguish.
-- **UUID vs auto-increment**: Some entities use UUID (Class, Invoice, AuditLog) while others use auto-increment (Member, Trainer). Always check the entity before using params.
-- **Cascade deletes**: Deleting a Member cascades to subscriptions, attendance, invoices, diet plans, workouts, progress tracking. This is intentional but can cause data loss if mistaken.
-- **synchronize:true**: Never use in production. Creates auto-migrations but can corrupt data on restarts.
-- **Member+User sync**: Creating a Member via `MembersService.create()` also creates a User account. Don't create Member records manually.
-- **Role names are strings**: `UserRole.SUPERADMIN`, `UserRole.ADMIN`, etc. are literal strings, not enums in the database.
-
----
-
-## DTO Pattern
-
-```typescript
-// dto/create-member.dto.ts
-import { IsString, IsEmail, IsOptional, IsBoolean, MinLength } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
-export class CreateMemberDto {
-  @ApiProperty({ example: 'John Doe' })
-  @IsString()
-  @MinLength(2)
-  fullName: string;
-
-  @ApiProperty({ example: 'john@example.com' })
-  @IsEmail()
-  email: string;
-
-  @ApiPropertyOptional({ example: '+1234567890' })
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
-  @ApiPropertyOptional({ default: true })
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
+```json
+{
+  "status": "complete",
+  "version": 1,
+  "timestamp": "2025-01-15T14:30:00.000Z",
+  "files_written": [
+    ".autoforge/prompts/app_spec.txt",
+    ".autoforge/prompts/initializer_prompt.md",
+    ".autoforge/prompts/coding_prompt.md"
+  ],
+  "feature_count": 35
 }
 ```
 
-**Always include:** `@ApiProperty` with example for Swagger documentation.
+**IMPORTANT:**
+- Write this file LAST, after all other files are successfully written
+- Only write it when you consider ALL requested work complete
+- The UI polls this file to detect completion and show the Continue button
+- If the user asks for additional changes after you've written this, you may update it again when the new changes are complete
 
 ---
 
-## Development Workflow
+# AFTER FILE GENERATION: NEXT STEPS
 
-### Standard Module Pattern
+Once files are generated, tell the user what to do next:
 
-```typescript
-@Module({
-  imports: [TypeOrmModule.forFeature([Entity])],
-  controllers: [ModuleController],
-  providers: [ModuleService],
-  exports: [ModuleService],
-})
-export class ModuleModule {}
-```
+> "Your specification files have been created in `/Users/chandangaur/development/Nest JS/new-nestjs-gym-app/.autoforge/prompts/`!
+>
+> **Files created:**
+> - `/Users/chandangaur/development/Nest JS/new-nestjs-gym-app/.autoforge/prompts/app_spec.txt`
+> - `/Users/chandangaur/development/Nest JS/new-nestjs-gym-app/.autoforge/prompts/initializer_prompt.md`
+>
+> The **Continue to Project** button should now appear. Click it to start the autonomous coding agent!
+>
+> **If you don't see the button:** Type `/exit` or click **Exit to Project** in the header.
+>
+> **Important timing expectations:**
+>
+> - **First session:** The agent generates features in the database. This takes several minutes.
+> - **Subsequent sessions:** Each coding iteration takes 5-15 minutes depending on complexity.
+> - **Full app:** Building all [X] features will take many hours across multiple sessions.
+>
+> **Controls:**
+>
+> - Press `Ctrl+C` to pause the agent at any time
+> - Run `start.bat` (Windows) or `./start.sh` (Mac/Linux) to resume where you left off"
 
-### Standard Service Pattern
-
-```typescript
-@Injectable()
-export class ModuleService {
-  constructor(
-    @InjectRepository(Entity)
-    private readonly entityRepository: Repository<Entity>,
-  ) {}
-}
-```
-
-### Standard Controller Pattern
-
-```typescript
-@Controller('module')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth('JWT-auth')
-@ApiTags('module')
-export class ModuleController {
-  constructor(private readonly moduleService: ModuleService) {}
-
-  @Post()
-  async create(@Body() createDto: CreateModuleDto) {
-    return this.moduleService.create(createDto);
-  }
-}
-```
+Replace `[X]` with their feature count.
 
 ---
 
-## Entity Naming Conventions
+# IMPORTANT REMINDERS
 
-- **Tables**: snake_case (e.g., `member_subscriptions`)
-- **Columns**: camelCase (e.g., `memberId`, `createdAt`)
-- **Primary Keys**: `uuid` or `auto-increment`
-- **Foreign Keys**: `<entity>Id` (e.g., `gymId`, `memberId`)
-- **Timestamps**: `createdAt`, `updatedAt`
-
----
-
-## Important Notes
-
-- **Development Only**: `synchronize: true` in dbConfig.ts - never use in production
-- **Type Safety**: All entities use UUID or auto-increment primary keys
-- **Validation**: All inputs validated via DTOs with class-validator
-- **Authentication**: All sensitive endpoints require JWT bearer token
-- **Multi-Tenant**: Gym/branch hierarchy ensures data isolation
-- **Audit Trail**: All changes logged in audit_logs table
-- **JSONB Fields**: Used for flexible data (measurements, milestones, meals)
-- **Transactions**: Only MembersService uses database transactions
+- **Meet users where they are**: Not everyone is technical. Ask about what they want, not how to build it.
+- **Quick Mode is the default**: Most users should be able to describe their app and let you handle the technical details.
+- **Derive, don't interrogate**: For non-technical users, derive database schema, API endpoints, and architecture from their feature descriptions. Don't ask them to specify these.
+- **Use plain language**: Instead of "What entities need CRUD operations?", ask "What things can users create, edit, or delete?"
+- **Be thorough on features**: This is where to spend time. Keep asking follow-up questions until you have a complete picture.
+- **Derive feature count, don't guess**: After gathering requirements, tally up testable features yourself and present the estimate. Don't use fixed tiers or ask users to guess.
+- **Validate before generating**: Present a summary including your derived feature count and get explicit approval before creating files.
 
 ---
 
-## File Structure Pattern
+# BEGIN
 
-```
-src/<module>/
-├── <module>.module.ts      # Module definition
-├── <module>.controller.ts  # HTTP endpoints
-├── <module>.service.ts     # Business logic
-├── dto/
-│   ├── create-<module>.dto.ts
-│   └── update-<module>.dto.ts
-└── types/                  # Optional type definitions
-```
+Start by greeting the user warmly. Ask ONLY the Phase 1 questions:
 
----
+> "Hi! I'm here to help you create a detailed specification for your app.
+>
+> Let's start with the basics:
+>
+> 1. What do you want to call this project?
+> 2. In your own words, what are you building?
+> 3. Who will use it - just you, or others too?"
 
-## Recently Implemented Features (Jan 2026)
+**STOP HERE and wait for their response.** Do not ask any other questions yet. Do not use AskUserQuestion yet. Just have a conversation about their project basics first.
 
-### Role-Based Access Control
-- **Permissions Enum** (`src/common/enums/permissions.enum.ts`): GYM_*, BRANCH_*, MEMBER_*, TRAINER_*, CHART_*, DIET_*, GOAL_* permissions
-- **@Roles Decorator** (`src/auth/decorators/roles.decorator.ts`): Role-based route protection
-- **RolesGuard** (`src/auth/guards/roles.guard.ts`): Validates user roles against required roles
-- **BranchAccessGuard** (`src/auth/guards/branch-access.guard.ts`): Validates gym/branch ownership
-
-### Goal System
-- **GoalSchedule** (`src/entities/goal_schedules.entity.ts`): Weekly/monthly/quarterly goals with milestones
-- **GoalScheduleMilestone** (`src/entities/goal_schedule_milestones.entity.ts`): Per-period milestone tracking
-- **GoalTemplate** (`src/entities/goal_templates.entity.ts`): Reusable goal templates
-
-### Training Charts (Workout Templates)
-- **WorkoutTemplate** (`src/entities/workout_templates.entity.ts`):
-  - ChartVisibility: PRIVATE, GYM_PUBLIC
-  - ChartType: STRENGTH, CARDIO, HIIT, FLEXIBILITY, COMPOUND
-  - DifficultyLevel: BEGINNER, INTERMEDIATE, ADVANCED
-  - Template versioning (version, parent_template_id, usage_count)
-- **WorkoutTemplateExercise** (`src/entities/workout_template_exercises.entity.ts`):
-  - EquipmentRequired: BARBELL, DUMBBELL, CABLE, MACHINE, BODYWEIGHT, etc.
-- **WorkoutPlanChartAssignment** (`src/entities/workout_plan_chart_assignments.entity.ts`): Chart-to-member assignments with customizations
-
-### Diet Integration
-- **DietTemplate** (`src/entities/diet_templates.entity.ts`): Template fields (is_template, usage_count, version)
-- **DietTemplateMeal** (`src/entities/diet_template_meals.entity.ts`): Template meals
-- **DietPlanAssignment** (`src/entities/diet_plan_assignments.entity.ts`): Diet-to-member assignments
-
-### Template Sharing
-- **TemplateShare** (`src/entities/template_shares.entity.ts`): Admin-to-trainer template sharing
-
-### Notifications
-- **NotificationType Enum**: GOAL_PROGRESS, GOAL_COMPLETED, GOAL_MISSED, MILESTONE_COMPLETE, MILESTONE_MISSED, CHART_ASSIGNED, CHART_SHARED, DIET_ASSIGNED, TEMPLATE_FEEDBACK_REQUEST, SYSTEM, REMINDER
-
-### New Controllers Added
-- `src/goals/goal-schedules.controller.ts` - Goal schedule CRUD
-- `src/goals/goal-templates.controller.ts` - Goal template management
-- `src/workouts/workout-templates.controller.ts` - Workout template management
-- `src/workouts/workout-plan-chart-assignments.controller.ts` - Chart assignments
-- `src/diet-plans/diet-templates.controller.ts` - Diet template management
-- `src/diet-plans/diet-assignments.controller.ts` - Diet assignments
-
----
-
-## Database Seeding
-
-Check `src/database/` for:
-- `seed-working.ts` - Working seed data
-- `add-comprehensive-data.ts` - Full test data
-- `verify-data.ts` - Data verification script
+After they respond, acknowledge what they said, then move to Phase 2.
