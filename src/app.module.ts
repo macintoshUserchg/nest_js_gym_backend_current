@@ -22,6 +22,7 @@ import { DietTemplateMeal } from './entities/diet_template_meals.entity';
 import { TemplateShare } from './entities/template_shares.entity';
 import { TemplateAssignment } from './entities/template_assignments.entity';
 import { MemberTrainerAssignment } from './entities/member_trainer_assignments.entity';
+import { Role } from './entities/roles.entity';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { GymsModule } from './gyms/gyms.module';
@@ -65,6 +66,7 @@ import { TemplateSharesModule } from './templates/template-shares.module';
     TypeOrmModule.forFeature([
       Gym,
       User,
+      Role,
       Branch,
       Class,
       Member,
