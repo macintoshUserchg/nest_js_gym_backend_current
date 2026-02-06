@@ -42,6 +42,10 @@ function request(method, path, data, token) {
 async function testFeature13() {
   console.log('\n=== TESTING FEATURE #13: Create gym with duplicate email fails ===\n');
 
+  // Generate unique email using timestamp
+  const timestamp = Date.now();
+  const testEmail = `test_feature_13_${timestamp}@gym.com`;
+
   // Step 1: Login
   console.log('Step 1: Login as superadmin...');
   const loginRes = await request('POST', '/auth/login', {
@@ -53,10 +57,10 @@ async function testFeature13() {
   console.log('Token received:', token ? 'Yes' : 'No');
 
   // Step 2: Create first gym
-  console.log('\nStep 2: Create first gym with email test_feature_13@gym.com...');
+  console.log(`\nStep 2: Create first gym with email ${testEmail}...`);
   const gym1Data = {
     name: 'Test Gym Feature 13',
-    email: 'test_feature_13@gym.com',
+    email: testEmail,
     phone: '+1234567890',
     address: '123 Test Street'
   };
@@ -76,7 +80,7 @@ async function testFeature13() {
   console.log('\nStep 3: Attempt to create second gym with same email...');
   const gym2Data = {
     name: 'Test Gym Feature 13 Duplicate',
-    email: 'test_feature_13@gym.com',
+    email: testEmail,
     phone: '+0987654321',
     address: '456 Duplicate Street'
   };
@@ -108,7 +112,7 @@ async function testFeature13() {
   // Step 6: Verify second gym was not created
   console.log('\nStep 6: Verify second gym was not created in database...');
   const getAllGyms = await request('GET', '/gyms', null, token);
-  const duplicateEmailCount = getAllGyms.data.filter(g => g.email === 'test_feature_13@gym.com').length;
+  const duplicateEmailCount = getAllGyms.data.filter(g => g.email === testEmail).length;
   if (duplicateEmailCount === 1) {
     console.log('✅ Only one gym exists with the email');
   } else {

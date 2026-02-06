@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, DataSource, QueryFailedError } from 'typeorm';
 import { Gym } from '../entities/gym.entity';
 import { Branch } from '../entities/branch.entity';
 import { Member } from '../entities/members.entity';
@@ -29,30 +29,43 @@ export class GymsService {
   // ========== GYM OPERATIONS ==========
 
   async create(createGymDto: CreateGymDto) {
-    const gym = this.gymsRepo.create(createGymDto);
-    const savedGym = await this.gymsRepo.save(gym);
+    try {
+      const gym = this.gymsRepo.create(createGymDto);
+      const savedGym = await this.gymsRepo.save(gym);
 
-    // Create default branch for the gym
-    const defaultBranch = this.branchesRepo.create({
-      name: `${savedGym.name} - Main Branch`,
-      email: savedGym.email,
-      phone: savedGym.phone,
-      address: savedGym.address,
-      location: savedGym.location,
-      state: savedGym.state,
-      latitude: savedGym.latitude,
-      longitude: savedGym.longitude,
-      gym: savedGym,
-      mainBranch: true,
-    });
+      // Create default branch for the gym
+      const defaultBranch = this.branchesRepo.create({
+        name: `${savedGym.name} - Main Branch`,
+        email: savedGym.email,
+        phone: savedGym.phone,
+        address: savedGym.address,
+        location: savedGym.location,
+        state: savedGym.state,
+        latitude: savedGym.latitude,
+        longitude: savedGym.longitude,
+        gym: savedGym,
+        mainBranch: true,
+      });
 
-    await this.branchesRepo.save(defaultBranch);
+      await this.branchesRepo.save(defaultBranch);
 
-    // Return gym with the default branch
-    return this.gymsRepo.findOne({
-      where: { gymId: savedGym.gymId },
-      relations: ['branches'],
-    });
+      // Return gym with the default branch
+      return this.gymsRepo.findOne({
+        where: { gymId: savedGym.gymId },
+        relations: ['branches'],
+      });
+    } catch (error) {
+      // Handle duplicate key violation (unique constraint on email)
+      if (error instanceof QueryFailedError) {
+        if (error.message && error.message.includes('duplicate key')) {
+          throw new ConflictException('A gym with this email already exists');
+        }
+        if (error.message && error.message.includes('unique constraint')) {
+          throw new ConflictException('A gym with this email already exists');
+        }
+      }
+      throw error;
+    }
   }
 
   async findAll(location?: string, search?: string) {
