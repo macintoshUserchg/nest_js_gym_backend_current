@@ -119,19 +119,53 @@ setup_database() {
     echo ""
 }
 
+validate_jwt_secret() {
+    if [ ! -f ".env" ]; then
+        return 0  # Skip validation if .env doesn't exist yet
+    fi
+
+    # Check if JWT_SECRET is set in environment or .env
+    if [[ -z "$JWT_SECRET" ]]; then
+        # Try to source from .env
+        source .env 2>/dev/null || true
+    fi
+
+    if [[ -z "$JWT_SECRET" ]]; then
+        print_error "JWT_SECRET environment variable is not set"
+        print_info "Generate a secure secret with: openssl rand -base64 32"
+        print_info "Then run: export JWT_SECRET=\"<your-secret>\""
+        print_info "Or add it to your .env file"
+        return 1
+    fi
+
+    if [[ ${#JWT_SECRET} -lt 32 ]]; then
+        print_error "JWT_SECRET must be at least 32 characters (current: ${#JWT_SECRET})"
+        return 1
+    fi
+
+    return 0
+}
+
 setup_environment() {
     print_header "Environment Configuration"
 
     if [ ! -f ".env" ]; then
-        print_error ".env file not found"
         print_info "Creating .env file from template..."
+
+        # Check if JWT_SECRET is set in environment
+        if [[ -z "$JWT_SECRET" ]]; then
+            print_error "JWT_SECRET environment variable is required"
+            print_info "Generate with: openssl rand -base64 32"
+            print_info "Then run: export JWT_SECRET=\"<your-secret>\""
+            return 1
+        fi
 
         cat > .env << EOF
 # Database Configuration
 POSTGRES_URL="postgresql://${DB_USER}@localhost:5432/${DB_NAME}"
 
-# JWT Configuration
-JWT_SECRET="56r67a7d9asd76gs9a7dg6796as786d078as6d789sa"
+# JWT Configuration - Set via environment variable
+JWT_SECRET="\${JWT_SECRET}"
 JWT_EXPIRES_IN="1d"
 
 # Server Configuration
@@ -141,9 +175,12 @@ PORT="3000"
 NODE_ENV="development"
 EOF
         print_success ".env file created"
-        print_info "Please review and update .env with your configuration"
     else
         print_success ".env file already exists"
+        # Validate JWT_SECRET if .env exists
+        if ! validate_jwt_secret; then
+            return 1
+        fi
     fi
     echo ""
 }
@@ -173,6 +210,19 @@ run_tests() {
 start_server() {
     print_header "Starting Development Server"
 
+    # Cleanup function for server process
+    cleanup_server() {
+        if [[ -n "$SERVER_PID" ]] && kill -0 $SERVER_PID 2>/dev/null; then
+            print_info "Stopping server (PID: $SERVER_PID)..."
+            kill $SERVER_PID 2>/dev/null
+            wait $SERVER_PID 2>/dev/null
+            rm -f .server.pid
+        fi
+    }
+
+    # Set trap for cleanup on exit/error/interrupt
+    trap cleanup_server EXIT INT TERM
+
     print_info "Starting server in background..."
     nohup npm run start:dev > logs/server.log 2>&1 &
     SERVER_PID=$!
@@ -180,19 +230,35 @@ start_server() {
     # Save PID for later
     echo $SERVER_PID > .server.pid
 
+    # Poll for server readiness with timeout
     print_info "Waiting for server to start..."
-    sleep 10
+    local max_attempts=30
+    local attempt=0
 
-    # Check if server is running
-    if kill -0 $SERVER_PID 2>/dev/null; then
-        print_success "Server started successfully (PID: $SERVER_PID)"
-        print_info "Logs: tail -f logs/server.log"
-    else
-        print_error "Server failed to start"
-        print_info "Check logs: cat logs/server.log"
-        return 1
-    fi
-    echo ""
+    while [[ $attempt -lt $max_attempts ]]; do
+        # Check if health endpoint is responding
+        if curl -s http://localhost:${DEFAULT_PORT}/health > /dev/null 2>&1; then
+            print_success "Server started successfully (PID: $SERVER_PID)"
+            print_info "Logs: tail -f logs/server.log"
+            # Clear trap on success so cleanup doesn't run on normal exit
+            trap - EXIT INT TERM
+            return 0
+        fi
+
+        # Check if server process died
+        if ! kill -0 $SERVER_PID 2>/dev/null; then
+            print_error "Server process died unexpectedly"
+            print_info "Check logs: cat logs/server.log"
+            return 1
+        fi
+
+        sleep 1
+        ((attempt++))
+    done
+
+    print_error "Server failed to start within ${max_attempts} seconds"
+    print_info "Check logs: cat logs/server.log"
+    return 1
 }
 
 print_access_info() {

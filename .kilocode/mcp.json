@@ -8,7 +8,11 @@
             ],
             "env": {
                 "DEFAULT_MINIMUM_TOKENS": ""
-            }
+            },
+            "alwaysAllow": [
+                "resolve-library-id",
+                "query-docs"
+            ]
         },
         "filesystem": {
             "command": "npx",
@@ -18,7 +22,21 @@
                 "/Users/chandangaur/development/Nest JS/new-nestjs-gym-app"
             ],
             "alwaysAllow": [
-                "read_text_file"
+                "read_text_file",
+                "edit_file",
+                "search_files",
+                "write_file",
+                "create_directory",
+                "list_directory",
+                "directory_tree",
+                "list_directory_with_sizes",
+                "get_file_info",
+                "move_file",
+                "delete_file",
+                "read_file",
+                "read_media_file",
+                "list_allowed_directories",
+                "read_multiple_files"
             ]
         },
         "sequentialthinking": {
@@ -26,6 +44,28 @@
             "args": [
                 "-y",
                 "@modelcontextprotocol/server-sequential-thinking"
+            ],
+            "alwaysAllow": [
+                "sequential_thinking",
+                "sequentialthinking"
+            ]
+        },
+        "memory": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-memory"
+            ],
+            "alwaysAllow": [
+                "create_entities",
+                "open_nodes",
+                "search_nodes",
+                "read_graph",
+                "delete_relations",
+                "delete_observations",
+                "delete_entities",
+                "add_observations",
+                "create_relations"
             ]
         }
     }

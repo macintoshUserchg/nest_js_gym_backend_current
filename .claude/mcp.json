@@ -1,14 +1,38 @@
 {
   "mcpServers": {
-    // Add your MCP servers here
-    // Example:
-    // "filesystem": {
-    //   "command": "npx",
-    //   "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/dir"]
-    // },
-    // "postgres": {
-    //   "command": "npx",
-    //   "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://user:pass@localhost:5432/db"]
-    // }
+    "serena": {
+      "command": "/Users/chandangaur/Library/Python/3.11/bin/serena-mcp-server",
+      "args": ["--project", "/Users/chandangaur/development/Nest JS/new-nestjs-gym-app"],
+      "env": {},
+      "disabled": false
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "env": {
+        "DEFAULT_MINIMUM_TOKENS": ""
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/chandangaur/development/Nest JS/new-nestjs-gym-app"],
+      "alwaysAllow": [
+        "read_text_file",
+        "write_file",
+        "create_directory",
+        "list_directory",
+        "search_files"
+      ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "alwaysAllow": [
+        "create_entities",
+        "search_nodes",
+        "add_observations",
+        "create_relations"
+      ]
+    }
   }
 }

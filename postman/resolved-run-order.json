@@ -1,9 +1,6 @@
 {
   "supportEndpoints": [
-    "User login",
-    "Create a new gym",
-    "Create a branch for a gym",
-    "Create a new member"
+    "User login"
   ],
-  "target": "Create invoice"
+  "target": "Get all gyms"
 }

@@ -70,3 +70,10 @@ postman/interactions.log
 .worktrees/
 .security-key
 logs/security/
+
+# Claude local settings (may contain sensitive data)
+.claude/settings.local.json
+.claude/settings.*.local.json
+
+# Additional environment files
+.env.*.local

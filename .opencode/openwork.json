@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "workspace": {
+    "name": "new-nestjs-gym-app",
+    "createdAt": 1770395422570,
+    "preset": "starter"
+  },
+  "authorizedRoots": [
+    "/Users/chandangaur/development/Nest JS/new-nestjs-gym-app"
+  ]
+}

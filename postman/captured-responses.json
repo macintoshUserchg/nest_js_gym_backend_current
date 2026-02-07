@@ -1,88 +1,244 @@
 {
   "User login": {
-    "userid": "6c74d48d-93e9-433c-b5c4-8d55260404a6",
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2Yzc0ZDQ4ZC05M2U5LTQzM2MtYjVjNC04ZDU1MjYwNDA0YTYiLCJlbWFpbCI6ImFkbWluQGZpdG5lc3NmaXJzdGVsaXRlLmNvbSIsInJvbGUiOnsiaWQiOiJjYTIyNDJhOC1jNWViLTRkZjEtYmM2Mi1iMDU3MmVjMzFkMjAiLCJuYW1lIjoiQURNSU4iLCJkZXNjcmlwdGlvbiI6Ikd5bSBBZG1pbmlzdHJhdG9yIn0sImlhdCI6MTc3MDMwMDM2NywiZXhwIjoxNzcwMzg2NzY3fQ.OZ_hnT7wFa1lLVdKqS3r5PP8M1l0AE-MctrpXFJ_7z8"
+    "userid": "3e0dcc02-8973-412e-b134-1297be80fb01",
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzZTBkY2MwMi04OTczLTQxMmUtYjEzNC0xMjk3YmU4MGZiMDEiLCJlbWFpbCI6ImFkbWluQGZpdG5lc3NmaXJzdGVsaXRlLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MDM5OTUwOSwiZXhwIjoxNzcwNDg1OTA5fQ.o4-J7WVBWYc0-q6IJXfcdT5neAHTkcRCfIVq-3UBsnM"
   },
   "Get all gyms": [
     {
-      "gymId": "4e289654-bbe0-4fca-86c1-5f191cb61ebe",
-      "name": "Fitness First Elite"
+      "gymId": "50c10bb3-78e2-41f2-bde6-7d0280d5dfcb",
+      "name": "Fitness First Elite",
+      "email": "admin@fitnessfirstelite.com",
+      "phone": "+1-555-FITNESS",
+      "logoUrl": null,
+      "address": "123 Elite Fitness Drive, Wellness City, WC 90210",
+      "location": "Downtown",
+      "state": "California",
+      "latitude": "34.05220000",
+      "longitude": "-118.24370000",
+      "branches": [
+        {
+          "branchId": "4a7612ac-28ab-4afb-8775-b4ee5ab4f2ef",
+          "name": "Fitness First Elite - Downtown",
+          "email": "downtown@fitnessfirstelite.com",
+          "phone": "+1-555-0101",
+          "address": "123 Elite Fitness Drive, Wellness City, WC 90210",
+          "location": "Downtown",
+          "state": "California",
+          "mainBranch": true,
+          "latitude": null,
+          "longitude": null,
+          "createdAt": "2026-02-06T02:06:44.971Z",
+          "updatedAt": "2026-02-06T02:06:44.971Z"
+        },
+        {
+          "branchId": "f726465e-1fa7-4db1-83d2-0bc83191c980",
+          "name": "Fitness First Elite - Beverly Hills",
+          "email": "beverlyhills@fitnessfirstelite.com",
+          "phone": "+1-555-0102",
+          "address": "456 Rodeo Drive, Beverly Hills, BH 90211",
+          "location": "Beverly Hills",
+          "state": "California",
+          "mainBranch": false,
+          "latitude": "34.07360000",
+          "longitude": "-118.40040000",
+          "createdAt": "2026-02-06T02:06:44.971Z",
+          "updatedAt": "2026-02-06T02:06:44.971Z"
+        },
+        {
+          "branchId": "4cc2e78c-c50f-4308-aa28-e4ce2bea13c5",
+          "name": "Fitness First Elite - Santa Monica",
+          "email": "santamonica@fitnessfirstelite.com",
+          "phone": "+1-555-0103",
+          "address": "789 Ocean Avenue, Santa Monica, SM 90401",
+          "location": "Santa Monica",
+          "state": "California",
+          "mainBranch": false,
+          "latitude": "34.01950000",
+          "longitude": "-118.49120000",
+          "createdAt": "2026-02-06T02:06:44.971Z",
+          "updatedAt": "2026-02-06T02:06:44.971Z"
+        },
+        {
+          "branchId": "89849381-e0de-4309-938a-410f61daaa86",
+          "name": "Fitness First Elite - Pasadena",
+          "email": "pasadena@fitnessfirstelite.com",
+          "phone": "+1-555-0104",
+          "address": "321 Colorado Blvd, Pasadena, PS 91101",
+          "location": "Pasadena",
+          "state": "California",
+          "mainBranch": false,
+          "latitude": "34.14780000",
+          "longitude": "-118.14450000",
+          "createdAt": "2026-02-06T02:06:44.971Z",
+          "updatedAt": "2026-02-06T02:06:44.971Z"
+        },
+        {
+          "branchId": "54bbabe3-dd69-41be-aec2-3a4a40a50d7b",
+          "name": "FEATURE_16_TEST_BRANCH_1770344218780",
+          "email": "branch16@test.com",
+          "phone": "555-0166",
+          "address": "742 Evergreen Terrace, Springfield",
+          "location": "Springfield",
+          "state": "IL",
+          "mainBranch": false,
+          "latitude": "39.78170000",
+          "longitude": "-89.65010000",
+          "createdAt": "2026-02-06T02:16:58.825Z",
+          "updatedAt": "2026-02-06T02:16:58.825Z"
+        }
+      ],
+      "createdAt": "2026-02-06T02:06:44.966Z",
+      "updatedAt": "2026-02-06T02:06:44.966Z"
+    },
+    {
+      "gymId": "0d260a86-be46-456f-b578-82d9a1374328",
+      "name": "Test Gym API Verification 1770343958209",
+      "email": "test@apiverification.com",
+      "phone": "+1-555-9999",
+      "logoUrl": null,
+      "address": "123 Test Street",
+      "location": "Test City",
+      "state": "Test State",
+      "latitude": null,
+      "longitude": null,
+      "branches": [
+        {
+          "branchId": "c72f50a1-2f39-4fa0-b84e-a45a932fd203",
+          "name": "Test Gym API Verification 1770343958209 - Main Branch",
+          "email": "test@apiverification.com",
+          "phone": "+1-555-9999",
+          "address": "123 Test Street",
+          "location": "Test City",
+          "state": "Test State",
+          "mainBranch": true,
+          "latitude": null,
+          "longitude": null,
+          "createdAt": "2026-02-06T02:12:38.218Z",
+          "updatedAt": "2026-02-06T02:12:38.218Z"
+        }
+      ],
+      "createdAt": "2026-02-06T02:12:38.212Z",
+      "updatedAt": "2026-02-06T02:12:38.212Z"
+    },
+    {
+      "gymId": "253f6ada-e049-41b7-ae03-c539cf30eb42",
+      "name": "Test Gym Feature 13",
+      "email": "test_feature_13@gym.com",
+      "phone": "+1234567890",
+      "logoUrl": null,
+      "address": "123 Test Street",
+      "location": null,
+      "state": null,
+      "latitude": null,
+      "longitude": null,
+      "branches": [
+        {
+          "branchId": "00aa0d86-14be-4009-b6be-7602a3337fa1",
+          "name": "Test Gym Feature 13 - Main Branch",
+          "email": "test_feature_13@gym.com",
+          "phone": "+1234567890",
+          "address": "123 Test Street",
+          "location": null,
+          "state": null,
+          "mainBranch": true,
+          "latitude": null,
+          "longitude": null,
+          "createdAt": "2026-02-06T02:13:42.635Z",
+          "updatedAt": "2026-02-06T02:13:42.635Z"
+        }
+      ],
+      "createdAt": "2026-02-06T02:13:42.629Z",
+      "updatedAt": "2026-02-06T02:13:42.629Z"
+    },
+    {
+      "gymId": "28ca3dc5-85f3-481d-9f86-7d30c9f26f31",
+      "name": "Test Gym Feature 12",
+      "email": "testgym12@example.com",
+      "phone": "+1-555-9999",
+      "logoUrl": null,
+      "address": "123 Test Street, Test City, TC 12345",
+      "location": "Test Location",
+      "state": "Test State",
+      "latitude": "33.12340000",
+      "longitude": "-112.12340000",
+      "branches": [
+        {
+          "branchId": "a68f241a-f4fa-4187-b369-9c640d7df20f",
+          "name": "Test Gym Feature 12 - Main Branch",
+          "email": "testgym12@example.com",
+          "phone": "+1-555-9999",
+          "address": "123 Test Street, Test City, TC 12345",
+          "location": "Test Location",
+          "state": "Test State",
+          "mainBranch": true,
+          "latitude": "33.12340000",
+          "longitude": "-112.12340000",
+          "createdAt": "2026-02-06T02:14:47.933Z",
+          "updatedAt": "2026-02-06T02:14:47.933Z"
+        }
+      ],
+      "createdAt": "2026-02-06T02:14:47.928Z",
+      "updatedAt": "2026-02-06T02:14:47.928Z"
+    },
+    {
+      "gymId": "0069c681-aea5-4dcc-a7c3-c228fd131f20",
+      "name": "PERSIST_TEST_GYM_1770344143",
+      "email": "persist_test_1770344143@example.com",
+      "phone": "1234567890",
+      "logoUrl": null,
+      "address": "123 Test Street",
+      "location": "Test City",
+      "state": "TS",
+      "latitude": "40.71280000",
+      "longitude": "-74.00600000",
+      "branches": [
+        {
+          "branchId": "e43fa5ce-2b06-4d8a-991f-d831ecefeb5b",
+          "name": "PERSIST_TEST_GYM_1770344143 - Main Branch",
+          "email": "persist_test_1770344143@example.com",
+          "phone": "1234567890",
+          "address": "123 Test Street",
+          "location": "Test City",
+          "state": "TS",
+          "mainBranch": true,
+          "latitude": "40.71280000",
+          "longitude": "-74.00600000",
+          "createdAt": "2026-02-06T02:15:43.197Z",
+          "updatedAt": "2026-02-06T02:15:43.197Z"
+        }
+      ],
+      "createdAt": "2026-02-06T02:15:43.191Z",
+      "updatedAt": "2026-02-06T02:15:43.191Z"
+    },
+    {
+      "gymId": "f3fc41c4-4788-411c-863c-387d04618f6b",
+      "name": "DB Verification Test 1770344702",
+      "email": "dbverify1770344702@test.com",
+      "phone": "+1234567890",
+      "logoUrl": null,
+      "address": "123 Test Street",
+      "location": "Test City",
+      "state": "TS",
+      "latitude": null,
+      "longitude": null,
+      "branches": [
+        {
+          "branchId": "27666478-3e90-4a76-828f-a0a0943ac6a2",
+          "name": "DB Verification Test 1770344702 - Main Branch",
+          "email": "dbverify1770344702@test.com",
+          "phone": "+1234567890",
+          "address": "123 Test Street",
+          "location": "Test City",
+          "state": "TS",
+          "mainBranch": true,
+          "latitude": null,
+          "longitude": null,
+          "createdAt": "2026-02-06T02:16:40.474Z",
+          "updatedAt": "2026-02-06T02:16:40.474Z"
+        }
+      ],
+      "createdAt": "2026-02-06T02:16:40.470Z",
+      "updatedAt": "2026-02-06T02:16:40.470Z"
     }
-  ],
-  "Create a new gym": {
-    "gymId": "4e289654-bbe0-4fca-86c1-5f191cb61ebe",
-    "name": "Fitness First Elite"
-  },
-  "Create a branch for a gym": {
-    "branchId": "48e41979-bfac-4ab4-89e8-bd9f2398a040",
-    "name": "Fitness First Elite - Downtown"
-  },
-  "Create a new member": {
-    "id": 101,
-    "fullName": "Cornelius Dickens",
-    "email": "Kip_Hermann46@yahoo.com"
-  },
-  "Create invoice": {
-    "invoice_id": "3a74fd80-c0e2-4332-95d5-0538ce934e26",
-    "member": {
-      "id": 101,
-      "fullName": "Cornelius Dickens",
-      "email": "Kip_Hermann46@yahoo.com",
-      "phone": "755.776.8035 x28205",
-      "gender": "other",
-      "dateOfBirth": "1995-06-15",
-      "addressLine1": "145 Ellen Lock",
-      "addressLine2": "Suite 805",
-      "city": "Aracelyfield",
-      "state": "Oklahoma",
-      "postalCode": "09658",
-      "avatarUrl": "https://zealous-agreement.com/",
-      "attachmentUrl": "https://assured-creator.biz",
-      "emergencyContactName": "Lynne Reinger",
-      "emergencyContactPhone": "1-792-693-1178",
-      "isActive": true,
-      "freezeMember": false,
-      "createdAt": "2026-02-04T16:24:16.381Z",
-      "updatedAt": "2026-02-04T16:24:16.381Z",
-      "subscriptionId": 101,
-      "branchBranchId": "48e41979-bfac-4ab4-89e8-bd9f2398a040",
-      "is_managed_by_member": true
-    },
-    "subscription": {
-      "id": 101,
-      "member": {
-        "id": 101,
-        "fullName": "Cornelius Dickens",
-        "email": "Kip_Hermann46@yahoo.com",
-        "phone": "755.776.8035 x28205",
-        "gender": "other",
-        "dateOfBirth": "1995-06-15",
-        "addressLine1": "145 Ellen Lock",
-        "addressLine2": "Suite 805",
-        "city": "Aracelyfield",
-        "state": "Oklahoma",
-        "postalCode": "09658",
-        "avatarUrl": "https://zealous-agreement.com/",
-        "attachmentUrl": "https://assured-creator.biz",
-        "emergencyContactName": "Lynne Reinger",
-        "emergencyContactPhone": "1-792-693-1178",
-        "isActive": true,
-        "freezeMember": false,
-        "createdAt": "2026-02-04T16:24:16.381Z",
-        "updatedAt": "2026-02-04T16:24:16.381Z",
-        "subscriptionId": 101,
-        "branchBranchId": "48e41979-bfac-4ab4-89e8-bd9f2398a040",
-        "is_managed_by_member": true
-      },
-      "startDate": "2026-02-04T16:24:16.381Z",
-      "endDate": "2026-03-06T16:24:16.381Z",
-      "isActive": true,
-      "selectedClassIds": []
-    },
-    "total_amount": 149.99,
-    "description": "Monthly membership fee - February 2026",
-    "due_date": "2026-02-28T00:00:00.000Z",
-    "status": "pending",
-    "created_at": "2026-02-05T14:07:30.159Z"
-  }
+  ]
 }

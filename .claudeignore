@@ -1,0 +1,69 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE directories
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.swp
+*.swo
+
+# Temp directories
+.temp/
+.tmp/
+.cache/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Postman collection auto-populator runtime state
+postman/existing-data.json
+postman/user-choice.json
+postman/interactions.log
+
+# Lock files (optional - uncomment if desired)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Misc
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
