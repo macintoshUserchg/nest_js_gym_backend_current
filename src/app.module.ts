@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { pgConfig } from '../dbConfig';
 import { ConfigModule } from '@nestjs/config';
+import { minioConfig } from './config/minio.config';
+import { UploadModule } from './upload/upload.module';
 import { Gym } from './entities/gym.entity';
 import { User } from './entities/users.entity';
 import { Branch } from './entities/branch.entity';
@@ -61,6 +63,7 @@ import { TemplateSharesModule } from './templates/template-shares.module';
     ConfigModule.forRoot({
       envFilePath: '.env',
       expandVariables: true,
+      load: [minioConfig],
     }),
     TypeOrmModule.forRoot(pgConfig),
     TypeOrmModule.forFeature([
@@ -116,6 +119,7 @@ import { TemplateSharesModule } from './templates/template-shares.module';
     GoalSchedulesModule,
     ProgressTrackingModule,
     TemplateSharesModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],
