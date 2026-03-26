@@ -115,9 +115,8 @@ export class UploadService {
         this.bucket,
         key,
         file.buffer,
-        {
-          'Content-Type': file.mimetype,
-        }
+        file.size,
+        { 'Content-Type': file.mimetype },
       );
 
       const url = `${this.publicUrl}/${this.bucket}/${key}`;
@@ -163,9 +162,8 @@ export class UploadService {
         this.bucket,
         key,
         file.buffer,
-        {
-          'Content-Type': file.mimetype,
-        }
+        file.size,
+        { 'Content-Type': file.mimetype },
       );
 
       const url = `${this.publicUrl}/${this.bucket}/${key}`;
