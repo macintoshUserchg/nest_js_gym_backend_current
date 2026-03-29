@@ -25,8 +25,8 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column()
-  passwordHash: string;
+  @Column({ nullable: true })
+  passwordHash?: string;
 
   @ManyToOne(() => Role, (role) => role.users, { nullable: false, eager: true })
   role: Role;
@@ -36,6 +36,12 @@ export class User {
 
   @Column({ nullable: true })
   trainerId?: string;
+
+  @Column({ nullable: true, unique: true })
+  phoneNumber?: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  phoneVerifiedAt?: Date;
 
   @CreateDateColumn()
   createdAt: Date;

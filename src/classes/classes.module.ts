@@ -5,6 +5,7 @@ import {
   ClassesController,
   BranchClassesController,
   GymClassesController,
+  TrainerClassesController,
 } from './classes.controller';
 import { Class } from '../entities/classes.entity';
 import { Branch } from '../entities/branch.entity';
@@ -17,6 +18,7 @@ import { Gym } from '../entities/gym.entity';
     ClassesController,
     BranchClassesController,
     GymClassesController,
+    TrainerClassesController,
   ],
   providers: [ClassesService],
   exports: [ClassesService],

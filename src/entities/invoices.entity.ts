@@ -37,6 +37,9 @@ export class Invoice {
   })
   status: string;
 
+  @Column({ type: 'timestamp', nullable: true })
+  paid_at?: Date;
+
   @OneToMany(() => PaymentTransaction, (payment) => payment.invoice)
   payments: PaymentTransaction[];
 

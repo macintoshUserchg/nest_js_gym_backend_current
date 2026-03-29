@@ -1,6 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, In } from 'typeorm';
+import {
+  Repository,
+  Between,
+  In,
+  SelectQueryBuilder,
+  ObjectLiteral,
+} from 'typeorm';
 import { Gym } from '../entities/gym.entity';
 import { Branch } from '../entities/branch.entity';
 import { Member } from '../entities/members.entity';
@@ -36,6 +42,54 @@ export class AnalyticsService {
     @InjectRepository(PaymentTransaction)
     private paymentsRepo: Repository<PaymentTransaction>,
   ) {}
+
+  private startOfToday(date: Date = new Date()) {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    return start;
+  }
+
+  private applyEffectiveActiveSubscriptionFilter<T extends ObjectLiteral>(
+    queryBuilder: SelectQueryBuilder<T>,
+    alias: string,
+    today: Date,
+  ) {
+    return queryBuilder
+      .andWhere(`${alias}.isActive = :subscriptionIsActive`, {
+        subscriptionIsActive: true,
+      })
+      .andWhere(`${alias}.endDate >= :activeSubscriptionFloor`, {
+        activeSubscriptionFloor: today,
+      });
+  }
+
+  private async countEffectiveActiveMembers(
+    params: { branchId: string } | { branchIds: string[] },
+  ) {
+    const today = this.startOfToday();
+    const query = this.subscriptionsRepo
+      .createQueryBuilder('subscription')
+      .innerJoin('subscription.member', 'member')
+      .select('COUNT(DISTINCT member.id)', 'count')
+      .andWhere('member.isActive = :memberIsActive', { memberIsActive: true });
+
+    this.applyEffectiveActiveSubscriptionFilter(query, 'subscription', today);
+
+    if ('branchId' in params) {
+      query.andWhere('member.branchBranchId = :branchId', {
+        branchId: params.branchId,
+      });
+    } else if (params.branchIds.length === 0) {
+      return 0;
+    } else {
+      query.andWhere('member.branchBranchId IN (:...branchIds)', {
+        branchIds: params.branchIds,
+      });
+    }
+
+    const result = await query.getRawOne<{ count?: string }>();
+    return parseInt(result?.count || '0', 10);
+  }
 
   /**
    * OPTIMIZED: Get gym dashboard analytics with minimal response
@@ -97,9 +151,7 @@ export class AnalyticsService {
       this.membersRepo.count({
         where: { branch: { branchId: In(branchIds) } },
       }),
-      this.membersRepo.count({
-        where: { isActive: true, branch: { branchId: In(branchIds) } },
-      }),
+      this.countEffectiveActiveMembers({ branchIds }),
       branchIds.length > 0
         ? this.subscriptionsRepo
             .createQueryBuilder('subscription')
@@ -108,6 +160,9 @@ export class AnalyticsService {
             .andWhere('subscription.isActive = :isActive', { isActive: true })
             .innerJoin('subscription.member', 'member')
             .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
+            .andWhere('member.isActive = :memberIsActive', {
+              memberIsActive: true,
+            })
             .getCount()
         : 0,
       branchIds.length > 0
@@ -120,6 +175,9 @@ export class AnalyticsService {
             .andWhere('subscription.isActive = :isActive', { isActive: true })
             .innerJoin('subscription.member', 'member')
             .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
+            .andWhere('member.isActive = :memberIsActive', {
+              memberIsActive: true,
+            })
             .getCount()
         : 0,
       branchIds.length > 0
@@ -207,6 +265,9 @@ export class AnalyticsService {
             .andWhere('subscription.isActive = :isActive', { isActive: true })
             .innerJoin('subscription.member', 'member')
             .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
+            .andWhere('member.isActive = :memberIsActive', {
+              memberIsActive: true,
+            })
             .select('DISTINCT member.id', 'id')
             .getRawMany()
             .then((results) => results.map((result) => result.id))
@@ -224,6 +285,9 @@ export class AnalyticsService {
             .andWhere('subscription.isActive = :isActive', { isActive: true })
             .innerJoin('subscription.member', 'member')
             .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
+            .andWhere('member.isActive = :memberIsActive', {
+              memberIsActive: true,
+            })
             .select('DISTINCT member.id', 'id')
             .getRawMany()
             .then((results) => results.map((result) => result.id))
@@ -419,7 +483,12 @@ export class AnalyticsService {
       };
     }
 
-    const [currentMonthRevenueResult, lastMonthRevenueResult, currentMonthRefundsResult, lastMonthRefundsResult] =
+    const [
+      currentMonthRevenueResult,
+      lastMonthRevenueResult,
+      currentMonthRefundsResult,
+      lastMonthRefundsResult,
+    ] =
       branchIds.length > 0
         ? await Promise.all([
             // Completed payments (revenue)
@@ -627,9 +696,7 @@ export class AnalyticsService {
       where: { branch: { branchId: In(branchIds) } },
     });
 
-    const activeMembers = await this.membersRepo.count({
-      where: { isActive: true, branch: { branchId: In(branchIds) } },
-    });
+    const activeMembers = await this.countEffectiveActiveMembers({ branchIds });
 
     const expiringToday =
       branchIds.length > 0
@@ -640,6 +707,9 @@ export class AnalyticsService {
             .andWhere('subscription.isActive = :isActive', { isActive: true })
             .innerJoin('subscription.member', 'member')
             .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
+            .andWhere('member.isActive = :memberIsActive', {
+              memberIsActive: true,
+            })
             .getCount()
         : 0;
 
@@ -654,6 +724,9 @@ export class AnalyticsService {
             .andWhere('subscription.isActive = :isActive', { isActive: true })
             .innerJoin('subscription.member', 'member')
             .andWhere('member.branchBranchId IN (:...branchIds)', { branchIds })
+            .andWhere('member.isActive = :memberIsActive', {
+              memberIsActive: true,
+            })
             .getCount()
         : 0;
 
@@ -742,9 +815,7 @@ export class AnalyticsService {
       classIds,
     ] = await Promise.all([
       this.membersRepo.count({ where: { branch: { branchId } } }),
-      this.membersRepo.count({
-        where: { isActive: true, branch: { branchId } },
-      }),
+      this.countEffectiveActiveMembers({ branchId }),
       this.attendanceRepo.count({
         where: { date: Between(today, tomorrow), branch: { branchId } },
       }),
@@ -778,6 +849,7 @@ export class AnalyticsService {
         .andWhere('subscription.endDate < :tomorrow', { tomorrow })
         .andWhere('subscription.isActive = :isActive', { isActive: true })
         .andWhere('member.branchBranchId = :branchId', { branchId })
+        .andWhere('member.isActive = :memberIsActive', { memberIsActive: true })
         .getCount(),
       this.subscriptionsRepo
         .createQueryBuilder('subscription')
@@ -788,6 +860,7 @@ export class AnalyticsService {
         })
         .andWhere('subscription.isActive = :isActive', { isActive: true })
         .andWhere('member.branchBranchId = :branchId', { branchId })
+        .andWhere('member.isActive = :memberIsActive', { memberIsActive: true })
         .getCount(),
       this.invoicesRepo
         .createQueryBuilder('invoice')
@@ -834,6 +907,7 @@ export class AnalyticsService {
       .andWhere('subscription.endDate < :tomorrow', { tomorrow })
       .andWhere('subscription.isActive = :isActive', { isActive: true })
       .andWhere('member.branchBranchId = :branchId', { branchId })
+      .andWhere('member.isActive = :memberIsActive', { memberIsActive: true })
       .select('DISTINCT member.id', 'id')
       .getRawMany()
       .then((results) => results.map((result) => result.id));
@@ -846,6 +920,7 @@ export class AnalyticsService {
       .andWhere('subscription.endDate < :tenDaysFromNow', { tenDaysFromNow })
       .andWhere('subscription.isActive = :isActive', { isActive: true })
       .andWhere('member.branchBranchId = :branchId', { branchId })
+      .andWhere('member.isActive = :memberIsActive', { memberIsActive: true })
       .select('DISTINCT member.id', 'id')
       .getRawMany()
       .then((results) => results.map((result) => result.id));
@@ -929,69 +1004,73 @@ export class AnalyticsService {
       };
     }
 
-    const [currentMonthRevenueResult, lastMonthRevenueResult, currentMonthRefundsResult, lastMonthRefundsResult] =
-      await Promise.all([
-        // Completed payments (revenue)
-        this.paymentsRepo
-          .createQueryBuilder('payment')
-          .innerJoin('payment.invoice', 'invoice')
-          .innerJoin('invoice.member', 'member')
-          .select('SUM(payment.amount)', 'total')
-          .where('member.branchBranchId = :branchId', { branchId })
-          .andWhere('payment.created_at >= :firstDayOfCurrentMonth', {
-            firstDayOfCurrentMonth,
-          })
-          .andWhere('payment.created_at < :firstDayOfNextMonth', {
-            firstDayOfNextMonth,
-          })
-          .andWhere('payment.status = :status', { status: 'completed' })
-          .getRawOne(),
-        // Last month completed payments
-        this.paymentsRepo
-          .createQueryBuilder('payment')
-          .innerJoin('payment.invoice', 'invoice')
-          .innerJoin('invoice.member', 'member')
-          .select('SUM(payment.amount)', 'total')
-          .where('member.branchBranchId = :branchId', { branchId })
-          .andWhere('payment.created_at >= :firstDayOfLastMonth', {
-            firstDayOfLastMonth,
-          })
-          .andWhere('payment.created_at < :firstDayOfCurrentMonth', {
-            firstDayOfCurrentMonth,
-          })
-          .andWhere('payment.status = :status', { status: 'completed' })
-          .getRawOne(),
-        // Current month refunds (to deduct from revenue)
-        this.paymentsRepo
-          .createQueryBuilder('payment')
-          .innerJoin('payment.invoice', 'invoice')
-          .innerJoin('invoice.member', 'member')
-          .select('SUM(payment.amount)', 'total')
-          .where('member.branchBranchId = :branchId', { branchId })
-          .andWhere('payment.created_at >= :firstDayOfCurrentMonth', {
-            firstDayOfCurrentMonth,
-          })
-          .andWhere('payment.created_at < :firstDayOfNextMonth', {
-            firstDayOfNextMonth,
-          })
-          .andWhere('payment.status = :status', { status: 'refund' })
-          .getRawOne(),
-        // Last month refunds
-        this.paymentsRepo
-          .createQueryBuilder('payment')
-          .innerJoin('payment.invoice', 'invoice')
-          .innerJoin('invoice.member', 'member')
-          .select('SUM(payment.amount)', 'total')
-          .where('member.branchBranchId = :branchId', { branchId })
-          .andWhere('payment.created_at >= :firstDayOfLastMonth', {
-            firstDayOfLastMonth,
-          })
-          .andWhere('payment.created_at < :firstDayOfCurrentMonth', {
-            firstDayOfCurrentMonth,
-          })
-          .andWhere('payment.status = :status', { status: 'refund' })
-          .getRawOne(),
-      ]);
+    const [
+      currentMonthRevenueResult,
+      lastMonthRevenueResult,
+      currentMonthRefundsResult,
+      lastMonthRefundsResult,
+    ] = await Promise.all([
+      // Completed payments (revenue)
+      this.paymentsRepo
+        .createQueryBuilder('payment')
+        .innerJoin('payment.invoice', 'invoice')
+        .innerJoin('invoice.member', 'member')
+        .select('SUM(payment.amount)', 'total')
+        .where('member.branchBranchId = :branchId', { branchId })
+        .andWhere('payment.created_at >= :firstDayOfCurrentMonth', {
+          firstDayOfCurrentMonth,
+        })
+        .andWhere('payment.created_at < :firstDayOfNextMonth', {
+          firstDayOfNextMonth,
+        })
+        .andWhere('payment.status = :status', { status: 'completed' })
+        .getRawOne(),
+      // Last month completed payments
+      this.paymentsRepo
+        .createQueryBuilder('payment')
+        .innerJoin('payment.invoice', 'invoice')
+        .innerJoin('invoice.member', 'member')
+        .select('SUM(payment.amount)', 'total')
+        .where('member.branchBranchId = :branchId', { branchId })
+        .andWhere('payment.created_at >= :firstDayOfLastMonth', {
+          firstDayOfLastMonth,
+        })
+        .andWhere('payment.created_at < :firstDayOfCurrentMonth', {
+          firstDayOfCurrentMonth,
+        })
+        .andWhere('payment.status = :status', { status: 'completed' })
+        .getRawOne(),
+      // Current month refunds (to deduct from revenue)
+      this.paymentsRepo
+        .createQueryBuilder('payment')
+        .innerJoin('payment.invoice', 'invoice')
+        .innerJoin('invoice.member', 'member')
+        .select('SUM(payment.amount)', 'total')
+        .where('member.branchBranchId = :branchId', { branchId })
+        .andWhere('payment.created_at >= :firstDayOfCurrentMonth', {
+          firstDayOfCurrentMonth,
+        })
+        .andWhere('payment.created_at < :firstDayOfNextMonth', {
+          firstDayOfNextMonth,
+        })
+        .andWhere('payment.status = :status', { status: 'refund' })
+        .getRawOne(),
+      // Last month refunds
+      this.paymentsRepo
+        .createQueryBuilder('payment')
+        .innerJoin('payment.invoice', 'invoice')
+        .innerJoin('invoice.member', 'member')
+        .select('SUM(payment.amount)', 'total')
+        .where('member.branchBranchId = :branchId', { branchId })
+        .andWhere('payment.created_at >= :firstDayOfLastMonth', {
+          firstDayOfLastMonth,
+        })
+        .andWhere('payment.created_at < :firstDayOfCurrentMonth', {
+          firstDayOfCurrentMonth,
+        })
+        .andWhere('payment.status = :status', { status: 'refund' })
+        .getRawOne(),
+    ]);
 
     const currentMonthRevenue =
       parseFloat(currentMonthRevenueResult?.total || '0') -
@@ -1151,9 +1230,7 @@ export class AnalyticsService {
       amountDueMembers,
     ] = await Promise.all([
       this.membersRepo.count({ where: { branch: { branchId } } }),
-      this.membersRepo.count({
-        where: { isActive: true, branch: { branchId } },
-      }),
+      this.countEffectiveActiveMembers({ branchId }),
       this.subscriptionsRepo
         .createQueryBuilder('subscription')
         .innerJoin('subscription.member', 'member')
@@ -1161,6 +1238,7 @@ export class AnalyticsService {
         .andWhere('subscription.endDate < :tomorrow', { tomorrow })
         .andWhere('subscription.isActive = :isActive', { isActive: true })
         .andWhere('member.branchBranchId = :branchId', { branchId })
+        .andWhere('member.isActive = :memberIsActive', { memberIsActive: true })
         .getCount(),
       this.subscriptionsRepo
         .createQueryBuilder('subscription')
@@ -1171,6 +1249,7 @@ export class AnalyticsService {
         })
         .andWhere('subscription.isActive = :isActive', { isActive: true })
         .andWhere('member.branchBranchId = :branchId', { branchId })
+        .andWhere('member.isActive = :memberIsActive', { memberIsActive: true })
         .getCount(),
       this.invoicesRepo
         .createQueryBuilder('invoice')
@@ -1354,7 +1433,8 @@ export class AnalyticsService {
     const assignedMembers = await this.assignmentsRepo
       .createQueryBuilder('assignment')
       .innerJoinAndSelect('assignment.member', 'member')
-      .where('assignment.trainerId = :trainerId', { trainerId: trainer.id })
+      .innerJoin('assignment.trainer', 'trainer')
+      .where('trainer.id = :trainerId', { trainerId: trainer.id })
       .getMany();
 
     return {

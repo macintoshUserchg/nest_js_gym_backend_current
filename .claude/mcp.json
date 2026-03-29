@@ -1,11 +1,5 @@
 {
   "mcpServers": {
-    "serena": {
-      "command": "/Users/chandangaur/Library/Python/3.11/bin/serena-mcp-server",
-      "args": ["--project", "/Users/chandangaur/development/Nest JS/new-nestjs-gym-app"],
-      "env": {},
-      "disabled": false
-    },
     "context7": {
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"],
@@ -31,7 +25,39 @@
         "create_entities",
         "search_nodes",
         "add_observations",
-        "create_relations"
+        "create_relations",
+        "read_graph",
+        "delete_entities",
+        "delete_relations",
+        "delete_observations",
+        "open_nodes"
+      ]
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-fetch"],
+      "alwaysAllow": ["fetch"]
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": ""
+      },
+      "alwaysAllow": ["brave_web_search"]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": ""
+      },
+      "alwaysAllow": [
+        "create_or_update_file",
+        "create_issue",
+        "create_pull_request",
+        "fork_repository",
+        "push_files"
       ]
     }
   }

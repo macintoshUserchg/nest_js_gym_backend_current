@@ -6,6 +6,7 @@ import { Member } from '../entities/members.entity';
 import { Trainer } from '../entities/trainers.entity';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UserRole } from '../common/enums/permissions.enum';
 
 @Injectable()
 export class UsersService {
@@ -34,6 +35,7 @@ export class UsersService {
       branch: createUserDto.branchId
         ? { branchId: createUserDto.branchId }
         : undefined,
+      phoneNumber: createUserDto.phoneNumber,
     });
 
     return this.usersRepo.save(user);
@@ -91,6 +93,35 @@ export class UsersService {
 
   async findByEmail(email: string) {
     return this.usersRepo.findOne({ where: { email }, relations: ['role'] });
+  }
+
+  async findByPhoneNumber(phoneNumber: string) {
+    return this.usersRepo.findOne({
+      where: { phoneNumber },
+      relations: ['role', 'gym', 'branch'],
+    });
+  }
+
+  async findOtpEligibleUserByPhone(phoneNumber: string) {
+    const user = await this.findByPhoneNumber(phoneNumber);
+    if (!user) {
+      return null;
+    }
+
+    const allowedRoles = new Set([UserRole.MEMBER, UserRole.TRAINER]);
+    if (!allowedRoles.has(user.role?.name as UserRole)) {
+      return null;
+    }
+
+    if (user.role?.name === UserRole.MEMBER && !user.memberId) {
+      return null;
+    }
+
+    if (user.role?.name === UserRole.TRAINER && !user.trainerId) {
+      return null;
+    }
+
+    return user;
   }
 
   async findAll() {

@@ -7,6 +7,7 @@ import {
   IsArray,
   IsInt,
   IsDateString,
+  Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -60,4 +61,13 @@ export class CreateClassDto {
   @IsInt({ each: true })
   @IsOptional()
   daysOfWeek?: number[];
+
+  @ApiPropertyOptional({
+    description: 'Assigned trainer ID',
+    example: 4,
+  })
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  trainerId?: number;
 }

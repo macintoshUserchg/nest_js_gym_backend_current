@@ -10,6 +10,7 @@ import { Member } from '../entities/members.entity';
 import { MembershipPlan } from '../entities/membership_plans.entity';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
+import { isSubscriptionCurrentlyActive } from '../common/utils/subscription.util';
 
 @Injectable()
 export class SubscriptionsService {
@@ -66,9 +67,13 @@ export class SubscriptionsService {
   }
 
   async findAll() {
-    return this.subscriptionsRepo.find({
+    const subscriptions = await this.subscriptionsRepo.find({
       relations: ['member', 'plan'],
     });
+
+    return subscriptions.map((subscription) =>
+      this.withEffectiveActiveState(subscription),
+    );
   }
 
   async findOne(id: number) {
@@ -79,7 +84,7 @@ export class SubscriptionsService {
     if (!subscription) {
       throw new NotFoundException(`Subscription with ID ${id} not found`);
     }
-    return subscription;
+    return this.withEffectiveActiveState(subscription);
   }
 
   async findByMember(memberId: number) {
@@ -101,7 +106,7 @@ export class SubscriptionsService {
       );
     }
 
-    return subscription;
+    return this.withEffectiveActiveState(subscription);
   }
 
   async update(id: number, updateDto: UpdateSubscriptionDto) {
@@ -137,5 +142,10 @@ export class SubscriptionsService {
   async remove(id: number) {
     const subscription = await this.findOne(id);
     return this.subscriptionsRepo.remove(subscription);
+  }
+
+  private withEffectiveActiveState(subscription: MemberSubscription) {
+    subscription.isActive = isSubscriptionCurrentlyActive(subscription);
+    return subscription;
   }
 }

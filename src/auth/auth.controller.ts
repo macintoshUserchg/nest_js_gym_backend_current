@@ -16,6 +16,8 @@ import {
 import { AuthService } from './auth.service';
 import { LoginUserDto } from './dto/login-user.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
+import { RequestMobileOtpDto } from './dto/request-mobile-otp.dto';
+import { VerifyMobileOtpDto } from './dto/verify-mobile-otp.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -83,6 +85,45 @@ export class AuthController {
       userid: user.userId,
       access_token: token,
     };
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('otp/mobile/request')
+  @ApiOperation({
+    summary: 'Send mobile OTP',
+    description:
+      'Sends a Twilio Verify OTP to an eligible member or trainer mobile number.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'OTP sent successfully.',
+    schema: {
+      properties: {
+        message: { type: 'string', example: 'OTP sent successfully' },
+        phoneNumber: { type: 'string', example: '+919876543210' },
+      },
+    },
+  })
+  requestMobileOtp(@Body() body: RequestMobileOtpDto) {
+    return this.authService.requestMobileOtp(body.phoneNumber);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('otp/mobile/verify')
+  @ApiOperation({
+    summary: 'Verify mobile OTP',
+    description:
+      'Verifies the submitted Twilio OTP and returns a JWT token for eligible member and trainer accounts.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'OTP verified successfully.',
+    type: LoginResponseDto,
+  })
+  verifyMobileOtp(
+    @Body() body: VerifyMobileOtpDto,
+  ): Promise<LoginResponseDto> {
+    return this.authService.verifyMobileOtp(body.phoneNumber, body.code);
   }
 
   @HttpCode(HttpStatus.OK)

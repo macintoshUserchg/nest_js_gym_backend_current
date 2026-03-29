@@ -354,26 +354,26 @@ erDiagram
 
 ## Development Setup
 
-1. Clone the repository
+1. Clone the repository.
 2. Install dependencies:
    ```bash
    npm install
    ```
-3. Configure environment variables:
-
-   - Create a `.env` file
-   - Set database connection details
-   - Configure JWT secret
-
-4. Run migrations:
-
+3. Copy the example environment and fill in secrets:
    ```bash
-   npm run typeorm:run-migrations
+   cp .env.example .env
    ```
-
-5. Start the development server:
+4. Set `DATABASE_URL` to a reachable PostgreSQL instance.
+5. Fill `TWILIO_*` if member/trainer mobile OTP should work.
+6. Fill `SMTP_*` if reminder emails should be delivered.
+7. Start the development server:
    ```bash
    npm run start:dev
+   ```
+8. Production runtime uses:
+   ```bash
+   npm run build
+   npm run start:prod
    ```
 
 ## Running Tests
@@ -381,12 +381,12 @@ erDiagram
 To run the tests, use the following command:
 
 ```bash
-npm run test
+npm test -- --runInBand
 ```
 
 ## API Documentation
 
-API documentation is not yet implemented. It will be available at `/api` once implemented.
+Swagger is available at [http://localhost:3000/api](http://localhost:3000/api) when the server is running.
 
 ## Environment Variables
 
@@ -394,6 +394,17 @@ API documentation is not yet implemented. It will be available at `/api` once im
 PORT=3000
 DATABASE_URL=postgresql://user:password@localhost:5432/gym_db
 JWT_SECRET=your-secret-key
+JWT_EXPIRES_IN=1d
+NODE_ENV=development
+CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_VERIFY_SERVICE_SID=
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
 ```
 
 ## Contributing

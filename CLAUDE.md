@@ -49,7 +49,7 @@ src/
 │   ├── auth.service.ts           # Auth business logic
 │   └── auth.module.ts            # Auth module
 │
-├── entities/                     # TypeORM entities (27 total)
+├── entities/                     # TypeORM entities (38 total)
 │   ├── users.entity.ts           # User accounts
 │   ├── roles.entity.ts           # RBAC roles
 │   ├── gym.entity.ts             # Gym chains
@@ -88,7 +88,7 @@ src/
 │   ├── notifications.entity.ts   # User notifications
 │   └── exercise_library.entity.ts # Exercise reference
 │
-├── [feature-modules]/            # 23 feature modules
+├── [feature-modules]/            # 32 feature modules
 │   ├── dto/                      # Data Transfer Objects
 │   ├── [feature].controller.ts   # Route handlers
 │   ├── [feature].service.ts      # Business logic
@@ -437,89 +437,40 @@ The project includes a Postman auto-populator system that:
 
 ### Risk Assessment
 
-See `project_risk.md` or Serena memory `project_risk_assessment` for complete risk analysis and mitigation timeline.
+See `project_risk.md` for complete risk analysis and mitigation timeline.
 
 **Estimated Time to Production:** 2-3 months (dedicated team) or 4-6 months (single developer)
 
-## Key Features
+### Key Features
 
 1. **Multi-Gym Chain Support** - Manage multiple gym locations
----
-
-## Serena MCP Integration
-
-**Status:** ✅ Active (February 7, 2026)
-
-Serena coding agent toolkit is configured for semantic code operations:
-- **MCP Config:** `.claude/mcp.json`
-- **Project Config:** `.serena/project.yml`
-- **Web Dashboard:** http://127.0.0.1:24282/dashboard/index.html
-- **Tools:** 29 semantic code tools (find_symbol, replace_symbol_body, rename_symbol, etc.)
-- **Languages:** TypeScript (LSP backend)
-
-### Available Serena Tools
-
-**Symbolic Operations:**
-- `find_symbol` - Find classes/methods by name (semantic, not grep)
-- `find_referencing_symbols` - Find all usages of a symbol
-- `replace_symbol_body` - Replace entire method/function body
-- `rename_symbol` - Rename across entire codebase
-- `insert_after_symbol` / `insert_before_symbol` - Insert code at symbol boundaries
-
-**File Operations:**
-- `read_file` - Read file contents
-- `create_text_file` - Create/overwrite file
-- `list_dir` - List directory contents
-- `find_file` - Find files by mask
-- `replace_content` - Regex-based content replacement
-
-**Memory Operations:**
-- `read_memory` - Read project memory
-- `list_memories` - List all memories
-- `write_memory` - Write new memory
-
-**Search & Analysis:**
-- `search_for_pattern` - Pattern search across project
-- `get_symbols_overview` - Get structure of any file
+2. **Member Management** - Comprehensive member profiles with subscriptions
+3. **Trainer Management** - Assign trainers to members
+4. **Class Scheduling** - Group fitness classes
+5. **Attendance Tracking** - Check-in system with monthly reports
+6. **Workout Plans** - Create and assign custom workout plans
+7. **Diet Plans** - Nutrition planning and tracking
+8. **Goal Setting** - Fitness goal management with milestones
+9. **Progress Tracking** - Body measurements and weight tracking
+10. **Financial Management** - Invoices and payment tracking
+11. **Lead Management** - Inquiry tracking for prospective members
+12. **Audit Logging** - System activity tracking
+13. **Notifications** - User notification system
+14. **RBAC** - Role-based access control with 4 roles
 
 ---
 
 ## Related Documentation
 
-### Serena Memories (Project Context)
-- **Project Info**: `.serena/memories/project_info.md` - Complete architecture, 38 entities, 32 modules
-- **Risk Assessment**: `.serena/memories/project_risk_assessment.md` - Risks and 4-phase action plan
-- **API Reference**: `.serena/memories/api_reference.md` - Complete API documentation with all endpoints
-- **Coding Style**: `.serena/memories/style_and_conventions.md` - Naming patterns and conventions
-- **Commands**: `.serena/memories/suggested_commands.md` - Development and testing commands
-- **Postman Setup**: `.serena/memories/postman-collection-populator-setup.md` - Postman automation
-- **Serena MCP**: `.serena/memories/serena_mcp_setup.md` - Serena MCP configuration
-
 ### Analysis Documents
-- **Project Analysis**: `project_analysis.md` - Comprehensive agent team analysis (Feb 6, 2026)
-  - 38 entities detailed breakdown
-  - 32 feature modules documented
-  - Missing features categorized
-  - Recommendations prioritized
+- **Project Analysis**: `project_analysis.md` - Comprehensive analysis
 - **Risk Tracking**: `project_risk.md` - Development phase risk tracking
-
-### Documentation Updates (February 7, 2026)
-
-**Corrections Made:**
-- Entity count: 27 → **38 entities**
-- Module count: 23 → **32 modules**
-- Added code statistics: 150+ TS files, 48 controllers, 32 services, ~32,715 LOC
-- Project status: "production-ready" → **70% complete**
-- Documented critical missing features (payments, emails, file uploads, security)
-- Added Serena MCP integration section
 
 ---
 
 ## Recent Updates
 
 ### February 7, 2026
-- **Serena MCP Activated** - Semantic code tools now available via MCP
-- **Memories Updated** - All 9 Serena memories updated with comprehensive analysis data
 - **Risk Assessment Created** - Detailed risk analysis with 4-phase mitigation plan
 
 ### February 6, 2026
@@ -531,86 +482,3 @@ Serena coding agent toolkit is configured for semantic code operations:
 - JWT authentication and gym creation verified
 - Swagger documentation verified
 - Infrastructure tests completed
-
----
-
-## Serena MCP Integration
-
-**Status:** ✅ Active (February 7, 2026)
-
-Serena coding agent toolkit is configured for semantic code operations:
-- **MCP Config:** `.claude/mcp.json`
-- **Project Config:** `.serena/project.yml`
-- **Web Dashboard:** http://127.0.0.1:24282/dashboard/index.html
-- **Tools:** 29 semantic code tools (find_symbol, replace_symbol_body, rename_symbol, etc.)
-- **Languages:** TypeScript (LSP backend)
-
-### Available Serena Tools
-
-**Symbolic Operations:**
-- `find_symbol` - Find classes/methods by name (semantic, not grep)
-- `find_referencing_symbols` - Find all usages of a symbol
-- `replace_symbol_body` - Replace entire method/function body
-- `rename_symbol` - Rename across entire codebase
-- `insert_after_symbol` / `insert_before_symbol` - Insert code at symbol boundaries
-
-**File Operations:**
-- `read_file` - Read file contents
-- `create_text_file` - Create/overwrite file
-- `list_dir` - List directory contents
-- `find_file` - Find files by mask
-- `replace_content` - Regex-based content replacement
-
-**Memory Operations:**
-- `read_memory` - Read project memory
-- `list_memories` - List all memories
-- `write_memory` - Write new memory
-
-**Search & Analysis:**
-- `search_for_pattern` - Pattern search across project
-- `get_symbols_overview` - Get structure of any file
-
----
-
-## Related Documentation
-
-### Serena Memories (Project Context)
-- **Project Info**: `.serena/memories/project_info.md` - Complete architecture, 38 entities, 32 modules
-- **Risk Assessment**: `.serena/memories/project_risk_assessment.md` - Risks and 4-phase action plan
-- **API Reference**: `.serena/memories/api_reference.md` - Complete API documentation with all endpoints
-- **Coding Style**: `.serena/memories/style_and_conventions.md` - Naming patterns and conventions
-- **Commands**: `.serena/memories/suggested_commands.md` - Development and testing commands
-- **Postman Setup**: `.serena/memories/postman-collection-populator-setup.md` - Postman automation
-- **Serena MCP**: `.serena/memories/serena_mcp_setup.md` - Serena MCP configuration
-
-### Analysis Documents
-- **Project Analysis**: `project_analysis.md` - Comprehensive agent team analysis (Feb 6, 2026)
-  - 38 entities detailed breakdown
-  - 32 feature modules documented
-  - Missing features categorized
-  - Recommendations prioritized
-- **Risk Tracking**: `project_risk.md` - Development phase risk tracking
-
-### Documentation Updates (February 7, 2026)
-
-**Corrections Made:**
-- Entity count: 27 → **38 entities**
-- Module count: 23 → **32 modules**
-- Added code statistics: 150+ TS files, 48 controllers, 32 services, ~32,715 LOC
-- Project status: "production-ready" → **70% complete**
-- Documented critical missing features (payments, emails, file uploads, security)
-- Added Serena MCP integration section
-
----
-
-## Recent Updates
-
-### February 7, 2026
-- **Serena MCP Activated** - Semantic code tools now available via MCP
-- **Memories Updated** - All 9 Serena memories updated with comprehensive analysis data
-- **Risk Assessment Created** - Detailed risk analysis with 4-phase mitigation plan
-- **CLAUDE.md Updated** - Project documentation now reflects 70% complete status
-
-### February 6, 2026
-- **Comprehensive Analysis** - Agent team analysis completed (project_analysis.md)
-- **Risk Documentation** - Development phase risks identified and documented

@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
 import { Branch } from './branch.entity';
+import { Trainer } from './trainers.entity';
 
 @Entity('classes')
 export class Class {
@@ -8,6 +9,9 @@ export class Class {
 
   @ManyToOne(() => Branch, (b) => b.classes)
   branch: Branch;
+
+  @ManyToOne(() => Trainer, { nullable: true, eager: true })
+  trainer?: Trainer;
 
   @Column({ length: 100 })
   name: string;

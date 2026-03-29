@@ -18,6 +18,8 @@ import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import { AdminUpdateMemberDto } from './dto/admin-update-member.dto';
 import * as bcrypt from 'bcrypt';
+import { normalizePhoneNumber } from '../common/utils/phone.util';
+import { isSubscriptionCurrentlyActive } from '../common/utils/subscription.util';
 
 @Injectable()
 export class MembersService {
@@ -107,6 +109,9 @@ export class MembersService {
       gym: branch?.gym,
       branch: branch,
       memberId: '0', // Temporary, will be updated after member save
+      phoneNumber: createMemberDto.phone
+        ? normalizePhoneNumber(createMemberDto.phone)
+        : undefined,
     });
 
     // Create membership subscription
@@ -182,13 +187,15 @@ export class MembersService {
       // Map class details for response (without nested member)
       const subscriptionWithClasses = {
         id: member.subscription.id,
-        plan: member.subscription.plan ? {
-          id: member.subscription.plan.id,
-          name: member.subscription.plan.name,
-          price: member.subscription.plan.price,
-          durationInDays: member.subscription.plan.durationInDays,
-          description: member.subscription.plan.description,
-        } : null,
+        plan: member.subscription.plan
+          ? {
+              id: member.subscription.plan.id,
+              name: member.subscription.plan.name,
+              price: member.subscription.plan.price,
+              durationInDays: member.subscription.plan.durationInDays,
+              description: member.subscription.plan.description,
+            }
+          : null,
         classes: classes.map((c) => ({
           classId: c.class_id,
           name: c.name,
@@ -277,7 +284,9 @@ export class MembersService {
     }
 
     Object.assign(member, updateMemberDto);
-    return this.membersRepo.save(member);
+    const savedMember = await this.membersRepo.save(member);
+    await this.syncMemberUser(savedMember);
+    return savedMember;
   }
 
   async adminUpdate(id: number, updateMemberDto: AdminUpdateMemberDto) {
@@ -334,14 +343,20 @@ export class MembersService {
       }
 
       // Return the updated member with relations
-      return this.membersRepo.findOne({
+      const updatedMember = await this.membersRepo.findOne({
         where: { id: member.id },
         relations: ['subscription', 'branch'],
       });
+      if (updatedMember) {
+        await this.syncMemberUser(updatedMember);
+      }
+      return updatedMember;
     }
 
     Object.assign(member, updateMemberDto);
-    return this.membersRepo.save(member);
+    const savedMember = await this.membersRepo.save(member);
+    await this.syncMemberUser(savedMember);
+    return savedMember;
   }
 
   async remove(id: number) {
@@ -399,7 +414,7 @@ export class MembersService {
               })),
               startDate: subscription.startDate,
               endDate: subscription.endDate,
-              isActive: subscription.isActive,
+              isActive: isSubscriptionCurrentlyActive(subscription),
             }
           : null;
 
@@ -508,7 +523,9 @@ export class MembersService {
             planName: subscription.plan?.name,
             startDate: subscription.startDate,
             endDate: subscription.endDate,
-            status: subscription.isActive ? 'active' : 'inactive',
+            status: isSubscriptionCurrentlyActive(subscription)
+              ? 'active'
+              : 'inactive',
           }
         : null,
       attendance: {
@@ -523,5 +540,21 @@ export class MembersService {
         invoiceId: payment.invoice.invoice_id,
       })),
     };
+  }
+
+  private async syncMemberUser(member: Member) {
+    const user = await this.usersRepo.findOne({
+      where: { memberId: member.id.toString() },
+    });
+
+    if (!user) {
+      return;
+    }
+
+    user.email = member.email;
+    user.phoneNumber = member.phone
+      ? normalizePhoneNumber(member.phone)
+      : undefined;
+    await this.usersRepo.save(user);
   }
 }

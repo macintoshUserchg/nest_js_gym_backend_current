@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -339,5 +340,23 @@ export class GymClassesController {
   })
   findByGym(@Param('gymId') gymId: string) {
     return this.classesService.findByGym(gymId);
+  }
+}
+
+@ApiTags('trainers')
+@Controller('trainers')
+export class TrainerClassesController {
+  constructor(private readonly classesService: ClassesService) {}
+
+  @Get(':trainerId/classes')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get all classes for a trainer',
+    description:
+      'Retrieves all classes assigned to a specific trainer for schedule and dashboard usage.',
+  })
+  findByTrainer(@Param('trainerId', ParseIntPipe) trainerId: number) {
+    return this.classesService.findByTrainer(trainerId);
   }
 }

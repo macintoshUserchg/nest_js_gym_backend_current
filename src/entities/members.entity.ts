@@ -26,6 +26,9 @@ export class Member {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
+  @Column({ nullable: true })
+  userId?: string;
+
   @Column()
   fullName: string;
 

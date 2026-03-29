@@ -37,6 +37,18 @@ export class ClassesService {
       branch,
     };
 
+    if (createDto.trainerId) {
+      const trainer = await this.trainersRepo.findOne({
+        where: { id: createDto.trainerId },
+      });
+      if (!trainer) {
+        throw new NotFoundException(
+          `Trainer with ID ${createDto.trainerId} not found`,
+        );
+      }
+      classData.trainer = trainer;
+    }
+
     // Add timings if provided
     if (createDto.timings) {
       classData.timings = createDto.timings;
@@ -56,7 +68,8 @@ export class ClassesService {
   async findAll(branchId?: string, timing?: string, day?: number) {
     const queryBuilder = this.classesRepo
       .createQueryBuilder('class')
-      .leftJoinAndSelect('class.branch', 'branch');
+      .leftJoinAndSelect('class.branch', 'branch')
+      .leftJoinAndSelect('class.trainer', 'trainer');
 
     if (branchId) {
       queryBuilder.andWhere('branch.branchId = :branchId', { branchId });
@@ -80,7 +93,7 @@ export class ClassesService {
   async findOne(id: string) {
     const classEntity = await this.classesRepo.findOne({
       where: { class_id: id },
-      relations: ['branch'],
+      relations: ['branch', 'trainer'],
     });
     if (!classEntity) {
       throw new NotFoundException(`Class with ID ${id} not found`);
@@ -97,7 +110,7 @@ export class ClassesService {
     }
     return this.classesRepo.find({
       where: { branch: { branchId } },
-      relations: ['branch'],
+      relations: ['branch', 'trainer'],
     });
   }
 
@@ -114,6 +127,22 @@ export class ClassesService {
         );
       }
       classEntity.branch = branch;
+    }
+
+    if (updateDto.trainerId !== undefined) {
+      if (updateDto.trainerId) {
+        const trainer = await this.trainersRepo.findOne({
+          where: { id: updateDto.trainerId },
+        });
+        if (!trainer) {
+          throw new NotFoundException(
+            `Trainer with ID ${updateDto.trainerId} not found`,
+          );
+        }
+        classEntity.trainer = trainer;
+      } else {
+        classEntity.trainer = undefined;
+      }
     }
 
     if (updateDto.name) classEntity.name = updateDto.name;
@@ -162,7 +191,21 @@ export class ClassesService {
     const branchIds = branches.map((branch) => branch.branchId);
     return this.classesRepo.find({
       where: branchIds.map((branchId) => ({ branch: { branchId } })),
-      relations: ['branch'],
+      relations: ['branch', 'trainer'],
+    });
+  }
+
+  async findByTrainer(trainerId: number) {
+    const trainer = await this.trainersRepo.findOne({
+      where: { id: trainerId },
+    });
+    if (!trainer) {
+      throw new NotFoundException(`Trainer with ID ${trainerId} not found`);
+    }
+
+    return this.classesRepo.find({
+      where: { trainer: { id: trainerId } },
+      relations: ['branch', 'trainer'],
     });
   }
 }

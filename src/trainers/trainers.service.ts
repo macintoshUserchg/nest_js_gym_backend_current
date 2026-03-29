@@ -12,6 +12,7 @@ import { Role } from '../entities/roles.entity';
 import { CreateTrainerDto } from './dto/create-trainer.dto';
 import { UpdateTrainerDto } from './dto/update-trainer.dto';
 import * as bcrypt from 'bcrypt';
+import { normalizePhoneNumber } from '../common/utils/phone.util';
 
 @Injectable()
 export class TrainersService {
@@ -89,6 +90,9 @@ export class TrainersService {
       gym: branch?.gym,
       branch: branch,
       trainerId: savedTrainer.id.toString(),
+      phoneNumber: createDto.phone
+        ? normalizePhoneNumber(createDto.phone)
+        : undefined,
     });
 
     await this.usersRepo.save(user);
@@ -175,11 +179,29 @@ export class TrainersService {
       avatarUrl: updateDto.avatarUrl,
     });
 
-    return this.trainersRepo.save(trainer);
+    const savedTrainer = await this.trainersRepo.save(trainer);
+    await this.syncTrainerUser(savedTrainer);
+    return savedTrainer;
   }
 
   async remove(id: number) {
     const trainer = await this.findOne(id);
     return this.trainersRepo.remove(trainer);
+  }
+
+  private async syncTrainerUser(trainer: Trainer) {
+    const user = await this.usersRepo.findOne({
+      where: { trainerId: trainer.id.toString() },
+    });
+
+    if (!user) {
+      return;
+    }
+
+    user.email = trainer.email;
+    user.phoneNumber = trainer.phone
+      ? normalizePhoneNumber(trainer.phone)
+      : undefined;
+    await this.usersRepo.save(user);
   }
 }

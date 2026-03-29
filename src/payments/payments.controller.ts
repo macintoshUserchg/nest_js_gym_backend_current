@@ -2,8 +2,10 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
+  Query,
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common';
@@ -17,7 +19,12 @@ import {
 } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { UpdatePaymentDto } from './dto/update-payment.dto';
+import { RefundPaymentDto } from './dto/refund-payment.dto';
+import { PaymentFilterDto } from './dto/payment-filter.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../entities/users.entity';
 import { PaymentTransaction } from '../entities/payment_transactions.entity';
 
 @ApiTags('payments')
@@ -118,8 +125,11 @@ export class PaymentsController {
       },
     },
   })
-  create(@Body() createDto: CreatePaymentDto) {
-    return this.paymentsService.create(createDto);
+  create(
+    @Body() createDto: CreatePaymentDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.paymentsService.create(createDto, user?.userId);
   }
 
   @Get()
@@ -144,8 +154,54 @@ export class PaymentsController {
     description:
       'Forbidden - Insufficient permissions to access payment records.',
   })
-  findAll() {
-    return this.paymentsService.findAll();
+  findAll(@Query() filterDto: PaymentFilterDto) {
+    return this.paymentsService.findAll(filterDto);
+  }
+
+  @Get('summary')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get payment summary report',
+    description:
+      'Returns an aggregated payment report with totals, counts, and breakdowns by method and status. Supports date range, method, and status filters.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Return payment summary report.',
+    examples: {
+      success: {
+        summary: 'Payment summary report',
+        value: {
+          totalAmount: 12500.0,
+          totalTransactions: 150,
+          byMethod: {
+            cash: { count: 40, total: 3000.0 },
+            card: { count: 80, total: 7000.0 },
+            online: { count: 20, total: 1500.0 },
+            bank_transfer: { count: 10, total: 1000.0 },
+          },
+          byStatus: {
+            completed: { count: 140, total: 12000.0 },
+            pending: { count: 5, total: 300.0 },
+            failed: { count: 3, total: 100.0 },
+            refund: { count: 2, total: 100.0 },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Insufficient permissions to access payment reports.',
+  })
+  getSummary(@Query() filterDto: PaymentFilterDto) {
+    return this.paymentsService.getPaymentsSummary(filterDto);
   }
 
   @Get(':id')
@@ -215,6 +271,183 @@ export class PaymentsController {
   })
   findOne(@Param('id') id: string) {
     return this.paymentsService.findOne(id);
+  }
+
+  @Patch(':id')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Verify or reject payment',
+    description:
+      'Allows an admin to verify (approve) or reject a pending payment transaction. The verifying user is recorded for audit purposes.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Payment ID (UUID format)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiBody({
+    type: UpdatePaymentDto,
+    examples: {
+      verify: {
+        summary: 'Verify payment',
+        value: {
+          status: 'completed',
+          notes: 'Payment verified by admin',
+        },
+      },
+      reject: {
+        summary: 'Reject payment',
+        value: {
+          status: 'failed',
+          notes: 'Payment rejected - insufficient funds',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment verified or rejected successfully.',
+    type: PaymentTransaction,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid status transition.',
+    examples: {
+      invalidTransition: {
+        summary: 'Invalid status transition',
+        value: {
+          statusCode: 400,
+          message: 'Cannot update a refund payment status',
+          error: 'Bad Request',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Insufficient permissions to verify payments.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Payment not found.',
+    examples: {
+      notFound: {
+        summary: 'Payment ID not found',
+        value: {
+          statusCode: 404,
+          message:
+            'Payment with ID 123e4567-e89b-12d3-a456-426614174000 not found',
+          error: 'Not Found',
+        },
+      },
+    },
+  })
+  verifyPayment(
+    @Param('id') id: string,
+    @Body() updateDto: UpdatePaymentDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.paymentsService.verifyPayment(id, updateDto, user.userId);
+  }
+
+  @Post(':id/refund')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Issue payment refund',
+    description:
+      'Issues a refund for a completed payment transaction. The refund amount, method, and reason are recorded for audit and reconciliation purposes.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Payment ID (UUID format)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiBody({
+    type: RefundPaymentDto,
+    examples: {
+      fullRefund: {
+        summary: 'Full refund',
+        value: {
+          amount: 99.99,
+          refundMethod: 'card',
+          reason: 'Duplicate payment processed',
+          notes: 'Refund approved by manager',
+        },
+      },
+      partialRefund: {
+        summary: 'Partial refund',
+        value: {
+          amount: 50.0,
+          refundMethod: 'cash',
+          reason: 'Service not delivered as described',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Refund issued successfully.',
+    type: PaymentTransaction,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid refund data or refund amount exceeds payment amount.',
+    examples: {
+      exceedsAmount: {
+        summary: 'Refund amount exceeds payment',
+        value: {
+          statusCode: 400,
+          message: 'Refund amount (150.00) exceeds payment amount (99.99)',
+          error: 'Bad Request',
+        },
+      },
+      notRefundable: {
+        summary: 'Payment not refundable',
+        value: {
+          statusCode: 400,
+          message: 'Only completed payments can be refunded',
+          error: 'Bad Request',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Insufficient permissions to issue refunds.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Payment not found.',
+    examples: {
+      notFound: {
+        summary: 'Payment ID not found',
+        value: {
+          statusCode: 404,
+          message:
+            'Payment with ID 123e4567-e89b-12d3-a456-426614174000 not found',
+          error: 'Not Found',
+        },
+      },
+    },
+  })
+  refundPayment(
+    @Param('id') id: string,
+    @Body() refundDto: RefundPaymentDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.paymentsService.refundPayment(id, refundDto, user.userId);
   }
 }
 
@@ -290,6 +523,68 @@ export class InvoicePaymentsController {
   })
   findByInvoice(@Param('invoiceId') invoiceId: string) {
     return this.paymentsService.findByInvoice(invoiceId);
+  }
+
+  @Get(':invoiceId/payment-summary')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get invoice payment summary',
+    description:
+      'Returns a summary of payments for a specific invoice including total paid, remaining balance, payment count, and breakdown by method.',
+  })
+  @ApiParam({
+    name: 'invoiceId',
+    description: 'Invoice ID (UUID format)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Return invoice payment summary.',
+    examples: {
+      success: {
+        summary: 'Invoice payment summary',
+        value: {
+          invoiceId: '123e4567-e89b-12d3-a456-426614174000',
+          totalAmount: 200.0,
+          totalPaid: 175.0,
+          remainingBalance: 25.0,
+          paymentCount: 3,
+          isFullyPaid: false,
+          byMethod: {
+            cash: { count: 1, total: 50.0 },
+            card: { count: 2, total: 125.0 },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Invoice not found.',
+    examples: {
+      notFound: {
+        summary: 'Invoice ID not found',
+        value: {
+          statusCode: 404,
+          message:
+            'Invoice with ID 123e4567-e89b-12d3-a456-426614174000 not found',
+          error: 'Not Found',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Insufficient permissions to access invoice payment summary.',
+  })
+  getInvoicePaymentSummary(@Param('invoiceId') invoiceId: string) {
+    return this.paymentsService.getPaymentSummary(invoiceId);
   }
 }
 

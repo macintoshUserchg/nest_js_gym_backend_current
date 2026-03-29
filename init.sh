@@ -114,8 +114,7 @@ setup_database() {
         print_success "Database created"
     fi
 
-    # The NestJS app will auto-sync schema on first run (synchronize: true)
-    print_info "Database schema will be auto-synced on first server start"
+    print_info "The NestJS app will auto-sync schema in development mode only"
     echo ""
 }
 
@@ -162,7 +161,7 @@ setup_environment() {
 
         cat > .env << EOF
 # Database Configuration
-POSTGRES_URL="postgresql://${DB_USER}@localhost:5432/${DB_NAME}"
+DATABASE_URL="postgresql://${DB_USER}@localhost:5432/${DB_NAME}"
 
 # JWT Configuration - Set via environment variable
 JWT_SECRET="\${JWT_SECRET}"
@@ -170,9 +169,20 @@ JWT_EXPIRES_IN="1d"
 
 # Server Configuration
 PORT="3000"
-
-# Environment
 NODE_ENV="development"
+CORS_ORIGINS="http://localhost:3000,http://127.0.0.1:3000"
+
+# Twilio Verify (required for member/trainer mobile OTP)
+TWILIO_ACCOUNT_SID=""
+TWILIO_AUTH_TOKEN=""
+TWILIO_VERIFY_SERVICE_SID=""
+
+# SMTP (required for reminder emails)
+SMTP_HOST=""
+SMTP_PORT="587"
+SMTP_USER=""
+SMTP_PASS=""
+SMTP_FROM=""
 EOF
         print_success ".env file created"
     else
@@ -197,8 +207,8 @@ build_project() {
 run_tests() {
     print_header "Running Tests"
 
-    print_info "Running: npm run test"
-    if npm run test; then
+    print_info "Running: npm test -- --runInBand"
+    if npm test -- --runInBand; then
         print_success "All tests passed"
     else
         print_error "Some tests failed"
@@ -240,6 +250,7 @@ start_server() {
         if curl -s http://localhost:${DEFAULT_PORT}/health > /dev/null 2>&1; then
             print_success "Server started successfully (PID: $SERVER_PID)"
             print_info "Logs: tail -f logs/server.log"
+            print_info "Swagger: http://localhost:${DEFAULT_PORT}/api"
             # Clear trap on success so cleanup doesn't run on normal exit
             trap - EXIT INT TERM
             return 0

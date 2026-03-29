@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { pgConfig } from '../dbConfig';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { minioConfig } from './config/minio.config';
 import { UploadModule } from './upload/upload.module';
 import { Gym } from './entities/gym.entity';
@@ -57,6 +58,10 @@ import { WorkoutPlanChartAssignmentsModule } from './workouts/workout-plan-chart
 import { GoalSchedulesModule } from './goals/goal-schedules.module';
 import { ProgressTrackingModule } from './progress-tracking/progress-tracking.module';
 import { TemplateSharesModule } from './templates/template-shares.module';
+import { RenewalRequest } from './entities/renewal_requests.entity';
+import { ReminderLog } from './entities/reminder_logs.entity';
+import { RenewalsModule } from './renewals/renewals.module';
+import { RemindersModule } from './reminders/reminders.module';
 
 @Module({
   imports: [
@@ -65,6 +70,7 @@ import { TemplateSharesModule } from './templates/template-shares.module';
       expandVariables: true,
       load: [minioConfig],
     }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot(pgConfig),
     TypeOrmModule.forFeature([
       Gym,
@@ -88,6 +94,8 @@ import { TemplateSharesModule } from './templates/template-shares.module';
       MemberTrainerAssignment,
       DietPlanAssignment,
       WorkoutPlanChartAssignment,
+      RenewalRequest,
+      ReminderLog,
     ]),
     AuthModule,
     UsersModule,
@@ -119,6 +127,8 @@ import { TemplateSharesModule } from './templates/template-shares.module';
     GoalSchedulesModule,
     ProgressTrackingModule,
     TemplateSharesModule,
+    RenewalsModule,
+    RemindersModule,
     UploadModule,
   ],
   controllers: [AppController],

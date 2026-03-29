@@ -5,6 +5,18 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const corsOrigins = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  app.enableCors({
+    origin:
+      corsOrigins.length > 0
+        ? corsOrigins
+        : [/^http:\/\/localhost(:\d+)?$/, /^http:\/\/127\.0\.0\.1(:\d+)?$/],
+    credentials: true,
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -12,7 +24,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-// swager doc builder
+  // Swagger doc builder
   const config = new DocumentBuilder()
     .setTitle('Gym Management System')
     .setDescription('API documentation for the Gym Management System')

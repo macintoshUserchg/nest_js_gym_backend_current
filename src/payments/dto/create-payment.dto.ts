@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsOptional,
   IsUUID,
+  IsDateString,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -46,4 +47,22 @@ export class CreatePaymentDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @ApiPropertyOptional({
+    description: 'Actual date payment was received',
+    example: '2026-03-28T10:30:00.000Z',
+  })
+  @IsDateString()
+  @IsOptional()
+  payment_date?: Date;
+
+  @ApiPropertyOptional({
+    description: 'Payment status',
+    example: 'completed',
+    enum: ['pending', 'completed'],
+    default: 'completed',
+  })
+  @IsEnum(['pending', 'completed'])
+  @IsOptional()
+  status?: string;
 }
