@@ -63,6 +63,7 @@ import { ReminderLog } from './entities/reminder_logs.entity';
 import { RenewalsModule } from './renewals/renewals.module';
 import { RemindersModule } from './reminders/reminders.module';
 import { ExerciseLibraryModule } from './exercise-library/exercise-library.module';
+import { MealLibraryModule } from './meal-library/meal-library.module';
 
 @Module({
   imports: [
@@ -132,6 +133,7 @@ import { ExerciseLibraryModule } from './exercise-library/exercise-library.modul
     RemindersModule,
     UploadModule,
     ExerciseLibraryModule,
+    MealLibraryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

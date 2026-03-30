@@ -1,7 +1,7 @@
 # Remaining Features & Missing Implementations
 
 **Project:** NestJS Gym Management Backend
-**Project Maturity:** ~70% Complete
+**Project Maturity:** ~75% Complete
 **Last Updated:** 2026-03-30
 
 ---
@@ -22,57 +22,46 @@
 
 ## 1. Incomplete Module Implementations
 
-### 1.1 Exercise Library Module 🔴 Critical
+### 1.1 Exercise Library Module ✅ Completed
 
-**Current State:** Only a DTO exists (`src/exercise-library/dto/create-exercise.dto.ts`). No controller, service, entity, or module file.
+**Implemented:** Entity, Service, Controller, Module with full CRUD.
 
-**Missing:**
+- Entity: `src/entities/exercise_library.entity.ts` (UUID PK, global scope)
+- Module: `src/exercise-library/` (controller, service, DTOs)
+- Admin-only write access (SUPERADMIN, ADMIN)
+- Filter by body_part, exercise_type, difficulty_level, search
+- Registered in `app.module.ts`
 
-- Entity definition (`exercise_library.entity.ts` in `src/entities/`)
-- Service with CRUD operations
-- Controller with REST endpoints
-- Module registration in `app.module.ts`
-- Update and filter DTOs
-- Search/filter by body_part, exercise_type, difficulty_level
-- Pagination support
-- Image/video URL validation
-
-**Expected Endpoints:**
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | `/exercise-library` | Create exercise |
-| GET | `/exercise-library` | List exercises (filtered, paginated) |
-| GET | `/exercise-library/:id` | Get exercise |
-| PATCH | `/exercise-library/:id` | Update exercise |
-| DELETE | `/exercise-library/:id` | Delete exercise |
-| GET | `/exercise-library/body-part/:part` | Filter by body part |
-| GET | `/exercise-library/type/:type` | Filter by exercise type |
+**Endpoints:**
+| Method | Route | Auth | Description |
+|--------|-------|------|-------------|
+| POST | `/exercise-library` | Admin | Create exercise |
+| GET | `/exercise-library` | Auth | List exercises (filtered) |
+| GET | `/exercise-library/:id` | Auth | Get exercise |
+| PATCH | `/exercise-library/:id` | Admin | Update exercise |
+| DELETE | `/exercise-library/:id` | Admin | Delete exercise |
 
 ---
 
-### 1.2 Meal Library Module 🔴 Critical
+### 1.2 Meal Library Module ✅ Completed
 
-**Current State:** Referenced in wiki documentation but no implementation exists.
+**Implemented:** Entity, Service, Controller, Module with full CRUD.
 
-**Missing:**
+- Entity: `src/entities/meal_library.entity.ts` (UUID PK, global scope)
+- Module: `src/meal-library/` (controller, service, DTOs)
+- Admin + Trainer write access
+- Basic macros: calories, protein_g, carbs_g, fat_g
+- Filter by meal_type, search by name
+- Registered in `app.module.ts`
 
-- Entity for reusable meal definitions
-- Service with CRUD operations
-- Controller with REST endpoints
-- Nutritional data management (calories, macros)
-- Search/filter by meal_type, dietary preference
-- Ingredient database or tagging system
-
-**Expected Endpoints:**
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | `/meal-library` | Create meal entry |
-| GET | `/meal-library` | List meals (filtered, paginated) |
-| GET | `/meal-library/:id` | Get meal details |
-| PATCH | `/meal-library/:id` | Update meal |
-| DELETE | `/meal-library/:id` | Delete meal |
-| GET | `/meal-library/type/:type` | Filter by meal type |
-| GET | `/meal-library/search` | Search by ingredients/name |
+**Endpoints:**
+| Method | Route | Auth | Description |
+|--------|-------|------|-------------|
+| POST | `/meal-library` | Admin/Trainer | Create meal |
+| GET | `/meal-library` | Auth | List meals (filtered) |
+| GET | `/meal-library/:id` | Auth | Get meal |
+| PATCH | `/meal-library/:id` | Admin/Trainer | Update meal |
+| DELETE | `/meal-library/:id` | Admin/Trainer | Delete meal |
 
 ---
 
