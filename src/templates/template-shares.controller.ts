@@ -165,10 +165,7 @@ export class TemplateShareController {
     status: 404,
     description: 'Share not found',
   })
-  acceptShare(
-    @Param('id') id: string,
-    @CurrentUser() user: User,
-  ) {
+  acceptShare(@Param('id') id: string, @CurrentUser() user: User) {
     if (!user.trainerId) {
       return { message: 'Only trainers can accept template shares' };
     }

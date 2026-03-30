@@ -58,7 +58,9 @@ export class TemplateAssignmentsService {
 
     // Check permissions
     if (!isAdmin && !isTrainer) {
-      throw new ForbiddenException('Only trainers and admins can assign templates');
+      throw new ForbiddenException(
+        'Only trainers and admins can assign templates',
+      );
     }
 
     // Load member entity
@@ -108,15 +110,22 @@ export class TemplateAssignmentsService {
     if (isAdmin) {
       // Admins see all
       if (filters?.memberId) {
-        queryBuilder.andWhere('ta.memberId = :memberId', { memberId: filters.memberId });
+        queryBuilder.andWhere('ta.memberId = :memberId', {
+          memberId: filters.memberId,
+        });
       }
     } else if (isTrainer && user.trainerId) {
       // Trainers see only assignments for their members
-      queryBuilder.where('ta.trainer_assignmentId IN (SELECT id FROM member_trainer_assignments WHERE trainerId = :trainerId)', {
-        trainerId: parseInt(user.trainerId),
-      });
+      queryBuilder.where(
+        'ta.trainer_assignmentId IN (SELECT id FROM member_trainer_assignments WHERE trainerId = :trainerId)',
+        {
+          trainerId: parseInt(user.trainerId),
+        },
+      );
       if (filters?.memberId) {
-        queryBuilder.andWhere('ta.memberId = :memberId', { memberId: filters.memberId });
+        queryBuilder.andWhere('ta.memberId = :memberId', {
+          memberId: filters.memberId,
+        });
       }
     } else if (isMember && user.memberId) {
       // Members see only their own
@@ -157,7 +166,11 @@ export class TemplateAssignmentsService {
     return assignment;
   }
 
-  async findByMember(memberId: number, user: User, templateType?: 'workout' | 'diet') {
+  async findByMember(
+    memberId: number,
+    user: User,
+    templateType?: 'workout' | 'diet',
+  ) {
     // First verify access
     const assignments = await this.templateAssignmentRepository.find({
       where: { memberId },
@@ -174,7 +187,7 @@ export class TemplateAssignmentsService {
 
     let filtered = assignments;
     if (templateType) {
-      filtered = assignments.filter(a => a.template_type === templateType);
+      filtered = assignments.filter((a) => a.template_type === templateType);
     }
 
     return filtered;
@@ -201,7 +214,7 @@ export class TemplateAssignmentsService {
 
     // Add substitutions if provided
     if (dto.substitutions?.length) {
-      const newSubstitutions = dto.substitutions.map(s => ({
+      const newSubstitutions = dto.substitutions.map((s) => ({
         ...s,
         date: new Date(s.date),
       }));
@@ -236,7 +249,9 @@ export class TemplateAssignmentsService {
 
     if (isMember) {
       if (!user.memberId || assignment.memberId !== parseInt(user.memberId)) {
-        throw new ForbiddenException('You can only add substitutions to your own assignments');
+        throw new ForbiddenException(
+          'You can only add substitutions to your own assignments',
+        );
       }
     }
 
@@ -298,7 +313,10 @@ export class TemplateAssignmentsService {
     };
   }
 
-  private async incrementTemplateUsage(templateId: string, templateType: 'workout' | 'diet') {
+  private async incrementTemplateUsage(
+    templateId: string,
+    templateType: 'workout' | 'diet',
+  ) {
     if (templateType === 'workout') {
       await this.workoutTemplateRepository.increment(
         { template_id: templateId },

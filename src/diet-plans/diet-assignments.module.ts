@@ -7,13 +7,7 @@ import { DietPlanAssignmentsController } from './diet-assignments.controller';
 import { DietPlanAssignmentsService } from './diet-assignments.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      DietPlanAssignment,
-      DietPlan,
-      Member,
-    ]),
-  ],
+  imports: [TypeOrmModule.forFeature([DietPlanAssignment, DietPlan, Member])],
   controllers: [DietPlanAssignmentsController],
   providers: [DietPlanAssignmentsService],
   exports: [DietPlanAssignmentsService],

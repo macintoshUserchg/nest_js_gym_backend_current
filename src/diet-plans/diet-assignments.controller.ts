@@ -29,27 +29,31 @@ import {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth('JWT-auth')
 export class DietPlanAssignmentsController {
-  constructor(private readonly assignmentsService: DietPlanAssignmentsService) {}
+  constructor(
+    private readonly assignmentsService: DietPlanAssignmentsService,
+  ) {}
 
   @Post()
   @Roles(UserRole.TRAINER, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Assign diet plan to a member (trainer/admin only)' })
+  @ApiOperation({
+    summary: 'Assign diet plan to a member (trainer/admin only)',
+  })
   create(@Body() dto: CreateDietAssignmentDto, @CurrentUser() user: User) {
     return this.assignmentsService.create(dto, user);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all diet assignments' })
-  findAll(@CurrentUser() user: User, @Query() filters: FilterDietAssignmentsDto) {
+  findAll(
+    @CurrentUser() user: User,
+    @Query() filters: FilterDietAssignmentsDto,
+  ) {
     return this.assignmentsService.findAll(user, filters);
   }
 
   @Get('member/:memberId')
   @ApiOperation({ summary: 'Get diet assignments for a member' })
-  findByMember(
-    @Param('memberId') memberId: string,
-    @CurrentUser() user: User,
-  ) {
+  findByMember(@Param('memberId') memberId: string, @CurrentUser() user: User) {
     return this.assignmentsService.findByMember(parseInt(memberId), user);
   }
 
@@ -81,13 +85,19 @@ export class DietPlanAssignmentsController {
 
   @Post(':id/link-chart')
   @Roles(UserRole.TRAINER, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Link diet assignment to chart assignment (trainer/admin only)' })
+  @ApiOperation({
+    summary: 'Link diet assignment to chart assignment (trainer/admin only)',
+  })
   linkToChart(
     @Param('id') id: string,
     @Body() body: { chart_assignment_id: string },
     @CurrentUser() user: User,
   ) {
-    return this.assignmentsService.linkToChart(id, body.chart_assignment_id, user);
+    return this.assignmentsService.linkToChart(
+      id,
+      body.chart_assignment_id,
+      user,
+    );
   }
 
   @Post(':id/cancel')

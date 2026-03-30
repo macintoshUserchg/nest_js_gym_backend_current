@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TemplateShare } from '../entities/template_shares.entity';
@@ -83,7 +87,9 @@ export class TemplateSharesService {
       .orderBy('share.shared_at', 'DESC');
 
     if (trainerId) {
-      queryBuilder.where('share.shared_with_trainerId = :trainerId', { trainerId });
+      queryBuilder.where('share.shared_with_trainerId = :trainerId', {
+        trainerId,
+      });
     }
 
     return queryBuilder.getMany();

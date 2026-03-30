@@ -15,7 +15,10 @@ export class ShareTemplateDto {
   @IsNotEmpty()
   templateId: string;
 
-  @ApiProperty({ description: 'Template type', enum: ['workout', 'diet', 'goal'] })
+  @ApiProperty({
+    description: 'Template type',
+    enum: ['workout', 'diet', 'goal'],
+  })
   @IsEnum(['workout', 'diet', 'goal'])
   templateType: string;
 

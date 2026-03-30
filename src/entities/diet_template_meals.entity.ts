@@ -20,7 +20,14 @@ export class DietTemplateMeal {
 
   @Column({
     type: 'enum',
-    enum: ['breakfast', 'lunch', 'dinner', 'snack', 'pre_workout', 'post_workout'],
+    enum: [
+      'breakfast',
+      'lunch',
+      'dinner',
+      'snack',
+      'pre_workout',
+      'post_workout',
+    ],
   })
   meal_type: string;
 

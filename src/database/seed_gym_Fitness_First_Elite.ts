@@ -347,7 +347,7 @@ class FitnessFirstEliteSeeder {
         'members_subscriptionId_null',
       );
     }
-    
+
     // NOW delete member_subscriptions (circular reference broken)
     await safeDelete(
       `DELETE FROM "member_subscriptions"`,

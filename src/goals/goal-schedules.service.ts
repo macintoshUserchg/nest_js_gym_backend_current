@@ -34,20 +34,27 @@ export class GoalSchedulesService {
     if (dto.memberId && !isAdmin) {
       if (isTrainer) {
         // Check if trainer is assigned to this member
-        const assignment = await this.checkTrainerAssignment(dto.trainerId, dto.memberId);
+        const assignment = await this.checkTrainerAssignment(
+          dto.trainerId,
+          dto.memberId,
+        );
         if (!assignment) {
           throw new ForbiddenException('You are not assigned to this member');
         }
       } else if (userRole === 'MEMBER') {
         if (user.memberId && parseInt(user.memberId) !== dto.memberId) {
-          throw new ForbiddenException('Members can only create goals for themselves');
+          throw new ForbiddenException(
+            'Members can only create goals for themselves',
+          );
         }
       }
     }
 
     const goalSchedule = this.goalScheduleRepository.create({
       ...dto,
-      assigned_trainerId: dto.trainerId || (isTrainer && user.trainerId ? parseInt(user.trainerId) : null),
+      assigned_trainerId:
+        dto.trainerId ||
+        (isTrainer && user.trainerId ? parseInt(user.trainerId) : null),
       start_date: new Date(dto.start_date),
       end_date: new Date(dto.end_date),
     } as any);
@@ -71,13 +78,18 @@ export class GoalSchedulesService {
     // Validate member access
     if (!isAdmin) {
       if (isTrainer) {
-        const assignment = await this.checkTrainerAssignment(dto.trainerId, dto.memberId);
+        const assignment = await this.checkTrainerAssignment(
+          dto.trainerId,
+          dto.memberId,
+        );
         if (!assignment) {
           throw new ForbiddenException('You are not assigned to this member');
         }
       } else if (userRole === 'MEMBER') {
         if (user.memberId && parseInt(user.memberId) !== dto.memberId) {
-          throw new ForbiddenException('Members can only create goals for themselves');
+          throw new ForbiddenException(
+            'Members can only create goals for themselves',
+          );
         }
       }
     }
@@ -92,7 +104,9 @@ export class GoalSchedulesService {
         is_completed: false,
       })),
       member: { id: dto.memberId },
-      assigned_trainerId: dto.trainerId || (isTrainer && user.trainerId ? parseInt(user.trainerId) : null),
+      assigned_trainerId:
+        dto.trainerId ||
+        (isTrainer && user.trainerId ? parseInt(user.trainerId) : null),
       start_date: new Date(dto.start_date),
       end_date: new Date(dto.end_date),
     } as any);
@@ -143,7 +157,9 @@ export class GoalSchedulesService {
     }
 
     if (filters?.memberId && isAdmin) {
-      queryBuilder.andWhere('gs.memberId = :memberId', { memberId: filters.memberId });
+      queryBuilder.andWhere('gs.memberId = :memberId', {
+        memberId: filters.memberId,
+      });
     }
 
     const page = filters?.page || 1;
@@ -212,7 +228,12 @@ export class GoalSchedulesService {
         }
       } else if (userRole === 'MEMBER') {
         // Member can only update their own goals if no trainer assigned
-        if (goalSchedule.assigned_trainerId && goalSchedule.member && user.memberId && parseInt(user.memberId) !== goalSchedule.member.id) {
+        if (
+          goalSchedule.assigned_trainerId &&
+          goalSchedule.member &&
+          user.memberId &&
+          parseInt(user.memberId) !== goalSchedule.member.id
+        ) {
           throw new ForbiddenException('You cannot update this goal schedule');
         }
       }
@@ -221,7 +242,9 @@ export class GoalSchedulesService {
     // Update target goals with completed values
     if (dto.completed_goals?.length) {
       goalSchedule.target_goals = goalSchedule.target_goals.map((goal) => {
-        const completed = dto.completed_goals.find((cg) => cg.goal_id === goal.id);
+        const completed = dto.completed_goals.find(
+          (cg) => cg.goal_id === goal.id,
+        );
         if (completed) {
           return {
             ...goal,
@@ -250,7 +273,11 @@ export class GoalSchedulesService {
       status: dto.status,
     };
 
-    if (goalSchedule.period_progress && existingProgressIndex !== undefined && existingProgressIndex >= 0) {
+    if (
+      goalSchedule.period_progress &&
+      existingProgressIndex !== undefined &&
+      existingProgressIndex >= 0
+    ) {
       goalSchedule.period_progress[existingProgressIndex] = newProgress;
     } else {
       goalSchedule.period_progress = [
@@ -307,7 +334,9 @@ export class GoalSchedulesService {
     // Only creator or admin can delete
     if (!isAdmin && isTrainer && user.trainerId) {
       if (goalSchedule.assigned_trainerId !== parseInt(user.trainerId)) {
-        throw new ForbiddenException('You can only delete your own goal schedules');
+        throw new ForbiddenException(
+          'You can only delete your own goal schedules',
+        );
       }
     }
 
@@ -315,7 +344,10 @@ export class GoalSchedulesService {
     return { success: true, message: 'Goal schedule deleted' };
   }
 
-  private async checkTrainerAssignment(trainerId: number | undefined, memberId: number) {
+  private async checkTrainerAssignment(
+    trainerId: number | undefined,
+    memberId: number,
+  ) {
     // This would check the assignments table
     // For now, return true if trainerId is provided
     return !!trainerId;
@@ -334,7 +366,10 @@ export class GoalSchedulesService {
         throw new ForbiddenException('You are not assigned to this member');
       }
     } else if (isMember && user.memberId) {
-      if (goalSchedule.member && parseInt(user.memberId) !== goalSchedule.member.id) {
+      if (
+        goalSchedule.member &&
+        parseInt(user.memberId) !== goalSchedule.member.id
+      ) {
         throw new ForbiddenException('Access denied');
       }
     } else {
@@ -342,7 +377,10 @@ export class GoalSchedulesService {
     }
   }
 
-  private validateAdminOrAssignedTrainer(goalSchedule: GoalSchedule, user: User) {
+  private validateAdminOrAssignedTrainer(
+    goalSchedule: GoalSchedule,
+    user: User,
+  ) {
     const userRole = user.role?.name;
     const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
 
@@ -352,7 +390,9 @@ export class GoalSchedulesService {
           throw new ForbiddenException('You are not assigned to this member');
         }
       } else if (userRole === 'MEMBER') {
-        throw new ForbiddenException('Only trainers or admins can perform this action');
+        throw new ForbiddenException(
+          'Only trainers or admins can perform this action',
+        );
       }
     }
   }

@@ -16,7 +16,10 @@ import {
 import { Member } from '../entities/members.entity';
 import { MemberSubscription } from '../entities/member_subscriptions.entity';
 import { Invoice } from '../entities/invoices.entity';
-import { RenewalRequest, RenewalStatus } from '../entities/renewal_requests.entity';
+import {
+  RenewalRequest,
+  RenewalStatus,
+} from '../entities/renewal_requests.entity';
 import { User } from '../entities/users.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -56,7 +59,10 @@ export class RemindersService {
       throw new NotFoundException('No pending invoice found for this member');
     }
 
-    await this.sendDueReminderForInvoice(invoice, invoice.due_date || new Date());
+    await this.sendDueReminderForInvoice(
+      invoice,
+      invoice.due_date || new Date(),
+    );
     return this.getLatestReminderSummary(memberId);
   }
 
@@ -105,12 +111,15 @@ export class RemindersService {
       take: 10,
     });
 
-    const latestByType = logs.reduce<Record<string, ReminderLog>>((acc, log) => {
-      if (!acc[log.reminderType]) {
-        acc[log.reminderType] = log;
-      }
-      return acc;
-    }, {});
+    const latestByType = logs.reduce<Record<string, ReminderLog>>(
+      (acc, log) => {
+        if (!acc[log.reminderType]) {
+          acc[log.reminderType] = log;
+        }
+        return acc;
+      },
+      {},
+    );
 
     return latestByType;
   }
@@ -168,7 +177,10 @@ export class RemindersService {
       const member = subscription.member;
       if (!member) continue;
 
-      const daysUntilExpiry = this.daysBetween(new Date(), subscription.endDate);
+      const daysUntilExpiry = this.daysBetween(
+        new Date(),
+        subscription.endDate,
+      );
       if (!targets.has(daysUntilExpiry)) {
         continue;
       }
@@ -243,7 +255,10 @@ export class RemindersService {
     }
   }
 
-  private async sendDueReminderForInvoice(invoice: Invoice, referenceDate: Date) {
+  private async sendDueReminderForInvoice(
+    invoice: Invoice,
+    referenceDate: Date,
+  ) {
     await this.sendReminder({
       userId: await this.resolveUserId(invoice.member.id),
       memberId: invoice.member.id,

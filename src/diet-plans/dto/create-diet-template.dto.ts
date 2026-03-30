@@ -15,8 +15,24 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
 export class CreateDietTemplateMealDto {
-  @ApiProperty({ enum: ['breakfast', 'lunch', 'dinner', 'snack', 'pre_workout', 'post_workout'] })
-  @IsEnum(['breakfast', 'lunch', 'dinner', 'snack', 'pre_workout', 'post_workout'])
+  @ApiProperty({
+    enum: [
+      'breakfast',
+      'lunch',
+      'dinner',
+      'snack',
+      'pre_workout',
+      'post_workout',
+    ],
+  })
+  @IsEnum([
+    'breakfast',
+    'lunch',
+    'dinner',
+    'snack',
+    'pre_workout',
+    'post_workout',
+  ])
   meal_type: string;
 
   @ApiProperty({ example: 'Oatmeal with Fruits' })
@@ -98,8 +114,24 @@ export class CreateDietTemplateDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ enum: ['weight_loss', 'muscle_gain', 'maintenance', 'cutting', 'bulking', 'custom'] })
-  @IsEnum(['weight_loss', 'muscle_gain', 'maintenance', 'cutting', 'bulking', 'custom'])
+  @ApiProperty({
+    enum: [
+      'weight_loss',
+      'muscle_gain',
+      'maintenance',
+      'cutting',
+      'bulking',
+      'custom',
+    ],
+  })
+  @IsEnum([
+    'weight_loss',
+    'muscle_gain',
+    'maintenance',
+    'cutting',
+    'bulking',
+    'custom',
+  ])
   goal_type: string;
 
   @ApiProperty({ example: 1800 })
@@ -156,9 +188,25 @@ export class UpdateDietTemplateDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ enum: ['weight_loss', 'muscle_gain', 'maintenance', 'cutting', 'bulking', 'custom'] })
+  @ApiPropertyOptional({
+    enum: [
+      'weight_loss',
+      'muscle_gain',
+      'maintenance',
+      'cutting',
+      'bulking',
+      'custom',
+    ],
+  })
   @IsOptional()
-  @IsEnum(['weight_loss', 'muscle_gain', 'maintenance', 'cutting', 'bulking', 'custom'])
+  @IsEnum([
+    'weight_loss',
+    'muscle_gain',
+    'maintenance',
+    'cutting',
+    'bulking',
+    'custom',
+  ])
   goal_type?: string;
 
   @ApiPropertyOptional({ example: 1800 })

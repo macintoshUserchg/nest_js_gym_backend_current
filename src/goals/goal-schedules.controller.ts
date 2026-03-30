@@ -10,7 +10,12 @@ import {
   ParseIntPipe,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -41,8 +46,13 @@ export class GoalSchedulesController {
 
   @Post('from-template')
   @Roles(UserRole.TRAINER, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Create goal schedule from template (trainer/admin only)' })
-  createFromTemplate(@Body() dto: CreateGoalScheduleFromTemplateDto, @CurrentUser() user: User) {
+  @ApiOperation({
+    summary: 'Create goal schedule from template (trainer/admin only)',
+  })
+  createFromTemplate(
+    @Body() dto: CreateGoalScheduleFromTemplateDto,
+    @CurrentUser() user: User,
+  ) {
     return this.goalSchedulesService.createFromTemplate(dto, user);
   }
 
@@ -87,14 +97,18 @@ export class GoalSchedulesController {
 
   @Post(':id/resume')
   @Roles(UserRole.TRAINER, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Resume a paused goal schedule (trainer/admin only)' })
+  @ApiOperation({
+    summary: 'Resume a paused goal schedule (trainer/admin only)',
+  })
   resumeSchedule(@Param('id') id: string, @CurrentUser() user: User) {
     return this.goalSchedulesService.resumeSchedule(id, user);
   }
 
   @Post(':id/complete')
   @Roles(UserRole.TRAINER, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Mark a goal schedule as completed (trainer/admin only)' })
+  @ApiOperation({
+    summary: 'Mark a goal schedule as completed (trainer/admin only)',
+  })
   completeSchedule(@Param('id') id: string, @CurrentUser() user: User) {
     return this.goalSchedulesService.completeSchedule(id, user);
   }

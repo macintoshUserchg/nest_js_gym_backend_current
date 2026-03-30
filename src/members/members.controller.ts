@@ -79,29 +79,31 @@ export class MembersController {
               name: 'Elite Basic - Downtown',
               price: 8999,
               durationInDays: 30,
-              description: 'Access to premium gym facilities and basic classes'
+              description: 'Access to premium gym facilities and basic classes',
             },
             classes: [
               {
                 classId: 'ab1caf4b-bb4c-489e-aefd-ad6031fc92b1',
                 name: 'Elite Morning Yoga',
-                description: 'Premium yoga session to start your day with mindfulness and strength',
+                description:
+                  'Premium yoga session to start your day with mindfulness and strength',
                 timings: 'morning',
                 recurrenceType: 'weekly',
-                daysOfWeek: [1, 3, 5]
+                daysOfWeek: [1, 3, 5],
               },
               {
                 classId: '7b773efc-b250-4550-9763-8052cac699c0',
                 name: 'HIIT Elite Performance',
-                description: 'High-intensity interval training for elite athletes',
+                description:
+                  'High-intensity interval training for elite athletes',
                 timings: 'evening',
                 recurrenceType: 'weekly',
-                daysOfWeek: [2, 4]
-              }
+                daysOfWeek: [2, 4],
+              },
             ],
             startDate: '2026-01-11T05:34:36.139Z',
             endDate: '2026-02-10T05:34:36.139Z',
-            isActive: true
+            isActive: true,
           },
           branch: {
             branchId: '3c1f3add-0783-460b-ab77-df3f29aeb7ea',
@@ -115,10 +117,10 @@ export class MembersController {
             latitude: null,
             longitude: null,
             createdAt: '2026-01-06T06:32:39.084Z',
-            updatedAt: '2026-01-06T06:32:39.084Z'
-          }
-        }
-      }
+            updatedAt: '2026-01-06T06:32:39.084Z',
+          },
+        },
+      },
     },
   })
   @ApiResponse({
@@ -129,11 +131,13 @@ export class MembersController {
         summary: 'Validation failed',
         value: {
           statusCode: 400,
-          message: ['gender must be one of the following values: male, female, other'],
-          error: 'Bad Request'
-        }
-      }
-    }
+          message: [
+            'gender must be one of the following values: male, female, other',
+          ],
+          error: 'Bad Request',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 401,
@@ -147,19 +151,20 @@ export class MembersController {
         summary: 'Branch not found',
         value: {
           statusCode: 404,
-          message: 'Branch with ID 123e4567-e89b-12d3-a456-426614174000 not found',
-          error: 'Not Found'
-        }
+          message:
+            'Branch with ID 123e4567-e89b-12d3-a456-426614174000 not found',
+          error: 'Not Found',
+        },
       },
       planNotFound: {
         summary: 'Plan not found',
         value: {
           statusCode: 404,
           message: 'Membership plan with ID 999 not found',
-          error: 'Not Found'
-        }
-      }
-    }
+          error: 'Not Found',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 409,
@@ -170,10 +175,10 @@ export class MembersController {
         value: {
           statusCode: 409,
           message: 'Member with this email already exists',
-          error: 'Conflict'
-        }
-      }
-    }
+          error: 'Conflict',
+        },
+      },
+    },
   })
   @ApiBody({
     type: CreateMemberDto,
@@ -201,8 +206,8 @@ export class MembersController {
           freezeMember: false,
           selectedClassIds: [
             '8cd45646-061b-4730-a2a5-1f400226564b',
-            '33ec8f27-0708-4808-958f-091301f8aa2c'
-          ]
+            '33ec8f27-0708-4808-958f-091301f8aa2c',
+          ],
         },
       },
       minimalMember: {
@@ -587,7 +592,8 @@ export class BranchMembersController {
   })
   @ApiResponse({
     status: 200,
-    description: 'List of all members for the branch with subscription, plan, classes, and branch details.',
+    description:
+      'List of all members for the branch with subscription, plan, classes, and branch details.',
     type: [BranchMemberResponseDto],
     examples: {
       success: {
@@ -622,13 +628,15 @@ export class BranchMembersController {
                 name: 'Elite Basic - Downtown',
                 price: 8999,
                 durationInDays: 30,
-                description: 'Access to premium gym facilities and basic classes',
+                description:
+                  'Access to premium gym facilities and basic classes',
               },
               classes: [
                 {
                   classId: '8cd45646-061b-4730-a2a5-1f400226564b',
                   name: 'Elite Morning Yoga',
-                  description: 'Premium yoga session to start your day with mindfulness and strength',
+                  description:
+                    'Premium yoga session to start your day with mindfulness and strength',
                   timings: 'morning',
                   recurrenceType: 'weekly',
                   daysOfWeek: [1, 3, 5],
@@ -636,7 +644,8 @@ export class BranchMembersController {
                 {
                   classId: '33ec8f27-0708-4808-958f-091301f8aa2c',
                   name: 'HIIT Elite Performance',
-                  description: 'High-intensity interval training for elite athletes',
+                  description:
+                    'High-intensity interval training for elite athletes',
                   timings: 'evening',
                   recurrenceType: 'weekly',
                   daysOfWeek: [2, 4],
@@ -705,7 +714,8 @@ export class BranchMembersController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden - User does not have permission to access this branch\'s members.',
+    description:
+      "Forbidden - User does not have permission to access this branch's members.",
   })
   @ApiResponse({
     status: 404,
@@ -715,7 +725,8 @@ export class BranchMembersController {
         summary: 'Branch ID not found',
         value: {
           statusCode: 404,
-          message: 'Branch with ID dc33cf0d-763b-44af-bdd8-21427357df1b not found',
+          message:
+            'Branch with ID dc33cf0d-763b-44af-bdd8-21427357df1b not found',
           error: 'Not Found',
         },
       },

@@ -1,8 +1,14 @@
-import { IsNotEmpty, IsNumber, IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsEnum,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RefundPaymentDto {
-  @ApiProperty({ description: 'Refund amount', example: 50.00 })
+  @ApiProperty({ description: 'Refund amount', example: 50.0 })
   @IsNumber()
   @IsNotEmpty()
   amount: number;
@@ -16,7 +22,10 @@ export class RefundPaymentDto {
   @IsNotEmpty()
   refundMethod: string;
 
-  @ApiProperty({ description: 'Reason for refund', example: 'Customer requested cancellation' })
+  @ApiProperty({
+    description: 'Reason for refund',
+    example: 'Customer requested cancellation',
+  })
   @IsString()
   @IsNotEmpty()
   reason: string;

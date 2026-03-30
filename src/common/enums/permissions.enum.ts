@@ -42,7 +42,7 @@ export enum Permissions {
 
 export enum UserRole {
   SUPERADMIN = 'SUPERADMIN',
-  ADMIN = 'ADMIN',  // Gym owner level
+  ADMIN = 'ADMIN', // Gym owner level
   TRAINER = 'TRAINER',
   MEMBER = 'MEMBER',
 }

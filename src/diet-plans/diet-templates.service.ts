@@ -38,7 +38,9 @@ export class DietTemplatesService {
     const isTrainer = userRole === 'TRAINER';
 
     if (!isAdmin && !isTrainer) {
-      throw new ForbiddenException('Only trainers and admins can create diet templates');
+      throw new ForbiddenException(
+        'Only trainers and admins can create diet templates',
+      );
     }
 
     const { meals, ...templateData } = dto;
@@ -48,7 +50,9 @@ export class DietTemplatesService {
       trainerId: isTrainer && user.trainerId ? parseInt(user.trainerId) : null,
       version: 1,
     };
-    const template = this.dietTemplateRepository.create(templateDataWithTrainer);
+    const template = this.dietTemplateRepository.create(
+      templateDataWithTrainer,
+    );
 
     const savedTemplate = await this.dietTemplateRepository.save(template);
 
@@ -135,7 +139,7 @@ export class DietTemplatesService {
         const hasAccess =
           template.trainerId === parseInt(user.trainerId) ||
           template.is_shared_gym ||
-          await this.isSharedWithTrainer(id, parseInt(user.trainerId));
+          (await this.isSharedWithTrainer(id, parseInt(user.trainerId)));
         if (!hasAccess) {
           throw new ForbiddenException('Access denied');
         }
@@ -147,15 +151,19 @@ export class DietTemplatesService {
     return template;
   }
 
-
   async update(id: string, dto: UpdateDietTemplateDto, user: User) {
     const template = await this.findOne(id, user);
-    
+
     const userRole = user.role?.name;
     const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
-    if (!isAdmin && isTrainer && user.trainerId && template.trainerId !== parseInt(user.trainerId)) {
+    if (
+      !isAdmin &&
+      isTrainer &&
+      user.trainerId &&
+      template.trainerId !== parseInt(user.trainerId)
+    ) {
       throw new ForbiddenException('You can only update your own templates');
     }
 
@@ -184,7 +192,9 @@ export class DietTemplatesService {
     const isTrainer = userRole === 'TRAINER';
 
     if (!isAdmin && !isTrainer) {
-      throw new ForbiddenException('Only trainers and admins can copy templates');
+      throw new ForbiddenException(
+        'Only trainers and admins can copy templates',
+      );
     }
 
     const templateData: any = {
@@ -318,7 +328,8 @@ export class DietTemplatesService {
 
     const newRatingCount = template.rating_count + 1;
     const newAvgRating =
-      ((template.avg_rating || 0) * template.rating_count + dto.rating) / newRatingCount;
+      ((template.avg_rating || 0) * template.rating_count + dto.rating) /
+      newRatingCount;
 
     template.avg_rating = newAvgRating;
     template.rating_count = newRatingCount;
@@ -332,7 +343,12 @@ export class DietTemplatesService {
     const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
-    if (!isAdmin && isTrainer && user.trainerId && template.trainerId !== parseInt(user.trainerId)) {
+    if (
+      !isAdmin &&
+      isTrainer &&
+      user.trainerId &&
+      template.trainerId !== parseInt(user.trainerId)
+    ) {
       throw new ForbiddenException('You can only delete your own templates');
     }
 
@@ -340,9 +356,16 @@ export class DietTemplatesService {
     return { success: true, message: 'Template deleted' };
   }
 
-  private async isSharedWithTrainer(templateId: string, trainerId: number): Promise<boolean> {
+  private async isSharedWithTrainer(
+    templateId: string,
+    trainerId: number,
+  ): Promise<boolean> {
     const share = await this.templateShareRepository.findOne({
-      where: { template_id: templateId, shared_with_trainerId: trainerId, is_accepted: true },
+      where: {
+        template_id: templateId,
+        shared_with_trainerId: trainerId,
+        is_accepted: true,
+      },
     });
     return !!share;
   }

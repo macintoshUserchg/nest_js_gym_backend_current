@@ -8,7 +8,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../entities/users.entity';
@@ -25,7 +30,9 @@ import {
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth('JWT-auth')
 export class TemplateAssignmentsController {
-  constructor(private readonly templateAssignmentsService: TemplateAssignmentsService) {}
+  constructor(
+    private readonly templateAssignmentsService: TemplateAssignmentsService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a template assignment' })
@@ -35,7 +42,10 @@ export class TemplateAssignmentsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all template assignments' })
-  findAll(@CurrentUser() user: User, @Query() filters: FilterTemplateAssignmentsDto) {
+  findAll(
+    @CurrentUser() user: User,
+    @Query() filters: FilterTemplateAssignmentsDto,
+  ) {
     return this.templateAssignmentsService.findAll(user, filters);
   }
 
@@ -47,7 +57,11 @@ export class TemplateAssignmentsController {
     @CurrentUser() user: User,
     @Query('template_type') templateType?: 'workout' | 'diet',
   ) {
-    return this.templateAssignmentsService.findByMember(memberId, user, templateType);
+    return this.templateAssignmentsService.findByMember(
+      memberId,
+      user,
+      templateType,
+    );
   }
 
   @Get('analytics')

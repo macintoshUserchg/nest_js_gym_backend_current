@@ -10,7 +10,13 @@ import { Trainer } from '../entities/trainers.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TemplateShare, WorkoutTemplate, DietTemplate, User, Trainer]),
+    TypeOrmModule.forFeature([
+      TemplateShare,
+      WorkoutTemplate,
+      DietTemplate,
+      User,
+      Trainer,
+    ]),
   ],
   controllers: [TemplateShareController],
   providers: [TemplateSharesService],

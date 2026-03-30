@@ -9,7 +9,15 @@ import { TemplateAssignmentsController } from './template-assignments.controller
 import { TemplateAssignmentsService } from './template-assignments.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TemplateAssignment, WorkoutTemplate, DietTemplate, Member, MemberTrainerAssignment])],
+  imports: [
+    TypeOrmModule.forFeature([
+      TemplateAssignment,
+      WorkoutTemplate,
+      DietTemplate,
+      Member,
+      MemberTrainerAssignment,
+    ]),
+  ],
   controllers: [TemplateAssignmentsController],
   providers: [TemplateAssignmentsService],
   exports: [TemplateAssignmentsService],

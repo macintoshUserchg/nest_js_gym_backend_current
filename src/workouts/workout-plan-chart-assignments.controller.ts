@@ -11,7 +11,12 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { WorkoutPlanChartAssignmentsService } from './workout-plan-chart-assignments.service';
 import { CreateChartAssignmentDto } from './dto/create-chart-assignment.dto';
 import { UpdateChartAssignmentDto } from './dto/update-chart-assignment.dto';
@@ -27,12 +32,17 @@ import { ChartAssignmentStatus } from '../entities/workout_plan_chart_assignment
 @Controller('chart-assignments')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class WorkoutPlanChartAssignmentsController {
-  constructor(private readonly assignmentsService: WorkoutPlanChartAssignmentsService) {}
+  constructor(
+    private readonly assignmentsService: WorkoutPlanChartAssignmentsService,
+  ) {}
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.TRAINER)
   @ApiOperation({ summary: 'Assign a workout chart to a member' })
-  async create(@Body() dto: CreateChartAssignmentDto, @CurrentUser() user: User) {
+  async create(
+    @Body() dto: CreateChartAssignmentDto,
+    @CurrentUser() user: User,
+  ) {
     return this.assignmentsService.create(dto, user);
   }
 
@@ -51,7 +61,9 @@ export class WorkoutPlanChartAssignmentsController {
 
   @Get('member/:memberId')
   @ApiOperation({ summary: 'Get active chart assignments for a member' })
-  async getMemberAssignments(@Param('memberId', ParseIntPipe) memberId: number) {
+  async getMemberAssignments(
+    @Param('memberId', ParseIntPipe) memberId: number,
+  ) {
     return this.assignmentsService.getMemberActiveAssignments(memberId);
   }
 
@@ -73,7 +85,12 @@ export class WorkoutPlanChartAssignmentsController {
   @ApiOperation({ summary: 'Add an exercise substitution to an assignment' })
   async addSubstitution(
     @Param('id') id: string,
-    @Body() body: { original_exercise: string; substituted_exercise: string; reason?: string },
+    @Body()
+    body: {
+      original_exercise: string;
+      substituted_exercise: string;
+      reason?: string;
+    },
   ) {
     return this.assignmentsService.addSubstitution(id, body);
   }
@@ -83,7 +100,12 @@ export class WorkoutPlanChartAssignmentsController {
   @ApiOperation({ summary: 'Record exercise completion for an assignment' })
   async recordExerciseCompletion(
     @Param('id') id: string,
-    @Body() body: { exerciseName: string; completedSets: number; completedReps: number[] },
+    @Body()
+    body: {
+      exerciseName: string;
+      completedSets: number;
+      completedReps: number[];
+    },
   ) {
     return this.assignmentsService.recordExerciseCompletion(
       id,

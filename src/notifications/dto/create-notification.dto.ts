@@ -1,4 +1,11 @@
-import { IsString, IsNotEmpty, IsOptional, IsUUID, IsInt, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsUUID,
+  IsInt,
+  IsEnum,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { NotificationType } from '../../entities/notifications.entity';
 
@@ -12,12 +19,17 @@ export class CreateNotificationDto {
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({ example: 'Congratulations! You have completed your weekly goal.' })
+  @ApiProperty({
+    example: 'Congratulations! You have completed your weekly goal.',
+  })
   @IsString()
   @IsNotEmpty()
   message: string;
 
-  @ApiPropertyOptional({ enum: NotificationType, default: NotificationType.SYSTEM })
+  @ApiPropertyOptional({
+    enum: NotificationType,
+    default: NotificationType.SYSTEM,
+  })
   @IsOptional()
   @IsEnum(NotificationType)
   type?: NotificationType;

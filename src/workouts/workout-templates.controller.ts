@@ -191,11 +191,12 @@ export class WorkoutTemplatesController {
   @Roles(UserRole.TRAINER)
   @ApiOperation({
     summary: 'Get my workout templates (trainer only)',
-    description: 'Retrieves all workout templates created by the currently authenticated trainer.',
+    description:
+      'Retrieves all workout templates created by the currently authenticated trainer.',
   })
   @ApiResponse({
     status: 200,
-    description: 'List of trainer\'s templates',
+    description: "List of trainer's templates",
   })
   @ApiResponse({
     status: 403,
@@ -203,7 +204,10 @@ export class WorkoutTemplatesController {
   })
   findMyTemplates(@CurrentUser() user: User) {
     if (user.trainerId) {
-      return this.templatesService.findByTrainer(parseInt(user.trainerId), user);
+      return this.templatesService.findByTrainer(
+        parseInt(user.trainerId),
+        user,
+      );
     }
     return [];
   }
@@ -301,7 +305,12 @@ export class WorkoutTemplatesController {
     @Body() body: { trainerId: number; adminNote?: string },
     @CurrentUser() user: User,
   ) {
-    return this.templatesService.shareToTrainer(id, body.trainerId, user, body.adminNote);
+    return this.templatesService.shareToTrainer(
+      id,
+      body.trainerId,
+      user,
+      body.adminNote,
+    );
   }
 
   @Post(':id/accept')
@@ -330,7 +339,10 @@ export class WorkoutTemplatesController {
     @CurrentUser() user: User,
   ) {
     if (user.trainerId) {
-      return this.templatesService.acceptSharedTemplate(body.shareId, parseInt(user.trainerId));
+      return this.templatesService.acceptSharedTemplate(
+        body.shareId,
+        parseInt(user.trainerId),
+      );
     }
     return { message: 'Only trainers can accept shared templates' };
   }
@@ -339,7 +351,7 @@ export class WorkoutTemplatesController {
   @ApiOperation({
     summary: 'Rate a workout template',
     description:
-      'Allows users to rate a workout template. Ratings contribute to the template\'s average rating.',
+      "Allows users to rate a workout template. Ratings contribute to the template's average rating.",
   })
   @ApiParam({
     name: 'id',

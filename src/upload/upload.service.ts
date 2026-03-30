@@ -1,10 +1,23 @@
-import { Injectable, Logger, BadRequestException, ServiceUnavailableException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  ServiceUnavailableException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Client } from 'minio';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
-import { FILE_CATEGORIES, FileCategory, MINIO_BUCKET } from './constants/upload.constants';
-import { UploadedFile, PresignedUrlResponse } from './interfaces/upload.interface';
+import {
+  FILE_CATEGORIES,
+  FileCategory,
+  MINIO_BUCKET,
+} from './constants/upload.constants';
+import {
+  UploadedFile,
+  PresignedUrlResponse,
+} from './interfaces/upload.interface';
 import { User } from '../entities/users.entity';
 import { UserRole } from '../common/enums/permissions.enum';
 
@@ -19,22 +32,37 @@ export class UploadService {
   private readonly mediaMaxSize: number;
 
   constructor(private configService: ConfigService) {
-    const endpoint = this.configService.get<string>('minio.minio.endpoint') || 'localhost:9000';
-    const [host, portStr] = endpoint.includes(':') ? endpoint.split(':') : [endpoint, '9000'];
+    const endpoint =
+      this.configService.get<string>('minio.minio.endpoint') ||
+      'localhost:9000';
+    const [host, portStr] = endpoint.includes(':')
+      ? endpoint.split(':')
+      : [endpoint, '9000'];
 
     this.minioClient = new Client({
       endPoint: host,
       port: parseInt(portStr) || 9000,
       useSSL: this.configService.get<boolean>('minio.minio.useSsl') || false,
-      accessKey: this.configService.get<string>('minio.minio.accessKey') || 'minioadmin',
-      secretKey: this.configService.get<string>('minio.minio.secretKey') || 'minioadmin',
+      accessKey:
+        this.configService.get<string>('minio.minio.accessKey') || 'minioadmin',
+      secretKey:
+        this.configService.get<string>('minio.minio.secretKey') || 'minioadmin',
     });
 
-    this.bucket = this.configService.get<string>('minio.minio.bucket') || MINIO_BUCKET;
-    this.publicUrl = this.configService.get<string>('minio.minio.publicUrl') || 'http://localhost:9000';
-    this.avatarMaxSize = this.configService.get<number>('minio.upload.avatarMaxSize') || 5 * 1024 * 1024;
-    this.documentMaxSize = this.configService.get<number>('minio.upload.documentMaxSize') || 10 * 1024 * 1024;
-    this.mediaMaxSize = this.configService.get<number>('minio.upload.mediaMaxSize') || 50 * 1024 * 1024;
+    this.bucket =
+      this.configService.get<string>('minio.minio.bucket') || MINIO_BUCKET;
+    this.publicUrl =
+      this.configService.get<string>('minio.minio.publicUrl') ||
+      'http://localhost:9000';
+    this.avatarMaxSize =
+      this.configService.get<number>('minio.upload.avatarMaxSize') ||
+      5 * 1024 * 1024;
+    this.documentMaxSize =
+      this.configService.get<number>('minio.upload.documentMaxSize') ||
+      10 * 1024 * 1024;
+    this.mediaMaxSize =
+      this.configService.get<number>('minio.upload.mediaMaxSize') ||
+      50 * 1024 * 1024;
   }
 
   /**
@@ -64,17 +92,23 @@ export class UploadService {
 
     if (!config.allowedTypes.includes(mimetype)) {
       throw new BadRequestException(
-        `Invalid file type. Allowed: ${config.allowedTypes.join(', ')}`
+        `Invalid file type. Allowed: ${config.allowedTypes.join(', ')}`,
       );
     }
 
-    const maxSize = category === 'avatar' ? this.avatarMaxSize
-      : category === 'document' ? this.documentMaxSize
-      : category === 'media' ? this.mediaMaxSize
-      : 10 * 1024 * 1024; // progress
+    const maxSize =
+      category === 'avatar'
+        ? this.avatarMaxSize
+        : category === 'document'
+          ? this.documentMaxSize
+          : category === 'media'
+            ? this.mediaMaxSize
+            : 10 * 1024 * 1024; // progress
 
     if (size > maxSize) {
-      throw new BadRequestException(`File too large. Max size: ${maxSize / (1024 * 1024)}MB`);
+      throw new BadRequestException(
+        `File too large. Max size: ${maxSize / (1024 * 1024)}MB`,
+      );
     }
   }
 
@@ -90,7 +124,11 @@ export class UploadService {
   /**
    * Generate user-scoped file key with role-based folder
    */
-  private generateUserFileKey(baseFolder: string, userId: string, originalFilename: string): string {
+  private generateUserFileKey(
+    baseFolder: string,
+    userId: string,
+    originalFilename: string,
+  ): string {
     const ext = path.extname(originalFilename).toLowerCase();
     const uuid = uuidv4();
     return `${baseFolder}/${userId}/${uuid}${ext}`;
@@ -154,7 +192,7 @@ export class UploadService {
     const key = this.generateUserFileKey(
       FILE_CATEGORIES[category as FileCategory].folder,
       user.userId,
-      file.originalname
+      file.originalname,
     );
 
     try {
@@ -217,7 +255,7 @@ export class UploadService {
       const uploadUrl = await this.minioClient.presignedPutObject(
         this.bucket,
         key,
-        3600 // 1 hour expiry
+        3600, // 1 hour expiry
       );
 
       return {
@@ -227,8 +265,12 @@ export class UploadService {
         expiresIn: 3600,
       };
     } catch (error) {
-      this.logger.error(`Failed to generate presigned upload URL: ${error.message}`);
-      throw new BadRequestException(`Failed to generate upload URL: ${error.message}`);
+      this.logger.error(
+        `Failed to generate presigned upload URL: ${error.message}`,
+      );
+      throw new BadRequestException(
+        `Failed to generate upload URL: ${error.message}`,
+      );
     }
   }
 
@@ -257,7 +299,7 @@ export class UploadService {
       const uploadUrl = await this.minioClient.presignedPutObject(
         this.bucket,
         key,
-        3600 // 1 hour expiry
+        3600, // 1 hour expiry
       );
 
       return {
@@ -267,8 +309,12 @@ export class UploadService {
         expiresIn: 3600,
       };
     } catch (error) {
-      this.logger.error(`Failed to generate presigned upload URL: ${error.message}`);
-      throw new BadRequestException(`Failed to generate upload URL: ${error.message}`);
+      this.logger.error(
+        `Failed to generate presigned upload URL: ${error.message}`,
+      );
+      throw new BadRequestException(
+        `Failed to generate upload URL: ${error.message}`,
+      );
     }
   }
 
@@ -281,7 +327,10 @@ export class UploadService {
     const userId = user.userId;
 
     // Admins can access all files
-    if (user.role.name === UserRole.SUPERADMIN || user.role.name === UserRole.ADMIN) {
+    if (
+      user.role.name === UserRole.SUPERADMIN ||
+      user.role.name === UserRole.ADMIN
+    ) {
       return true;
     }
 
@@ -316,12 +365,16 @@ export class UploadService {
       const downloadUrl = await this.minioClient.presignedGetObject(
         this.bucket,
         key,
-        3600 // 1 hour expiry
+        3600, // 1 hour expiry
       );
       return downloadUrl;
     } catch (error) {
-      this.logger.error(`Failed to generate presigned download URL: ${error.message}`);
-      throw new BadRequestException(`Failed to generate download URL: ${error.message}`);
+      this.logger.error(
+        `Failed to generate presigned download URL: ${error.message}`,
+      );
+      throw new BadRequestException(
+        `Failed to generate download URL: ${error.message}`,
+      );
     }
   }
 

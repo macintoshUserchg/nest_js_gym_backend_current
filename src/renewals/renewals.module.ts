@@ -5,7 +5,10 @@ import { Member } from '../entities/members.entity';
 import { MembershipPlan } from '../entities/membership_plans.entity';
 import { Invoice } from '../entities/invoices.entity';
 import { MemberSubscription } from '../entities/member_subscriptions.entity';
-import { RenewalsController, MemberRenewalsController } from './renewals.controller';
+import {
+  RenewalsController,
+  MemberRenewalsController,
+} from './renewals.controller';
 import { RenewalsService } from './renewals.service';
 import { RemindersModule } from '../reminders/reminders.module';
 

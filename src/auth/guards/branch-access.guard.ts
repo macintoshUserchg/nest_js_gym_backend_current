@@ -22,10 +22,10 @@ export class BranchAccessGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requireBranchOwner = this.reflector.getAllAndOverride<boolean>('requireBranchOwner', [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requireBranchOwner = this.reflector.getAllAndOverride<boolean>(
+      'requireBranchOwner',
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requireBranchOwner) {
       return true;

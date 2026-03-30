@@ -39,7 +39,9 @@ export class WorkoutTemplatesService {
     const isTrainer = userRole === 'TRAINER';
 
     if (!isAdmin && !isTrainer) {
-      throw new ForbiddenException('Only trainers and admins can create workout templates');
+      throw new ForbiddenException(
+        'Only trainers and admins can create workout templates',
+      );
     }
 
     const { exercises, ...templateData } = dto;
@@ -151,7 +153,7 @@ export class WorkoutTemplatesService {
         const hasAccess =
           template.trainerId === parseInt(user.trainerId) ||
           template.is_shared_gym ||
-          await this.isSharedWithTrainer(id, parseInt(user.trainerId));
+          (await this.isSharedWithTrainer(id, parseInt(user.trainerId)));
         if (!hasAccess) {
           throw new ForbiddenException('Access denied');
         }
@@ -173,15 +175,19 @@ export class WorkoutTemplatesService {
     });
   }
 
-
   async update(id: string, dto: UpdateWorkoutTemplateDto, user: User) {
     const template = await this.findOne(id, user);
-    
+
     const userRole = user.role?.name;
     const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
-    if (!isAdmin && isTrainer && user.trainerId && template.trainerId !== parseInt(user.trainerId)) {
+    if (
+      !isAdmin &&
+      isTrainer &&
+      user.trainerId &&
+      template.trainerId !== parseInt(user.trainerId)
+    ) {
       throw new ForbiddenException('You can only update your own templates');
     }
 
@@ -200,7 +206,9 @@ export class WorkoutTemplatesService {
     const isTrainer = userRole === 'TRAINER';
 
     if (!isAdmin && !isTrainer) {
-      throw new ForbiddenException('Only trainers and admins can copy templates');
+      throw new ForbiddenException(
+        'Only trainers and admins can copy templates',
+      );
     }
 
     const templateData = {
@@ -221,7 +229,8 @@ export class WorkoutTemplatesService {
       version: original.version + 1,
     } as any);
 
-    const savedTemplate = await this.workoutTemplateRepository.save(newTemplate);
+    const savedTemplate =
+      await this.workoutTemplateRepository.save(newTemplate);
 
     // Copy exercises
     if (original.exercises?.length) {
@@ -335,7 +344,8 @@ export class WorkoutTemplatesService {
 
     const newRatingCount = template.rating_count + 1;
     const newAvgRating =
-      ((template.avg_rating || 0) * template.rating_count + dto.rating) / newRatingCount;
+      ((template.avg_rating || 0) * template.rating_count + dto.rating) /
+      newRatingCount;
 
     template.avg_rating = newAvgRating;
     template.rating_count = newRatingCount;
@@ -349,7 +359,12 @@ export class WorkoutTemplatesService {
     const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';
 
-    if (!isAdmin && isTrainer && user.trainerId && template.trainerId !== parseInt(user.trainerId)) {
+    if (
+      !isAdmin &&
+      isTrainer &&
+      user.trainerId &&
+      template.trainerId !== parseInt(user.trainerId)
+    ) {
       throw new ForbiddenException('You can only delete your own templates');
     }
 
@@ -357,9 +372,16 @@ export class WorkoutTemplatesService {
     return { success: true, message: 'Template deleted' };
   }
 
-  private async isSharedWithTrainer(templateId: string, trainerId: number): Promise<boolean> {
+  private async isSharedWithTrainer(
+    templateId: string,
+    trainerId: number,
+  ): Promise<boolean> {
     const share = await this.templateShareRepository.findOne({
-      where: { template_id: templateId, shared_with_trainerId: trainerId, is_accepted: true },
+      where: {
+        template_id: templateId,
+        shared_with_trainerId: trainerId,
+        is_accepted: true,
+      },
     });
     return !!share;
   }

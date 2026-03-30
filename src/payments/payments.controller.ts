@@ -125,10 +125,7 @@ export class PaymentsController {
       },
     },
   })
-  create(
-    @Body() createDto: CreatePaymentDto,
-    @CurrentUser() user: User,
-  ) {
+  create(@Body() createDto: CreatePaymentDto, @CurrentUser() user: User) {
     return this.paymentsService.create(createDto, user?.userId);
   }
 
@@ -330,8 +327,7 @@ export class PaymentsController {
   })
   @ApiResponse({
     status: 403,
-    description:
-      'Forbidden - Insufficient permissions to verify payments.',
+    description: 'Forbidden - Insufficient permissions to verify payments.',
   })
   @ApiResponse({
     status: 404,
@@ -424,8 +420,7 @@ export class PaymentsController {
   })
   @ApiResponse({
     status: 403,
-    description:
-      'Forbidden - Insufficient permissions to issue refunds.',
+    description: 'Forbidden - Insufficient permissions to issue refunds.',
   })
   @ApiResponse({
     status: 404,

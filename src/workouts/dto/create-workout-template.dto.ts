@@ -13,13 +13,35 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
-const EQUIPMENT_OPTIONS = ['BARBELL', 'DUMBBELL', 'CABLE', 'MACHINE', 'BODYWEIGHT', 'KETTLEBELL', 'MEDICINE_BALL', 'RESISTANCE_BAND', 'OTHER'];
+const EQUIPMENT_OPTIONS = [
+  'BARBELL',
+  'DUMBBELL',
+  'CABLE',
+  'MACHINE',
+  'BODYWEIGHT',
+  'KETTLEBELL',
+  'MEDICINE_BALL',
+  'RESISTANCE_BAND',
+  'OTHER',
+];
 
-const CHART_TYPE_OPTIONS = ['STRENGTH', 'CARDIO', 'HIIT', 'FLEXIBILITY', 'COMPOUND'];
+const CHART_TYPE_OPTIONS = [
+  'STRENGTH',
+  'CARDIO',
+  'HIIT',
+  'FLEXIBILITY',
+  'COMPOUND',
+];
 
 const DIFFICULTY_OPTIONS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
 
-const PLAN_TYPE_OPTIONS = ['strength', 'cardio', 'flexibility', 'endurance', 'general'];
+const PLAN_TYPE_OPTIONS = [
+  'strength',
+  'cardio',
+  'flexibility',
+  'endurance',
+  'general',
+];
 
 export class CreateWorkoutTemplateExerciseDto {
   @ApiProperty({ example: 'Bench Press' })

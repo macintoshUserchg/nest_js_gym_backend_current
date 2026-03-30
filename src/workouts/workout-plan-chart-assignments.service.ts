@@ -1,7 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { WorkoutPlanChartAssignment, ChartAssignmentStatus } from '../entities/workout_plan_chart_assignments.entity';
+import {
+  WorkoutPlanChartAssignment,
+  ChartAssignmentStatus,
+} from '../entities/workout_plan_chart_assignments.entity';
 import { WorkoutTemplate } from '../entities/workout_templates.entity';
 import { Member } from '../entities/members.entity';
 import { User } from '../entities/users.entity';
@@ -49,7 +56,9 @@ export class WorkoutPlanChartAssignmentsService {
       },
     });
     if (existingActive) {
-      throw new BadRequestException('This chart is already assigned to this member');
+      throw new BadRequestException(
+        'This chart is already assigned to this member',
+      );
     }
 
     // Build assignment data object to avoid null issues with TypeORM
@@ -74,7 +83,11 @@ export class WorkoutPlanChartAssignmentsService {
     const saved = await this.assignmentRepository.save(assignment);
 
     // Increment chart usage count
-    await this.chartRepository.increment({ template_id: dto.chart_id }, 'usage_count', 1);
+    await this.chartRepository.increment(
+      { template_id: dto.chart_id },
+      'usage_count',
+      1,
+    );
 
     // Send notification - look up user by memberId
     const user = await this.userRepository.findOne({
@@ -103,10 +116,14 @@ export class WorkoutPlanChartAssignmentsService {
       .orderBy('a.assigned_at', 'DESC');
 
     if (options?.memberId) {
-      queryBuilder.andWhere('a.memberId = :memberId', { memberId: options.memberId });
+      queryBuilder.andWhere('a.memberId = :memberId', {
+        memberId: options.memberId,
+      });
     }
     if (options?.chartId) {
-      queryBuilder.andWhere('a.chart_id = :chartId', { chartId: options.chartId });
+      queryBuilder.andWhere('a.chart_id = :chartId', {
+        chartId: options.chartId,
+      });
     }
     if (options?.status) {
       queryBuilder.andWhere('a.status = :status', { status: options.status });
@@ -136,7 +153,10 @@ export class WorkoutPlanChartAssignmentsService {
       assignment.end_date = new Date(dto.end_date);
     }
     if (dto.completion_percent !== undefined) {
-      assignment.completion_percent = Math.min(100, Math.max(0, dto.completion_percent));
+      assignment.completion_percent = Math.min(
+        100,
+        Math.max(0, dto.completion_percent),
+      );
     }
 
     return this.assignmentRepository.save(assignment);

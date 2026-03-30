@@ -21,10 +21,7 @@ export class AuthService {
   ) {
     this.twilioClient =
       process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
-        ? twilio(
-            process.env.TWILIO_ACCOUNT_SID,
-            process.env.TWILIO_AUTH_TOKEN,
-          )
+        ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
         : null;
   }
 

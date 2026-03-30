@@ -106,7 +106,13 @@ export class DietTemplatesController {
   @ApiQuery({
     name: 'goal_type',
     required: false,
-    enum: ['weight_loss', 'weight_gain', 'muscle_gain', 'maintenance', 'general_fitness'],
+    enum: [
+      'weight_loss',
+      'weight_gain',
+      'muscle_gain',
+      'maintenance',
+      'general_fitness',
+    ],
     description: 'Filter by goal type',
   })
   @ApiResponse({
@@ -182,11 +188,12 @@ export class DietTemplatesController {
   @Roles(UserRole.TRAINER, UserRole.ADMIN)
   @ApiOperation({
     summary: 'Get my diet templates (trainer only)',
-    description: 'Retrieves all diet templates created by the currently authenticated trainer.',
+    description:
+      'Retrieves all diet templates created by the currently authenticated trainer.',
   })
   @ApiResponse({
     status: 200,
-    description: 'List of trainer\'s templates',
+    description: "List of trainer's templates",
   })
   @ApiResponse({
     status: 403,
@@ -194,7 +201,10 @@ export class DietTemplatesController {
   })
   findMyTemplates(@CurrentUser() user: User) {
     if (user.trainerId) {
-      return this.templatesService.findByTrainer(parseInt(user.trainerId), user);
+      return this.templatesService.findByTrainer(
+        parseInt(user.trainerId),
+        user,
+      );
     }
     return [];
   }
@@ -292,7 +302,12 @@ export class DietTemplatesController {
     @Body() body: { trainerId: number; adminNote?: string },
     @CurrentUser() user: User,
   ) {
-    return this.templatesService.shareToTrainer(id, body.trainerId, user, body.adminNote);
+    return this.templatesService.shareToTrainer(
+      id,
+      body.trainerId,
+      user,
+      body.adminNote,
+    );
   }
 
   @Post(':id/accept')
@@ -321,7 +336,10 @@ export class DietTemplatesController {
     @CurrentUser() user: User,
   ) {
     if (user.trainerId) {
-      return this.templatesService.acceptSharedTemplate(body.shareId, parseInt(user.trainerId));
+      return this.templatesService.acceptSharedTemplate(
+        body.shareId,
+        parseInt(user.trainerId),
+      );
     }
     return { message: 'Only trainers can accept shared templates' };
   }
@@ -330,7 +348,7 @@ export class DietTemplatesController {
   @ApiOperation({
     summary: 'Rate a diet template',
     description:
-      'Allows users to rate a diet template. Ratings contribute to the template\'s average rating.',
+      "Allows users to rate a diet template. Ratings contribute to the template's average rating.",
   })
   @ApiParam({
     name: 'id',

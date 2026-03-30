@@ -1,7 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notification, NotificationType } from '../entities/notifications.entity';
+import {
+  Notification,
+  NotificationType,
+} from '../entities/notifications.entity';
 import { User } from '../entities/users.entity';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 
@@ -93,17 +96,29 @@ export class NotificationsService {
 
   // ===== Goal-related notification methods =====
 
-  async sendGoalProgressNotification(userId: string, goalTitle: string, progress: number) {
+  async sendGoalProgressNotification(
+    userId: string,
+    goalTitle: string,
+    progress: number,
+  ) {
     return this.create({
       userId,
       title: 'Goal Progress Update',
       message: `Your goal "${goalTitle}" is now ${progress}% complete. Keep up the good work!`,
       type: NotificationType.GOAL_PROGRESS,
-      metadata: { entity_type: 'goal', action: 'progress', related_data: { progress } },
+      metadata: {
+        entity_type: 'goal',
+        action: 'progress',
+        related_data: { progress },
+      },
     });
   }
 
-  async sendGoalCompletedNotification(userId: string, goalTitle: string, memberName: string) {
+  async sendGoalCompletedNotification(
+    userId: string,
+    goalTitle: string,
+    memberName: string,
+  ) {
     return this.create({
       userId,
       title: 'Goal Completed!',
@@ -123,7 +138,11 @@ export class NotificationsService {
     });
   }
 
-  async sendMilestoneCompleteNotification(userId: string, milestoneTitle: string, goalTitle: string) {
+  async sendMilestoneCompleteNotification(
+    userId: string,
+    milestoneTitle: string,
+    goalTitle: string,
+  ) {
     return this.create({
       userId,
       title: 'Milestone Complete!',
@@ -133,7 +152,11 @@ export class NotificationsService {
     });
   }
 
-  async sendMilestoneMissedNotification(userId: string, milestoneTitle: string, goalTitle: string) {
+  async sendMilestoneMissedNotification(
+    userId: string,
+    milestoneTitle: string,
+    goalTitle: string,
+  ) {
     return this.create({
       userId,
       title: 'Milestone Missed',
@@ -145,7 +168,11 @@ export class NotificationsService {
 
   // ===== Chart/Training notification methods =====
 
-  async sendChartAssignedNotification(userId: string, chartTitle: string, memberName: string) {
+  async sendChartAssignedNotification(
+    userId: string,
+    chartTitle: string,
+    memberName: string,
+  ) {
     return this.create({
       userId,
       title: 'Workout Chart Assigned',
@@ -155,7 +182,11 @@ export class NotificationsService {
     });
   }
 
-  async sendChartSharedNotification(userId: string, chartTitle: string, sharedBy: string) {
+  async sendChartSharedNotification(
+    userId: string,
+    chartTitle: string,
+    sharedBy: string,
+  ) {
     return this.create({
       userId,
       title: 'Workout Chart Shared With You',
@@ -167,7 +198,11 @@ export class NotificationsService {
 
   // ===== Diet notification methods =====
 
-  async sendDietAssignedNotification(userId: string, dietTitle: string, memberName: string) {
+  async sendDietAssignedNotification(
+    userId: string,
+    dietTitle: string,
+    memberName: string,
+  ) {
     return this.create({
       userId,
       title: 'Diet Plan Assigned',
@@ -179,7 +214,10 @@ export class NotificationsService {
 
   // ===== Template notification methods =====
 
-  async sendTemplateFeedbackRequestNotification(userId: string, templateTitle: string) {
+  async sendTemplateFeedbackRequestNotification(
+    userId: string,
+    templateTitle: string,
+  ) {
     return this.create({
       userId,
       title: 'Feedback Request',

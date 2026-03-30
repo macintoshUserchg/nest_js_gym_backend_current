@@ -7,7 +7,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../entities/users.entity';
@@ -23,11 +28,9 @@ export class NotificationsController {
   @Get()
   @ApiOperation({ summary: 'Get all notifications for current user' })
   @ApiQuery({ name: 'is_read', required: false, type: Boolean })
-  findAll(
-    @CurrentUser() user: User,
-    @Query('is_read') is_read?: string,
-  ) {
-    const options = is_read !== undefined ? { is_read: is_read === 'true' } : undefined;
+  findAll(@CurrentUser() user: User, @Query('is_read') is_read?: string) {
+    const options =
+      is_read !== undefined ? { is_read: is_read === 'true' } : undefined;
     return this.notificationsService.findByUser(user.userId, options);
   }
 

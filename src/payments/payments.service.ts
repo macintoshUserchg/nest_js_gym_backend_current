@@ -68,7 +68,10 @@ export class PaymentsService {
       (paymentStatus === 'completed' ? Number(createDto.amount) : 0);
 
     // Mark invoice as paid only when status is completed and totalPaid >= total_amount
-    if (paymentStatus === 'completed' && totalPaid >= Number(invoice.total_amount)) {
+    if (
+      paymentStatus === 'completed' &&
+      totalPaid >= Number(invoice.total_amount)
+    ) {
       invoice.status = 'paid';
       invoice.paid_at = new Date();
       await this.invoicesRepo.save(invoice);
@@ -163,9 +166,7 @@ export class PaymentsService {
       relations: ['invoice', 'invoice.payments'],
     });
     if (!payment) {
-      throw new NotFoundException(
-        `Payment with ID ${transactionId} not found`,
-      );
+      throw new NotFoundException(`Payment with ID ${transactionId} not found`);
     }
 
     if (payment.status !== 'pending') {
@@ -184,8 +185,7 @@ export class PaymentsService {
     if (updateDto.status === 'completed') {
       const invoice = payment.invoice;
       const completedPayments = invoice.payments.filter(
-        (p) =>
-          p.status === 'completed' && !p.original_transaction_id,
+        (p) => p.status === 'completed' && !p.original_transaction_id,
       );
       const totalPaid = completedPayments.reduce(
         (sum, p) => sum + Number(p.amount),
@@ -213,9 +213,7 @@ export class PaymentsService {
       relations: ['invoice'],
     });
     if (!payment) {
-      throw new NotFoundException(
-        `Payment with ID ${transactionId} not found`,
-      );
+      throw new NotFoundException(`Payment with ID ${transactionId} not found`);
     }
 
     if (payment.status !== 'completed') {
@@ -246,10 +244,7 @@ export class PaymentsService {
       0,
     );
 
-    if (
-      refundDto.amount >
-      Number(payment.amount) - totalAlreadyRefunded
-    ) {
+    if (refundDto.amount > Number(payment.amount) - totalAlreadyRefunded) {
       throw new BadRequestException(
         `Refund amount would exceed remaining refundable amount. Maximum refundable: ${(Number(payment.amount) - totalAlreadyRefunded).toFixed(2)}`,
       );
@@ -347,7 +342,9 @@ export class PaymentsService {
       .createQueryBuilder('payment')
       .leftJoin('payment.invoice', 'invoice')
       .leftJoin('invoice.member', 'member')
-      .where('payment.status = :completedStatus', { completedStatus: 'completed' })
+      .where('payment.status = :completedStatus', {
+        completedStatus: 'completed',
+      })
       .andWhere('payment.original_transaction_id IS NULL');
 
     if (filterDto) {
@@ -382,7 +379,9 @@ export class PaymentsService {
       .createQueryBuilder('payment')
       .leftJoin('payment.invoice', 'invoice')
       .leftJoin('invoice.member', 'member')
-      .where('payment.status = :completedStatus', { completedStatus: 'completed' })
+      .where('payment.status = :completedStatus', {
+        completedStatus: 'completed',
+      })
       .andWhere('payment.original_transaction_id IS NULL');
 
     if (filterDto) {
@@ -426,18 +425,11 @@ export class PaymentsService {
   async getReceipt(transactionId: string) {
     const payment = await this.paymentsRepo.findOne({
       where: { transaction_id: transactionId },
-      relations: [
-        'invoice',
-        'invoice.member',
-        'recorded_by',
-        'verified_by',
-      ],
+      relations: ['invoice', 'invoice.member', 'recorded_by', 'verified_by'],
     });
 
     if (!payment) {
-      throw new NotFoundException(
-        `Payment with ID ${transactionId} not found`,
-      );
+      throw new NotFoundException(`Payment with ID ${transactionId} not found`);
     }
 
     const invoice = payment.invoice;

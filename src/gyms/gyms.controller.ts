@@ -366,7 +366,8 @@ export class GymsController {
   })
   @ApiResponse({
     status: 200,
-    description: 'List of all members for the gym with their subscription and branch details.',
+    description:
+      'List of all members for the gym with their subscription and branch details.',
     type: [GymMemberResponseDto],
     examples: {
       success: {
@@ -401,13 +402,15 @@ export class GymsController {
                 name: 'Elite Basic - Downtown',
                 price: 8999,
                 durationInDays: 30,
-                description: 'Access to premium gym facilities and basic classes',
+                description:
+                  'Access to premium gym facilities and basic classes',
               },
               classes: [
                 {
                   classId: '8cd45646-061b-4730-a2a5-1f400226564b',
                   name: 'Elite Morning Yoga',
-                  description: 'Premium yoga session to start your day with mindfulness and strength',
+                  description:
+                    'Premium yoga session to start your day with mindfulness and strength',
                   timings: 'morning',
                   recurrenceType: 'weekly',
                   daysOfWeek: [1, 3, 5],
@@ -415,7 +418,8 @@ export class GymsController {
                 {
                   classId: '33ec8f27-0708-4808-958f-091301f8aa2c',
                   name: 'HIIT Elite Performance',
-                  description: 'High-intensity interval training for elite athletes',
+                  description:
+                    'High-intensity interval training for elite athletes',
                   timings: 'evening',
                   recurrenceType: 'weekly',
                   daysOfWeek: [2, 4],
@@ -484,7 +488,8 @@ export class GymsController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden - User does not have permission to access this gym\'s members.',
+    description:
+      "Forbidden - User does not have permission to access this gym's members.",
   })
   @ApiResponse({
     status: 404,

@@ -5,7 +5,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { RenewalRequest, RenewalStatus } from '../entities/renewal_requests.entity';
+import {
+  RenewalRequest,
+  RenewalStatus,
+} from '../entities/renewal_requests.entity';
 import { Member } from '../entities/members.entity';
 import { MembershipPlan } from '../entities/membership_plans.entity';
 import { Invoice } from '../entities/invoices.entity';
@@ -42,7 +45,9 @@ export class RenewalsService {
       where: { id: dto.planId },
     });
     if (!plan) {
-      throw new NotFoundException(`Membership plan with ID ${dto.planId} not found`);
+      throw new NotFoundException(
+        `Membership plan with ID ${dto.planId} not found`,
+      );
     }
 
     const existingOpenRequest = await this.renewalRequestsRepo.findOne({
@@ -113,7 +118,9 @@ export class RenewalsService {
     }
 
     if (request.status === RenewalStatus.ACTIVATED) {
-      throw new BadRequestException('Activated renewal requests cannot be cancelled');
+      throw new BadRequestException(
+        'Activated renewal requests cannot be cancelled',
+      );
     }
 
     request.status = RenewalStatus.CANCELLED;
@@ -142,12 +149,16 @@ export class RenewalsService {
 
       if (subscription.endDate && subscription.endDate >= now) {
         const endDate = new Date(subscription.endDate);
-        endDate.setDate(endDate.getDate() + request.requestedPlan.durationInDays);
+        endDate.setDate(
+          endDate.getDate() + request.requestedPlan.durationInDays,
+        );
         subscription.endDate = endDate;
       } else {
         subscription.startDate = request.requestedStartDate;
         const endDate = new Date(request.requestedStartDate);
-        endDate.setDate(endDate.getDate() + request.requestedPlan.durationInDays);
+        endDate.setDate(
+          endDate.getDate() + request.requestedPlan.durationInDays,
+        );
         subscription.endDate = endDate;
       }
 
@@ -163,7 +174,8 @@ export class RenewalsService {
         ),
         isActive: true,
       });
-      const savedSubscription = await this.subscriptionsRepo.save(newSubscription);
+      const savedSubscription =
+        await this.subscriptionsRepo.save(newSubscription);
       request.member.subscription = savedSubscription;
       request.member.subscriptionId = savedSubscription.id;
       await this.membersRepo.save(request.member);

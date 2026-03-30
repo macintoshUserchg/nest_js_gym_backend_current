@@ -5,7 +5,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { DietPlanAssignment, AssignmentStatus } from '../entities/diet_plan_assignments.entity';
+import {
+  DietPlanAssignment,
+  AssignmentStatus,
+} from '../entities/diet_plan_assignments.entity';
 import { DietPlan } from '../entities/diet_plans.entity';
 import { Member } from '../entities/members.entity';
 import { User } from '../entities/users.entity';
@@ -33,7 +36,9 @@ export class DietPlanAssignmentsService {
     const isTrainer = userRole === 'TRAINER';
 
     if (!isAdmin && !isTrainer) {
-      throw new ForbiddenException('Only trainers and admins can assign diet plans');
+      throw new ForbiddenException(
+        'Only trainers and admins can assign diet plans',
+      );
     }
 
     // Verify diet plan exists

@@ -33,7 +33,14 @@ export class DietTemplate {
 
   @Column({
     type: 'enum',
-    enum: ['weight_loss', 'muscle_gain', 'maintenance', 'cutting', 'bulking', 'custom'],
+    enum: [
+      'weight_loss',
+      'muscle_gain',
+      'maintenance',
+      'cutting',
+      'bulking',
+      'custom',
+    ],
   })
   goal_type: string;
 

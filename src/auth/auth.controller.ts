@@ -120,9 +120,7 @@ export class AuthController {
     description: 'OTP verified successfully.',
     type: LoginResponseDto,
   })
-  verifyMobileOtp(
-    @Body() body: VerifyMobileOtpDto,
-  ): Promise<LoginResponseDto> {
+  verifyMobileOtp(@Body() body: VerifyMobileOtpDto): Promise<LoginResponseDto> {
     return this.authService.verifyMobileOtp(body.phoneNumber, body.code);
   }
 

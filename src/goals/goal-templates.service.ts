@@ -25,7 +25,9 @@ export class GoalTemplatesService {
     const isTrainer = userRole === 'TRAINER';
 
     if (!isAdmin && !isTrainer) {
-      throw new ForbiddenException('Only trainers and admins can create goal templates');
+      throw new ForbiddenException(
+        'Only trainers and admins can create goal templates',
+      );
     }
 
     const goalTemplateData: any = {
@@ -37,7 +39,10 @@ export class GoalTemplatesService {
     return this.goalTemplateRepository.save(goalTemplate);
   }
 
-  async findAll(user: User, filters?: { tags?: string[]; is_active?: boolean }) {
+  async findAll(
+    user: User,
+    filters?: { tags?: string[]; is_active?: boolean },
+  ) {
     const userRole = user.role?.name;
     const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     const isTrainer = userRole === 'TRAINER';

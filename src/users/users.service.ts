@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../entities/users.entity';
@@ -137,9 +141,13 @@ export class UsersService {
     return this.usersRepo.delete(id);
   }
 
-  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
     const user = await this.findById(userId);
-    
+
     // Get the full user with password hash
     const userWithPassword = await this.usersRepo.findOne({
       where: { userId },
@@ -160,7 +168,10 @@ export class UsersService {
     }
 
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-    await this.usersRepo.update({ userId }, { passwordHash: hashedNewPassword });
+    await this.usersRepo.update(
+      { userId },
+      { passwordHash: hashedNewPassword },
+    );
 
     return { message: 'Password changed successfully' };
   }

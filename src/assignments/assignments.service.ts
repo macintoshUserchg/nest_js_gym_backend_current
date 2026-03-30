@@ -241,7 +241,10 @@ export class AssignmentsService {
 
   async updateTemplateSettings(
     id: string,
-    settings: { auto_apply_templates?: boolean; allow_member_substitutions?: boolean },
+    settings: {
+      auto_apply_templates?: boolean;
+      allow_member_substitutions?: boolean;
+    },
   ) {
     const assignment = await this.findOne(id);
 
@@ -249,7 +252,8 @@ export class AssignmentsService {
       assignment.auto_apply_templates = settings.auto_apply_templates;
     }
     if (settings.allow_member_substitutions !== undefined) {
-      assignment.allow_member_substitutions = settings.allow_member_substitutions;
+      assignment.allow_member_substitutions =
+        settings.allow_member_substitutions;
     }
 
     return this.assignmentsRepo.save(assignment);

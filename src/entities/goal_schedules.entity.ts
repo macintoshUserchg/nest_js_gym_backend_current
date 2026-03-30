@@ -60,7 +60,11 @@ export class GoalSchedule {
   @Column({ type: 'jsonb', nullable: true })
   period_progress?: {
     period_number: number;
-    completed_goals: { goal_id: string; achieved_value: number; completion_date: Date }[];
+    completed_goals: {
+      goal_id: string;
+      achieved_value: number;
+      completion_date: Date;
+    }[];
     member_notes?: string;
     trainer_notes?: string;
     status: 'pending' | 'in_progress' | 'completed' | 'missed';
