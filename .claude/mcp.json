@@ -59,6 +59,11 @@
         "fork_repository",
         "push_files"
       ]
+    },
+    "jcodemunch": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["jcodemunch-mcp"]
     }
   }
 }
