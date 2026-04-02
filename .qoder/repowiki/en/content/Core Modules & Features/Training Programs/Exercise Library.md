@@ -4,6 +4,11 @@
 **Referenced Files in This Document**
 - [exercise_library.entity.ts](file://src/entities/exercise_library.entity.ts)
 - [create-exercise.dto.ts](file://src/exercise-library/dto/create-exercise.dto.ts)
+- [update-exercise.dto.ts](file://src/exercise-library/dto/update-exercise.dto.ts)
+- [filter-exercise.dto.ts](file://src/exercise-library/dto/filter-exercise.dto.ts)
+- [exercise-library.module.ts](file://src/exercise-library/exercise-library.module.ts)
+- [exercise-library.controller.ts](file://src/exercise-library/exercise-library.controller.ts)
+- [exercise-library.service.ts](file://src/exercise-library/exercise-library.service.ts)
 - [workout_templates.entity.ts](file://src/entities/workout_templates.entity.ts)
 - [workout_template_exercises.entity.ts](file://src/entities/workout_template_exercises.entity.ts)
 - [workout_plan_exercises.entity.ts](file://src/entities/workout_plan_exercises.entity.ts)
@@ -11,7 +16,17 @@
 - [workouts.controller.ts](file://src/workouts/workouts.controller.ts)
 - [workouts.service.ts](file://src/workouts/workouts.service.ts)
 - [seed_gym_Fitness_First_Elite.ts](file://src/database/seed_gym_Fitness_First_Elite.ts)
+- [app.module.ts](file://src/app.module.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive CRUD operations documentation for the exercise library module
+- Documented the complete controller implementation with admin-only write permissions
+- Added filtering capabilities documentation covering body_part, exercise_type, difficulty_level, and search functionality
+- Updated architecture overview to reflect the fully implemented module structure
+- Enhanced practical examples with real API endpoints and usage scenarios
+- Added security considerations for admin-only access control
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -19,394 +34,426 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
+6. [API Endpoints and Usage](#api-endpoints-and-usage)
+7. [Security and Access Control](#security-and-access-control)
+8. [Dependency Analysis](#dependency-analysis)
+9. [Performance Considerations](#performance-considerations)
+10. [Troubleshooting Guide](#troubleshooting-guide)
+11. [Conclusion](#conclusion)
 
 ## Introduction
-This document describes the exercise library management system within the gym management backend. It covers the comprehensive exercise database model, metadata fields, validation and standardization, and the integration with workout planning. It also documents workflows for creating exercises, categorizing them by body parts, exercise types, and difficulty, and how these exercises are consumed during workout plan creation. Practical examples illustrate adding new exercises, managing equipment requirements, and ensuring quality and consistency across the exercise library.
+This document describes the fully implemented exercise library management system within the gym management backend. The exercise library module provides comprehensive CRUD operations for managing standardized exercise definitions, complete with filtering capabilities, admin-only write permissions, and seamless integration with workout planning systems. The module includes entity definition, service layer, controller implementation, DTO validation, and proper registration within the application architecture.
 
 ## Project Structure
-The exercise library is centered around a dedicated entity and DTO for validation, and integrates with two workout-related entity families:
-- Exercise library entity: stores canonical exercise definitions with metadata.
-- Workout template and template exercise entities: define reusable workout templates with equipment requirements and exercise specifications.
-- Workout plan and plan exercise entities: represent member-specific workout plans derived from templates or created ad-hoc.
+The exercise library module follows NestJS best practices with a complete implementation including entity, DTOs, service, controller, and module registration:
 
 ```mermaid
 graph TB
-subgraph "Exercise Library"
-EL["ExerciseLibrary<br/>exercise_id, exercise_name,<br/>body_part, exercise_type,<br/>difficulty_level, description,<br/>instructions, benefits, precautions,<br/>video_url, image_url, is_active,<br/>created_at, updated_at"]
+subgraph "Exercise Library Module"
+ELM["ExerciseLibraryModule<br/>Registers ExerciseLibrary entity<br/>Exports service provider"]
+ELC["ExerciseLibraryController<br/>POST /exercise-library<br/>GET /exercise-library<br/>GET /exercise-library/:id<br/>PATCH /exercise-library/:id<br/>DELETE /exercise-library/:id"]
+ELS["ExerciseLibraryService<br/>create(), findAll(), findOne()<br/>update(), remove()"]
 end
-subgraph "Workout Templates"
-WT["WorkoutTemplate<br/>title, description, chart_type,<br/>difficulty_level, plan_type,<br/>duration_days, visibility,<br/>is_shared_gym, is_active,<br/>version, parent_template_id,<br/>usage_count, avg_rating,<br/>tags, notes"]
-WTE["WorkoutTemplateExercise<br/>exercise_name, description,<br/>exercise_type, equipment_required,<br/>sets, reps, weight_kg,<br/>duration_minutes, distance_km,<br/>day_of_week, order_index,<br/>instructions, alternatives,<br/>is_active, member_can_skip"]
+subgraph "Core Entity"
+EL["ExerciseLibrary<br/>exercise_id (UUID)<br/>exercise_name (unique)<br/>body_part, exercise_type,<br/>difficulty_level, is_active,<br/>metadata fields, timestamps"]
 end
-subgraph "Workout Plans"
-WP["WorkoutPlan<br/>member, title, description,<br/>difficulty_level, plan_type,<br/>duration_days, start_date, end_date,<br/>notes, assigned_by_trainer"]
-WPE["WorkoutPlanExercise<br/>exercise_name, description,<br/>exercise_type, sets, reps,<br/>weight_kg, duration_minutes,<br/>distance_km, day_of_week,<br/>instructions, is_active"]
+subgraph "DTO Layer"
+CED["CreateExerciseDto<br/>Validation for creation"]
+UED["UpdateExerciseDto<br/>Partial updates"]
+FED["FilterExerciseDto<br/>Filtering by body_part,<br/>exercise_type, difficulty_level,<br/>search, is_active"]
 end
-EL --> |"Used by"| WTE
-WT --> |"Contains"| WTE
-WP --> |"Contains"| WPE
+subgraph "Integration Points"
+WT["WorkoutTemplateExercise<br/>References exercise_library"]
+WP["WorkoutPlanExercise<br/>Uses exercise metadata"]
+end
+ELM --> ELC
+ELM --> ELS
+ELS --> EL
+ELC --> ELS
+CED --> ELS
+UED --> ELS
+FED --> ELS
+EL --> WT
+EL --> WP
 ```
 
 **Diagram sources**
-- [exercise_library.entity.ts:1-59](file://src/entities/exercise_library.entity.ts#L1-L59)
-- [workout_templates.entity.ts:1-126](file://src/entities/workout_templates.entity.ts#L1-L126)
-- [workout_template_exercises.entity.ts:1-91](file://src/entities/workout_template_exercises.entity.ts#L1-L91)
-- [workout_plan_exercises.entity.ts:1-60](file://src/entities/workout_plan_exercises.entity.ts#L1-L60)
+- [exercise-library.module.ts:1-14](file://src/exercise-library/exercise-library.module.ts#L1-L14)
+- [exercise-library.controller.ts:28-97](file://src/exercise-library/exercise-library.controller.ts#L28-L97)
+- [exercise-library.service.ts:13-102](file://src/exercise-library/exercise-library.service.ts#L13-L102)
+- [exercise_library.entity.ts:9-59](file://src/entities/exercise_library.entity.ts#L9-L59)
+- [create-exercise.dto.ts:4-64](file://src/exercise-library/dto/create-exercise.dto.ts#L4-L64)
+- [update-exercise.dto.ts:1-5](file://src/exercise-library/dto/update-exercise.dto.ts#L1-L5)
+- [filter-exercise.dto.ts:5-41](file://src/exercise-library/dto/filter-exercise.dto.ts#L5-L41)
 
 **Section sources**
-- [exercise_library.entity.ts:1-59](file://src/entities/exercise_library.entity.ts#L1-L59)
-- [workout_templates.entity.ts:1-126](file://src/entities/workout_templates.entity.ts#L1-L126)
-- [workout_template_exercises.entity.ts:1-91](file://src/entities/workout_template_exercises.entity.ts#L1-L91)
-- [workout_plan_exercises.entity.ts:1-60](file://src/entities/workout_plan_exercises.entity.ts#L1-L60)
+- [exercise-library.module.ts:1-14](file://src/exercise-library/exercise-library.module.ts#L1-L14)
+- [exercise-library.controller.ts:28-97](file://src/exercise-library/exercise-library.controller.ts#L28-L97)
+- [exercise-library.service.ts:13-102](file://src/exercise-library/exercise-library.service.ts#L13-L102)
+- [exercise_library.entity.ts:9-59](file://src/entities/exercise_library.entity.ts#L9-L59)
 
 ## Core Components
-- ExerciseLibrary entity: central repository for standardized exercises with fields for name, body part, exercise type, difficulty, and rich metadata (description, instructions, benefits, precautions, media URLs). Includes activation flag and timestamps.
-- CreateExerciseDto: validates exercise creation requests with strict enum constraints for body_part, exercise_type, and difficulty_level, and optional text fields for descriptions and media.
-- WorkoutTemplate and WorkoutTemplateExercise: define reusable workout templates with equipment requirements and exercise specifications suitable for recommendation and scheduling.
-- WorkoutPlan and WorkoutPlanExercise: represent member-specific plans with exercise details and scheduling.
 
-Key capabilities:
-- Standardized exercise metadata for accurate search and filtering.
-- Equipment requirement modeling via enum in template exercises.
-- Validation via DTOs and service-level checks for permissions and existence.
+### ExerciseLibrary Entity
+The central repository for standardized exercises with comprehensive metadata:
+- **Identification**: UUID primary key (`exercise_id`)
+- **Unique Identifier**: String field (`exercise_name`) with uniqueness constraint
+- **Categorization**: Enum fields for `body_part`, `exercise_type`, and `difficulty_level`
+- **Rich Metadata**: Description, instructions, benefits, precautions (nullable text fields)
+- **Media Assets**: Video and image URL fields for demonstrations
+- **Lifecycle Management**: Active status flag and timestamp tracking
+
+### DTO Validation Layer
+Comprehensive validation ensures data integrity:
+- **CreateExerciseDto**: Validates exercise creation with enum constraints
+- **UpdateExerciseDto**: Extends create DTO for partial updates
+- **FilterExerciseDto**: Provides flexible filtering options with transformation
+
+### Service Implementation
+Complete CRUD operations with business logic:
+- **Create**: Duplicate detection by exercise name
+- **Read**: Individual retrieval and paginated listing with filtering
+- **Update**: Name conflict detection and partial updates
+- **Delete**: Cascade removal with error handling
 
 **Section sources**
-- [exercise_library.entity.ts:1-59](file://src/entities/exercise_library.entity.ts#L1-L59)
-- [create-exercise.dto.ts:1-64](file://src/exercise-library/dto/create-exercise.dto.ts#L1-L64)
-- [workout_templates.entity.ts:1-126](file://src/entities/workout_templates.entity.ts#L1-L126)
-- [workout_template_exercises.entity.ts:1-91](file://src/entities/workout_template_exercises.entity.ts#L1-L91)
-- [workout_plan_exercises.entity.ts:1-60](file://src/entities/workout_plan_exercises.entity.ts#L1-L60)
+- [exercise_library.entity.ts:9-59](file://src/entities/exercise_library.entity.ts#L9-L59)
+- [create-exercise.dto.ts:4-64](file://src/exercise-library/dto/create-exercise.dto.ts#L4-L64)
+- [update-exercise.dto.ts:1-5](file://src/exercise-library/dto/update-exercise.dto.ts#L1-L5)
+- [filter-exercise.dto.ts:5-41](file://src/exercise-library/dto/filter-exercise.dto.ts#L5-L41)
+- [exercise-library.service.ts:20-100](file://src/exercise-library/exercise-library.service.ts#L20-L100)
 
 ## Architecture Overview
-The system separates canonical exercise definitions from plan-level exercise instances. Exercises in the library inform template and plan exercises, enabling consistent categorization, equipment tracking, and metadata reuse.
+The exercise library module follows a clean architecture pattern with clear separation of concerns:
 
 ```mermaid
 classDiagram
+class ExerciseLibraryModule {
++imports : TypeOrmModule.forFeature([ExerciseLibrary])
++controllers : ExerciseLibraryController
++providers : ExerciseLibraryService
++exports : ExerciseLibraryService
+}
+class ExerciseLibraryController {
++create(createExerciseDto)
++findAll(filterDto)
++findOne(id)
++update(id, updateExerciseDto)
++remove(id)
++JWT authentication
++Role authorization
+}
+class ExerciseLibraryService {
++create(createExerciseDto)
++findAll(filterDto)
++findOne(exercise_id)
++update(exercise_id, updateExerciseDto)
++remove(exercise_id)
++duplicate detection
++validation logic
+}
 class ExerciseLibrary {
 +exercise_id : string
 +exercise_name : string
-+body_part : string
-+exercise_type : string
-+difficulty_level : string
-+description : string
-+instructions : string
-+benefits : string
-+precautions : string
-+video_url : string
-+image_url : string
++body_part : enum
++exercise_type : enum
++difficulty_level : enum
 +is_active : boolean
-+created_at : Date
-+updated_at : Date
++timestamps
 }
-class WorkoutTemplate {
-+template_id : string
-+title : string
-+description : string
-+chart_type : string
-+difficulty_level : string
-+plan_type : string
-+duration_days : number
-+visibility : string
-+is_shared_gym : boolean
-+is_active : boolean
-+version : number
-+parent_template_id : string
-+usage_count : number
-+avg_rating : number
-+tags : string[]
-+notes : string
-}
-class WorkoutTemplateExercise {
-+exercise_id : string
-+exercise_name : string
-+description : string
-+exercise_type : string
-+equipment_required : string
-+sets : number
-+reps : number
-+weight_kg : number
-+duration_minutes : number
-+distance_km : number
-+day_of_week : number
-+order_index : number
-+instructions : string
-+alternatives : string
-+is_active : boolean
-+member_can_skip : boolean
-}
-class WorkoutPlan {
-+plan_id : string
-+member_id : number
-+title : string
-+description : string
-+difficulty_level : string
-+plan_type : string
-+duration_days : number
-+start_date : Date
-+end_date : Date
-+notes : string
-}
-class WorkoutPlanExercise {
-+exercise_id : string
-+exercise_name : string
-+description : string
-+exercise_type : string
-+sets : number
-+reps : number
-+weight_kg : number
-+duration_minutes : number
-+distance_km : number
-+day_of_week : number
-+instructions : string
-+is_active : boolean
-}
-WorkoutTemplate "1" --> "*" WorkoutTemplateExercise : "has"
-WorkoutPlan "1" --> "*" WorkoutPlanExercise : "contains"
+ExerciseLibraryModule --> ExerciseLibraryController
+ExerciseLibraryModule --> ExerciseLibraryService
+ExerciseLibraryController --> ExerciseLibraryService
+ExerciseLibraryService --> ExerciseLibrary
 ```
 
 **Diagram sources**
-- [exercise_library.entity.ts:1-59](file://src/entities/exercise_library.entity.ts#L1-L59)
-- [workout_templates.entity.ts:1-126](file://src/entities/workout_templates.entity.ts#L1-L126)
-- [workout_template_exercises.entity.ts:1-91](file://src/entities/workout_template_exercises.entity.ts#L1-L91)
-- [workout_plan_exercises.entity.ts:1-60](file://src/entities/workout_plan_exercises.entity.ts#L1-L60)
+- [exercise-library.module.ts:7-12](file://src/exercise-library/exercise-library.module.ts#L7-L12)
+- [exercise-library.controller.ts:30-33](file://src/exercise-library/exercise-library.controller.ts#L30-L33)
+- [exercise-library.service.ts:14-18](file://src/exercise-library/exercise-library.service.ts#L14-L18)
+- [exercise_library.entity.ts:10-58](file://src/entities/exercise_library.entity.ts#L10-L58)
 
 ## Detailed Component Analysis
 
-### Exercise Library Entity and Metadata Model
-The ExerciseLibrary entity defines the canonical exercise record with:
-- Identification and naming
-- Categorization: body_part (upper_body, lower_body, core, cardio, full_body), exercise_type (strength, cardio, flexibility, endurance, general), difficulty_level (beginner, intermediate, advanced)
-- Rich metadata: description, instructions, benefits, precautions
-- Media assets: video_url, image_url
-- Lifecycle: is_active flag and timestamps
+### Complete CRUD Implementation
+The exercise library module provides full CRUD functionality with proper error handling:
 
-Practical implications:
-- Enables consistent search and filtering across the platform.
-- Supports content-rich exercise cards and recommendations.
-- Facilitates quality assurance through standardized fields.
+**Create Operation**
+- Validates unique exercise name constraint
+- Throws conflict exception for duplicates
+- Returns created exercise with metadata
 
-**Section sources**
-- [exercise_library.entity.ts:1-59](file://src/entities/exercise_library.entity.ts#L1-L59)
+**Read Operations**
+- Individual retrieval by UUID with not-found handling
+- Bulk listing with comprehensive filtering
+- Pagination support through TypeORM's findAndCount
 
-### Exercise Creation DTO and Validation
-The CreateExerciseDto enforces:
-- Non-empty exercise_name
-- Enum constraints for body_part, exercise_type, difficulty_level
-- Optional text fields for description, instructions, benefits, precautions, video_url, image_url
+**Update Operation**
+- Partial updates with validation
+- Name conflict detection during updates
+- Atomic transaction handling
 
-Validation ensures data integrity and prevents malformed exercise entries.
+**Delete Operation**
+- Cascade removal with proper cleanup
+- Error handling for non-existent records
 
 **Section sources**
-- [create-exercise.dto.ts:1-64](file://src/exercise-library/dto/create-exercise.dto.ts#L1-L64)
+- [exercise-library.service.ts:20-100](file://src/exercise-library/exercise-library.service.ts#L20-L100)
+- [exercise-library.controller.ts:35-95](file://src/exercise-library/exercise-library.controller.ts#L35-L95)
 
-### Equipment Requirements in Templates
-WorkoutTemplateExercise introduces equipment_required via an enum (BARBELL, DUMBBELL, CABLE, MACHINE, BODYWEIGHT, KETTLEBELL, MEDICINE_BALL, RESISTANCE_BAND, OTHER). This enables:
-- Equipment-aware exercise selection
-- Filtering by available equipment
-- Recommendation algorithms that match exercises to gym inventory
+### Comprehensive Filtering System
+The module supports sophisticated filtering through FilterExerciseDto:
+
+**Category Filters**
+- `body_part`: upper_body, lower_body, core, cardio, full_body
+- `exercise_type`: strength, cardio, flexibility, endurance, general  
+- `difficulty_level`: beginner, intermediate, advanced
+
+**Search and Status**
+- `search`: Text-based exercise name filtering using ILike
+- `is_active`: Boolean filtering for active/inactive exercises
+
+**Implementation Details**
+- Dynamic WHERE clause construction
+- Case-insensitive search patterns
+- Optional parameter handling
+- Default ordering by exercise name
 
 **Section sources**
-- [workout_template_exercises.entity.ts:11-21](file://src/entities/workout_template_exercises.entity.ts#L11-L21)
-- [workout_template_exercises.entity.ts:45-50](file://src/entities/workout_template_exercises.entity.ts#L45-L50)
+- [filter-exercise.dto.ts:5-41](file://src/exercise-library/dto/filter-exercise.dto.ts#L5-L41)
+- [exercise-library.service.ts:34-61](file://src/exercise-library/exercise-library.service.ts#L34-L61)
 
-### Workout Plan Creation and Exercise Selection
-Workout creation is handled by the WorkoutsController and WorkoutsService:
-- Authorization: Only ADMIN or TRAINER users can create plans; TRAINERs must be assigned to the member or have explicit permissions.
-- Member and trainer validation: Ensures member and trainer records exist.
-- Plan creation: Builds WorkoutPlan with metadata and saves.
-- Exercise ingestion: Converts CreateWorkoutPlanExerciseDto entries into WorkoutPlanExercise records and persists them.
+### Admin-Only Write Permissions
+Security is enforced at multiple layers:
 
-```mermaid
-sequenceDiagram
-participant Client as "Client"
-participant Controller as "WorkoutsController"
-participant Service as "WorkoutsService"
-participant RepoWP as "WorkoutPlan Repository"
-participant RepoWPE as "WorkoutPlanExercise Repository"
-participant RepoMember as "Member Repository"
-participant RepoTrainer as "Trainer Repository"
-participant RepoUser as "User Repository"
-Client->>Controller : POST /workouts
-Controller->>Service : create(dto, userId)
-Service->>RepoMember : findOne(memberId)
-Member-->>Service : Member
-Service->>RepoUser : findOne(userId)
-User-->>Service : User
-Service->>Service : validate role (ADMIN/TRAINER)
-alt TRAINER
-Service->>RepoTrainer : findOne(trainerId?)
-Trainer-->>Service : Trainer
-end
-Service->>RepoWP : create(workoutPlanData)
-RepoWP-->>Service : Saved WorkoutPlan
-Service->>RepoWPE : create(exercises)
-RepoWPE-->>Service : Saved WorkoutPlanExercises
-Service-->>Controller : WorkoutPlan with relations
-Controller-->>Client : Created plan
+**Authentication**
+- JWT authentication required for all write operations
+- Public read access for authenticated users
+
+**Authorization**
+- SUPERADMIN role for all operations
+- ADMIN role for read operations
+- RolesGuard enforces permission checking
+
+**Implementation**
+- Decorators on controller methods
+- Role validation middleware
+- Proper HTTP status codes for unauthorized access
+
+**Section sources**
+- [exercise-library.controller.ts:36-88](file://src/exercise-library/exercise-library.controller.ts#L36-L88)
+- [app.module.ts:65](file://src/app.module.ts#L65)
+
+## API Endpoints and Usage
+
+### REST API Endpoints
+The exercise library exposes the following endpoints:
+
+**Create Exercise**
+- **Method**: POST
+- **Endpoint**: `/exercise-library`
+- **Authentication**: JWT required
+- **Authorization**: SUPERADMIN or ADMIN
+- **Response**: 201 Created with exercise data
+
+**List Exercises**
+- **Method**: GET  
+- **Endpoint**: `/exercise-library`
+- **Authentication**: JWT required
+- **Authorization**: Any authenticated user
+- **Query Parameters**: body_part, exercise_type, difficulty_level, search, is_active
+- **Response**: 200 OK with pagination data
+
+**Get Exercise**
+- **Method**: GET
+- **Endpoint**: `/exercise-library/:id`
+- **Authentication**: JWT required
+- **Authorization**: Any authenticated user
+- **Response**: 200 OK with exercise data
+
+**Update Exercise**
+- **Method**: PATCH
+- **Endpoint**: `/exercise-library/:id`
+- **Authentication**: JWT required
+- **Authorization**: SUPERADMIN or ADMIN
+- **Response**: 200 OK with updated exercise data
+
+**Delete Exercise**
+- **Method**: DELETE
+- **Endpoint**: `/exercise-library/:id`
+- **Authentication**: JWT required
+- **Authorization**: SUPERADMIN or ADMIN
+- **Response**: 200 OK with deletion confirmation
+
+### Request and Response Examples
+
+**Create Exercise Request**
+```json
+{
+  "exercise_name": "Bench Press",
+  "body_part": "upper_body",
+  "exercise_type": "strength",
+  "difficulty_level": "intermediate",
+  "description": "Barbell chest press exercise",
+  "instructions": "Lie on flat bench, grip barbell...",
+  "benefits": "Strengthens chest, shoulders, triceps",
+  "precautions": "Keep feet flat on ground",
+  "video_url": "https://example.com/video.mp4",
+  "image_url": "https://example.com/image.jpg"
+}
 ```
 
-**Diagram sources**
-- [workouts.controller.ts:34-460](file://src/workouts/workouts.controller.ts#L34-L460)
-- [workouts.service.ts:31-125](file://src/workouts/workouts.service.ts#L31-L125)
+**Filter Exercise Response**
+```json
+{
+  "data": [
+    {
+      "exercise_id": "uuid-here",
+      "exercise_name": "Bench Press",
+      "body_part": "upper_body",
+      "exercise_type": "strength", 
+      "difficulty_level": "intermediate",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "total": 1
+}
+```
 
 **Section sources**
-- [workouts.controller.ts:34-460](file://src/workouts/workouts.controller.ts#L34-L460)
-- [workouts.service.ts:31-125](file://src/workouts/workouts.service.ts#L31-L125)
-- [create-workout-plan.dto.ts:14-144](file://src/workouts/dto/create-workout-plan.dto.ts#L14-L144)
+- [exercise-library.controller.ts:35-95](file://src/exercise-library/exercise-library.controller.ts#L35-L95)
+- [exercise-library.service.ts:34-61](file://src/exercise-library/exercise-library.service.ts#L34-L61)
 
-### Exercise Search and Filtering
-While a dedicated exercise library controller is not present in the analyzed files, the ExerciseLibrary entity supports robust filtering via:
-- Enum filters: body_part, exercise_type, difficulty_level
-- Text search: exercise_name, description, benefits, precautions
-- Status filter: is_active
+## Security and Access Control
 
-Recommendations:
-- Implement a dedicated ExerciseLibraryController with endpoints supporting query parameters for filtering and pagination.
-- Add index coverage for frequent filters (e.g., body_part, exercise_type, difficulty_level, is_active).
+### Authentication Requirements
+All exercise library endpoints require JWT authentication:
+- **Read Operations**: Any authenticated user
+- **Write Operations**: Requires valid JWT token
+- **Token Validation**: Automatic JWT guard enforcement
 
-[No sources needed since this section provides general guidance]
+### Role-Based Authorization
+Access control is enforced through role-based permissions:
 
-### Exercise Validation and Quality Assurance
-Quality measures observed:
-- DTO validation for exercise creation
-- Service-level checks for member/trainer existence and role-based permissions
-- Enum constraints prevent invalid categorical data
+**Super Admin Privileges**
+- Full CRUD access to all exercises
+- Can bypass most restrictions
+- Global administrative capabilities
 
-Recommendations:
-- Add duplicate detection by normalized exercise_name and category combinations.
-- Enforce uniqueness constraints at the database level for canonical exercise identifiers.
-- Implement pre-save hooks to normalize text fields and sanitize URLs.
+**Admin Privileges**  
+- Read access to all exercises
+- Write access to exercise management
+- Limited to administrative functions
 
-**Section sources**
-- [create-exercise.dto.ts:1-64](file://src/exercise-library/dto/create-exercise.dto.ts#L1-L64)
-- [workouts.service.ts:31-72](file://src/workouts/workouts.service.ts#L31-L72)
+**Trainer/Member Access**
+- Read-only access to exercises
+- Cannot modify exercise library
+- Used for workout plan creation
 
-### Exercise Standardization and Lifecycle Management
-Standardization:
-- Centralized ExerciseLibrary entity with strict enums for body_part, exercise_type, difficulty_level.
-- Rich metadata fields support consistent presentation and recommendations.
-
-Lifecycle:
-- is_active flag controls visibility and inclusion in recommendations.
-- created_at and updated_at enable audit trails and sorting.
-
-Recommendations:
-- Add soft-delete patterns and archived status for historical exercises.
-- Implement versioning for exercise definitions to track updates.
+### Security Features
+- **Duplicate Prevention**: Automatic detection of exercise names
+- **Input Validation**: Strict DTO validation for all inputs
+- **Error Handling**: Proper HTTP status codes for different failure modes
+- **Audit Trail**: Timestamps for all modifications
 
 **Section sources**
-- [exercise_library.entity.ts:50-57](file://src/entities/exercise_library.entity.ts#L50-L57)
-
-### Practical Examples
-
-#### Example: Adding a New Exercise to the Library
-Steps:
-- Validate exercise metadata using CreateExerciseDto.
-- Persist to ExerciseLibrary with standardized fields.
-- Mark as active and publish.
-
-Outcome:
-- Exercise appears in search and can be referenced by templates and plans.
-
-**Section sources**
-- [create-exercise.dto.ts:1-64](file://src/exercise-library/dto/create-exercise.dto.ts#L1-L64)
-- [exercise_library.entity.ts:1-59](file://src/entities/exercise_library.entity.ts#L1-L59)
-
-#### Example: Categorizing Exercises by Difficulty and Equipment
-Steps:
-- Choose difficulty_level from predefined enum.
-- Select equipment_required for template exercises to reflect gym inventory.
-- Assign body_part and exercise_type for grouping.
-
-Outcome:
-- Users can filter by difficulty and equipment availability.
-
-**Section sources**
-- [workout_template_exercises.entity.ts:11-21](file://src/entities/workout_template_exercises.entity.ts#L11-L21)
-- [workout_template_exercises.entity.ts:45-50](file://src/entities/workout_template_exercises.entity.ts#L45-L50)
-- [exercise_library.entity.ts:17-30](file://src/entities/exercise_library.entity.ts#L17-L30)
-
-#### Example: Creating Exercise Videos and Demonstrations
-Steps:
-- Populate video_url and image_url in ExerciseLibrary.
-- Reference media in workout templates and plans for instructional guidance.
-
-Outcome:
-- Enhanced learning experience and safer exercise execution.
-
-**Section sources**
-- [exercise_library.entity.ts:44-48](file://src/entities/exercise_library.entity.ts#L44-L48)
-
-#### Example: Maintaining Exercise Accuracy
-Steps:
-- Use benefits and precautions fields to communicate safety and outcomes.
-- Keep descriptions and instructions up to date.
-- Use is_active to temporarily hide outdated entries.
-
-Outcome:
-- Reliable, evidence-based exercise guidance.
-
-**Section sources**
-- [exercise_library.entity.ts:32-42](file://src/entities/exercise_library.entity.ts#L32-L42)
-
-#### Example: Using the Library in Workout Planning
-Steps:
-- Seed or select exercises from ExerciseLibrary for templates.
-- Map equipment_required to available gym assets.
-- Build WorkoutPlanExercise entries with sets/reps or time/distance parameters.
-
-Outcome:
-- Structured, equipment-aware workout plans tailored to members.
-
-**Section sources**
-- [seed_gym_Fitness_First_Elite.ts:1772-1812](file://src/database/seed_gym_Fitness_First_Elite.ts#L1772-L1812)
-- [workout_template_exercises.entity.ts:45-50](file://src/entities/workout_template_exercises.entity.ts#L45-L50)
-- [workout_plan_exercises.entity.ts:27-46](file://src/entities/workout_plan_exercises.entity.ts#L27-L46)
+- [exercise-library.controller.ts:36-88](file://src/exercise-library/exercise-library.controller.ts#L36-L88)
+- [exercise-library.service.ts:20-32](file://src/exercise-library/exercise-library.service.ts#L20-L32)
 
 ## Dependency Analysis
-The system exhibits clear separation of concerns:
-- ExerciseLibrary is independent and can be referenced by templates and plans.
-- WorkoutTemplateExercise extends exercise definitions with equipment and scheduling metadata.
-- WorkoutPlanExercise captures member-specific exercise details.
+The exercise library module integrates seamlessly with the broader application architecture:
 
 ```mermaid
 graph LR
-EL["ExerciseLibrary"] --> WTE["WorkoutTemplateExercise"]
-WT["WorkoutTemplate"] --> WTE
-WP["WorkoutPlan"] --> WPE["WorkoutPlanExercise"]
+subgraph "Application Layer"
+AM["AppModule<br/>Registers ExerciseLibraryModule"]
+EM["ExerciseLibraryModule<br/>Imports TypeOrmModule.forFeature"]
+end
+subgraph "Domain Layer"
+ES["ExerciseLibraryService<br/>Business Logic"]
+EC["ExerciseLibraryController<br/>HTTP Interface"]
+end
+subgraph "Infrastructure Layer"
+ER["ExerciseLibrary Repository<br/>TypeORM"]
+EE["ExerciseLibrary Entity<br/>Database Schema"]
+end
+subgraph "External Dependencies"
+JWT["JWT Authentication"]
+ROLE["Role Guard"]
+TYPEORM["TypeORM"]
 ```
 
 **Diagram sources**
-- [exercise_library.entity.ts:1-59](file://src/entities/exercise_library.entity.ts#L1-L59)
-- [workout_templates.entity.ts:1-126](file://src/entities/workout_templates.entity.ts#L1-L126)
-- [workout_template_exercises.entity.ts:1-91](file://src/entities/workout_template_exercises.entity.ts#L1-L91)
-- [workout_plan_exercises.entity.ts:1-60](file://src/entities/workout_plan_exercises.entity.ts#L1-L60)
+- [app.module.ts:65](file://src/app.module.ts#L65)
+- [exercise-library.module.ts:7-12](file://src/exercise-library/exercise-library.module.ts#L7-L12)
+- [exercise-library.controller.ts:23-26](file://src/exercise-library/exercise-library.controller.ts#L23-L26)
+- [exercise-library.service.ts:15-18](file://src/exercise-library/exercise-library.service.ts#L15-L18)
 
 **Section sources**
-- [workout_templates.entity.ts:1-126](file://src/entities/workout_templates.entity.ts#L1-L126)
-- [workout_template_exercises.entity.ts:1-91](file://src/entities/workout_template_exercises.entity.ts#L1-L91)
-- [workout_plan_exercises.entity.ts:1-60](file://src/entities/workout_plan_exercises.entity.ts#L1-L60)
+- [app.module.ts:65](file://src/app.module.ts#L65)
+- [exercise-library.module.ts:7-12](file://src/exercise-library/exercise-library.module.ts#L7-L12)
+- [exercise-library.controller.ts:23-26](file://src/exercise-library/exercise-library.controller.ts#L23-L26)
 
 ## Performance Considerations
-- Index frequently queried columns: body_part, exercise_type, difficulty_level, is_active on ExerciseLibrary.
-- Paginate exercise listings and limit returned fields for recommendation endpoints.
-- Denormalize minimal metadata in templates/plans to reduce joins during rendering.
+Optimization strategies for the exercise library module:
 
-[No sources needed since this section provides general guidance]
+### Database Optimization
+- **Index Strategy**: Create indexes on frequently filtered columns:
+  - `exercise_name` (for search)
+  - `body_part`, `exercise_type`, `difficulty_level` (for category filtering)
+  - `is_active` (for status filtering)
+- **Pagination**: Use TypeORM's findAndCount for efficient pagination
+- **Selectivity**: Limit returned fields in filtered queries
+
+### Caching Strategy
+- **Read Caching**: Cache popular exercises for read-heavy workloads
+- **Filter Caching**: Cache common filter combinations
+- **Metadata Caching**: Cache enum values and validation schemas
+
+### API Optimization
+- **Response Size**: Implement field selection for bulk operations
+- **Batch Processing**: Support batch operations for bulk updates
+- **Compression**: Enable response compression for large datasets
 
 ## Troubleshooting Guide
-Common issues and resolutions:
-- Unauthorized access when creating workout plans: Verify user role is ADMIN or TRAINER and that trainer assignments are correct.
-- Missing member or trainer records: Ensure IDs exist before plan creation.
-- Invalid exercise type or enum values: Validate DTOs and enum constraints.
+
+### Common Issues and Solutions
+
+**Exercise Creation Failures**
+- **Duplicate Name Error**: Ensure unique exercise names across categories
+- **Validation Errors**: Check DTO constraints for enum values
+- **Database Constraints**: Verify unique index on exercise_name
+
+**Filtering Problems**
+- **Empty Results**: Verify filter parameters match existing data
+- **Case Sensitivity**: Search uses case-insensitive matching
+- **Permission Denied**: Ensure proper authentication and authorization
+
+**API Access Issues**
+- **401 Unauthorized**: Verify JWT token validity and expiration
+- **403 Forbidden**: Check user role permissions
+- **404 Not Found**: Verify exercise ID format and existence
+
+**Performance Issues**
+- **Slow Queries**: Add appropriate database indexes
+- **Large Responses**: Implement pagination and field limiting
+- **Memory Usage**: Optimize bulk operations with streaming
 
 **Section sources**
-- [workouts.service.ts:31-72](file://src/workouts/workouts.service.ts#L31-L72)
-- [workouts.service.ts:144-196](file://src/workouts/workouts.service.ts#L144-L196)
+- [exercise-library.service.ts:20-32](file://src/exercise-library/exercise-library.service.ts#L20-L32)
+- [exercise-library.service.ts:63-71](file://src/exercise-library/exercise-library.service.ts#L63-L71)
+- [exercise-library.controller.ts:41-44](file://src/exercise-library/exercise-library.controller.ts#L41-L44)
 
 ## Conclusion
-The exercise library provides a robust foundation for standardized exercise definitions, enriched metadata, and integration with workout templates and plans. By leveraging enum constraints, rich metadata fields, and equipment-aware template exercises, the system supports accurate search, filtering, and recommendation. Strengthening duplicate detection, normalization, and lifecycle management will further improve data quality and maintainability.
+The exercise library module represents a comprehensive solution for managing standardized exercise definitions within the gym management system. With complete CRUD operations, sophisticated filtering capabilities, admin-only write permissions, and seamless integration with workout planning systems, the module provides a robust foundation for exercise management.
+
+Key achievements include:
+- **Complete Implementation**: Full CRUD operations with proper error handling
+- **Advanced Filtering**: Multi-dimensional filtering by category, difficulty, and search
+- **Security**: Role-based access control with JWT authentication
+- **Integration**: Seamless connection to workout templates and plans
+- **Standards Compliance**: Following NestJS and TypeORM best practices
+
+The module's architecture supports future enhancements such as exercise versioning, duplicate detection improvements, and advanced recommendation algorithms. Its modular design ensures maintainability and scalability as the application grows.
