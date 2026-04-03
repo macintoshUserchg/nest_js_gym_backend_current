@@ -1,5 +1,4 @@
-import {
-  IsArray,
+import { MaxLength, IsArray,
   IsDateString,
   IsEnum,
   IsNotEmpty,
@@ -7,14 +6,14 @@ import {
   IsOptional,
   IsString,
   IsInt,
-  Min,
-} from 'class-validator';
+  Min,} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateWorkoutPlanExerciseDto {
   @ApiProperty({ description: 'Exercise name', example: 'Bench Press' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   exercise_name: string;
 
   @ApiPropertyOptional({ description: 'Exercise description' })
@@ -83,6 +82,7 @@ export class CreateWorkoutPlanDto {
   @ApiProperty({ description: 'Plan title', example: 'Beginner Strength Plan' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   title: string;
 
   @ApiPropertyOptional({ description: 'Plan description' })

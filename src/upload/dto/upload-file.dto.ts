@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsOptional } from 'class-validator';
+import { MaxLength, IsString, IsEnum, IsOptional} from 'class-validator';
 
 export enum UploadCategory {
   AVATAR = 'avatar',
@@ -14,5 +14,6 @@ export class UploadFileDto {
 
 export class UploadCategoryParamDto {
   @IsString()
+  @MaxLength(255)
   category: string;
 }

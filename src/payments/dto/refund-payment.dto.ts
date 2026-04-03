@@ -1,10 +1,8 @@
-import {
-  IsNotEmpty,
+import { MaxLength, IsNotEmpty,
   IsNumber,
   IsEnum,
   IsOptional,
-  IsString,
-} from 'class-validator';
+  IsString,} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RefundPaymentDto {
@@ -28,6 +26,7 @@ export class RefundPaymentDto {
   })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(500)
   reason: string;
 
   @ApiPropertyOptional({ description: 'Additional notes' })

@@ -1,4 +1,4 @@
-import { IsNumber, IsOptional, IsString, IsBoolean } from 'class-validator';
+import { MaxLength, IsNumber, IsOptional, IsString, IsBoolean} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateGoalDto {
@@ -22,6 +22,7 @@ export class CreateGoalDto {
     example: 'Weight Loss',
   })
   @IsString()
+  @MaxLength(100)
   goal_type: string;
 
   @ApiPropertyOptional({

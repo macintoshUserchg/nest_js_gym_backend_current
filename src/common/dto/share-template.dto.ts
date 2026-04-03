@@ -1,12 +1,10 @@
-import {
-  IsString,
+import { MaxLength, IsString,
   IsNotEmpty,
   IsOptional,
   IsInt,
   IsEnum,
   IsUUID,
-  IsDateString,
-} from 'class-validator';
+  IsDateString,} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ShareTemplateDto {
@@ -37,6 +35,7 @@ export class AcceptSharedTemplateDto {
   @ApiProperty({ description: 'Share ID to accept' })
   @IsUUID()
   @IsNotEmpty()
+  @MaxLength(255)
   shareId: string;
 }
 

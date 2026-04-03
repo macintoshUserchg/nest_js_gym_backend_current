@@ -1,5 +1,4 @@
-import {
-  IsString,
+import { MaxLength, IsString,
   IsNotEmpty,
   IsEnum,
   IsOptional,
@@ -8,8 +7,7 @@ import {
   Min,
   IsArray,
   IsUUID,
-  IsDateString,
-} from 'class-validator';
+  IsDateString,} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateDietAssignmentDto {
@@ -58,11 +56,13 @@ export class DietSubstitutionDto {
   @ApiProperty({ description: 'Original meal name' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   original_meal: string;
 
   @ApiProperty({ description: 'Substituted meal name' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   substituted_meal: string;
 
   @ApiPropertyOptional({ description: 'Reason for substitution' })

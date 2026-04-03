@@ -77,3 +77,6 @@ logs/security/
 
 # Additional environment files
 .env.*.local
+
+# jCodeMunch file watcher manifest
+.jcodemunch-changes.json

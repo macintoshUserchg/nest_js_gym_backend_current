@@ -1,10 +1,8 @@
-import {
-  IsNumber,
+import { MaxLength, IsNumber,
   IsOptional,
   IsString,
   IsDateString,
-  IsInt,
-} from 'class-validator';
+  IsInt,} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateWorkoutLogDto {
@@ -28,6 +26,7 @@ export class CreateWorkoutLogDto {
     example: 'Bench Press',
   })
   @IsString()
+  @MaxLength(100)
   exercise_name: string;
 
   @ApiPropertyOptional({
@@ -75,5 +74,6 @@ export class CreateWorkoutLogDto {
     example: '2024-01-15',
   })
   @IsDateString()
+  @MaxLength(255)
   date: string;
 }

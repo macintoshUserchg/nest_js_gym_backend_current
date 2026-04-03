@@ -2,9 +2,20 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common/pipes/validation.pipe';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SanitizeInterceptor } from './common/interceptors/sanitize.interceptor';
+import helmet from 'helmet';
+import * as express from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Security headers
+  app.use(helmet());
+
+  // Body size limits
+  app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
   const corsOrigins = (process.env.CORS_ORIGINS || '')
     .split(',')
     .map((origin) => origin.trim())
@@ -22,8 +33,10 @@ async function bootstrap() {
       whitelist: true,
       transform: true,
       forbidNonWhitelisted: true,
+      disableErrorMessages: process.env.NODE_ENV === 'production',
     }),
   );
+  app.useGlobalInterceptors(new SanitizeInterceptor());
   // Swagger doc builder
   const config = new DocumentBuilder()
     .setTitle('Gym Management System')

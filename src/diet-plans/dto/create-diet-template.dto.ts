@@ -1,5 +1,4 @@
-import {
-  IsString,
+import { MaxLength, IsString,
   IsNotEmpty,
   IsEnum,
   IsOptional,
@@ -9,8 +8,7 @@ import {
   IsArray,
   ValidateNested,
   IsUUID,
-  IsNumber,
-} from 'class-validator';
+  IsNumber,} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -38,6 +36,7 @@ export class CreateDietTemplateMealDto {
   @ApiProperty({ example: 'Oatmeal with Fruits' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   meal_name: string;
 
   @ApiPropertyOptional()
@@ -107,6 +106,7 @@ export class CreateDietTemplateDto {
   @ApiProperty({ example: 'Weight Loss Diet Template' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   title: string;
 
   @ApiPropertyOptional()
@@ -254,6 +254,7 @@ export class CopyDietTemplateDto {
   @ApiProperty({ example: 'My Copied Diet Template' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   new_title: string;
 
   @ApiPropertyOptional()
@@ -273,11 +274,13 @@ export class SubstituteMealDto {
   @ApiProperty({ description: 'Original meal name' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   original_meal: string;
 
   @ApiProperty({ description: 'Substituted meal name' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   substituted_meal: string;
 
   @ApiPropertyOptional({ description: 'Reason for substitution' })

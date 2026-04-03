@@ -1,17 +1,16 @@
-import {
-  IsNotEmpty,
+import { MaxLength, IsNotEmpty,
   IsString,
   IsInt,
   IsOptional,
   Min,
-  IsUUID,
-} from 'class-validator';
+  IsUUID,} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateMembershipPlanDto {
   @ApiProperty({ description: 'Plan name', example: 'Premium Monthly' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   name: string;
 
   @ApiProperty({ description: 'Plan price in cents', example: 4999 })

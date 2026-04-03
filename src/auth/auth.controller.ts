@@ -13,17 +13,21 @@ import {
   ApiBody,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginUserDto } from './dto/login-user.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { RequestMobileOtpDto } from './dto/request-mobile-otp.dto';
 import { VerifyMobileOtpDto } from './dto/verify-mobile-otp.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
   @Post('login')
@@ -87,6 +91,89 @@ export class AuthController {
     };
   }
 
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @Post('forgot-password')
+  @ApiOperation({
+    summary: 'Request password reset',
+    description:
+      "Sends a password reset token to the user's email. Always returns success to prevent email enumeration.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Reset email sent (if account exists).',
+    schema: {
+      properties: {
+        message: {
+          type: 'string',
+          example:
+            'If an account with that email exists, a password reset link has been sent.',
+        },
+      },
+    },
+  })
+  @ApiBody({
+    type: ForgotPasswordDto,
+    examples: {
+      valid: {
+        value: { email: 'user@example.com' },
+      },
+    },
+  })
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @Post('reset-password')
+  @ApiOperation({
+    summary: 'Reset password with token',
+    description:
+      'Resets the user password using a valid reset token. Token expires after 15 minutes.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset successfully.',
+    schema: {
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Password has been reset successfully',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid or expired token.',
+    examples: {
+      invalidToken: {
+        summary: 'Invalid or expired token',
+        value: {
+          statusCode: 400,
+          message: 'Invalid or expired reset token',
+          error: 'Bad Request',
+        },
+      },
+    },
+  })
+  @ApiBody({
+    type: ResetPasswordDto,
+    examples: {
+      valid: {
+        value: {
+          token: 'a1b2c3d4e5f6789012345678901234567890abcdef',
+          newPassword: 'NewSecurePass123!',
+        },
+      },
+    },
+  })
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.token, dto.newPassword);
+  }
+
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @Post('otp/mobile/request')
   @ApiOperation({
@@ -108,6 +195,7 @@ export class AuthController {
     return this.authService.requestMobileOtp(body.phoneNumber);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @Post('otp/mobile/verify')
   @ApiOperation({

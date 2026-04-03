@@ -1,5 +1,4 @@
-import {
-  IsString,
+import { MaxLength, IsString,
   IsNotEmpty,
   IsEnum,
   IsOptional,
@@ -7,8 +6,7 @@ import {
   IsDateString,
   IsArray,
   ValidateNested,
-  Min,
-} from 'class-validator';
+  Min,} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -16,6 +14,7 @@ export class TargetGoalDto {
   @ApiProperty({ example: 'weight_loss' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   goal_type: string;
 
   @ApiProperty({ example: 5 })
@@ -26,6 +25,7 @@ export class TargetGoalDto {
   @ApiProperty({ example: 'kg' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(50)
   unit: string;
 
   @ApiPropertyOptional({ example: 'Lose 5kg this month' })
@@ -53,6 +53,7 @@ export class CreateGoalScheduleDto {
   @ApiProperty({ example: 'Monthly Fitness Goals - January' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   title: string;
 
   @ApiPropertyOptional()
@@ -62,6 +63,7 @@ export class CreateGoalScheduleDto {
 
   @ApiProperty({ enum: ['weekly', 'monthly', 'quarterly'] })
   @IsEnum(['weekly', 'monthly', 'quarterly'])
+  @MaxLength(50)
   schedule_type: string;
 
   @ApiProperty({ example: '2025-01-01' })
@@ -83,6 +85,7 @@ export class CreateGoalScheduleFromTemplateDto {
   @ApiProperty({ description: 'Goal template ID' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   templateId: string;
 
   @ApiProperty({ description: 'Member ID', example: 123 })

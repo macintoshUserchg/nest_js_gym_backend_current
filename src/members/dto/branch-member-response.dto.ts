@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsUrl, IsOptional } from 'class-validator';
 
 export class BranchMemberSubscriptionPlanDto {
   @ApiProperty({ description: 'Plan ID', example: 1 })
@@ -211,6 +212,7 @@ export class BranchMemberResponseDto {
     example: 'https://example.com/avatars/john.jpg',
     nullable: true,
   })
+  @IsUrl()
   avatarUrl: string | null;
 
   @ApiProperty({
@@ -218,6 +220,7 @@ export class BranchMemberResponseDto {
     example: 'https://example.com/docs/john-id.pdf',
     nullable: true,
   })
+  @IsUrl()
   attachmentUrl: string | null;
 
   @ApiProperty({ description: 'Emergency contact name', example: 'Jane Doe' })

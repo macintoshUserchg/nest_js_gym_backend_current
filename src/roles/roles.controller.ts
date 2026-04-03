@@ -18,6 +18,8 @@ import {
 import { RolesService } from './roles.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Role } from '../entities/roles.entity';
+import { CreateRoleDto } from './dto/create-role.dto';
+import { UpdateRoleDto } from './dto/update-role.dto';
 
 @ApiTags('roles')
 @Controller('roles')
@@ -129,7 +131,7 @@ export class RolesController {
     status: 409,
     description: 'Role with this name already exists.',
   })
-  create(@Body() createRoleDto: any) {
+  create(@Body() createRoleDto: CreateRoleDto) {
     return this.rolesService.create(createRoleDto);
   }
 
@@ -146,7 +148,7 @@ export class RolesController {
     description: 'The role has been successfully updated.',
     type: Role,
   })
-  update(@Param('id') id: string, @Body() updateRoleDto: any) {
+  update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
     return this.rolesService.update(id, updateRoleDto);
   }
 

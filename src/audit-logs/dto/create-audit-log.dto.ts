@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsOptional, IsObject } from 'class-validator';
+import { MaxLength, IsNotEmpty, IsString, IsOptional, IsObject} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateAuditLogDto {
@@ -8,21 +8,25 @@ export class CreateAuditLogDto {
   })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   userId: string;
 
   @ApiProperty({ description: 'Action performed', example: 'CREATE' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   action: string;
 
   @ApiProperty({ description: 'Entity type', example: 'Member' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   entityType: string;
 
   @ApiProperty({ description: 'Entity ID', example: '123' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   entityId: string;
 
   @ApiPropertyOptional({

@@ -1,5 +1,4 @@
-import {
-  IsArray,
+import { MaxLength, IsArray,
   IsDateString,
   IsEnum,
   IsNotEmpty,
@@ -7,8 +6,7 @@ import {
   IsOptional,
   IsString,
   IsInt,
-  Min,
-} from 'class-validator';
+  Min,} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateDietPlanMealDto {
@@ -37,6 +35,7 @@ export class CreateDietPlanMealDto {
   @ApiProperty({ description: 'Meal name', example: 'Oatmeal with Fruits' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   meal_name: string;
 
   @ApiPropertyOptional({ description: 'Meal description' })
@@ -101,6 +100,7 @@ export class CreateDietPlanDto {
   @ApiProperty({ description: 'Plan title', example: 'Weight Loss Diet Plan' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   title: string;
 
   @ApiPropertyOptional({ description: 'Plan description' })

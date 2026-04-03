@@ -1,5 +1,4 @@
-import {
-  IsString,
+import { MaxLength, IsString,
   IsNotEmpty,
   IsEnum,
   IsOptional,
@@ -8,8 +7,7 @@ import {
   Min,
   IsArray,
   ValidateNested,
-  IsUUID,
-} from 'class-validator';
+  IsUUID,} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -47,6 +45,7 @@ export class CreateWorkoutTemplateExerciseDto {
   @ApiProperty({ example: 'Bench Press' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   exercise_name: string;
 
   @ApiPropertyOptional()
@@ -56,6 +55,7 @@ export class CreateWorkoutTemplateExerciseDto {
 
   @ApiProperty({ enum: ['sets_reps', 'time', 'distance'] })
   @IsEnum(['sets_reps', 'time', 'distance'])
+  @MaxLength(50)
   exercise_type: string;
 
   @ApiPropertyOptional({ enum: EQUIPMENT_OPTIONS })
@@ -122,6 +122,7 @@ export class CreateWorkoutTemplateDto {
   @ApiProperty({ example: 'Full Body Strength Template' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   title: string;
 
   @ApiPropertyOptional()
@@ -131,6 +132,7 @@ export class CreateWorkoutTemplateDto {
 
   @ApiProperty({ enum: ['PRIVATE', 'GYM_PUBLIC'], default: 'PRIVATE' })
   @IsEnum(['PRIVATE', 'GYM_PUBLIC'])
+  @MaxLength(255)
   visibility: string;
 
   @ApiProperty({ enum: CHART_TYPE_OPTIONS })
@@ -234,6 +236,7 @@ export class CopyWorkoutTemplateDto {
   @ApiProperty({ example: 'My Copied Template' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   new_title: string;
 
   @ApiPropertyOptional()
@@ -253,11 +256,13 @@ export class SubstituteExerciseDto {
   @ApiProperty({ description: 'Original exercise name' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   original_exercise: string;
 
   @ApiProperty({ description: 'Substituted exercise name' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   substituted_exercise: string;
 
   @ApiPropertyOptional({ description: 'Reason for substitution' })

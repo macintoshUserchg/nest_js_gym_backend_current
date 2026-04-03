@@ -1,12 +1,10 @@
-import {
-  IsString,
+import { MaxLength, IsString,
   IsNotEmpty,
   IsOptional,
   IsEnum,
   IsInt,
   IsArray,
-  ValidateNested,
-} from 'class-validator';
+  ValidateNested,} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -14,6 +12,7 @@ export class DefaultGoalDto {
   @ApiProperty({ example: 'weight_loss' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   goal_type: string;
 
   @ApiProperty({ example: 5 })
@@ -24,6 +23,7 @@ export class DefaultGoalDto {
   @ApiProperty({ example: 'kg' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(50)
   unit: string;
 
   @ApiPropertyOptional({ example: 'Lose weight' })
@@ -41,6 +41,7 @@ export class CreateGoalTemplateDto {
   @ApiProperty({ example: 'Monthly Weight Loss Template' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   title: string;
 
   @ApiPropertyOptional()
@@ -50,6 +51,7 @@ export class CreateGoalTemplateDto {
 
   @ApiProperty({ enum: ['weekly', 'monthly', 'quarterly'] })
   @IsEnum(['weekly', 'monthly', 'quarterly'])
+  @MaxLength(255)
   default_schedule_type: string;
 
   @ApiProperty({ type: [DefaultGoalDto] })

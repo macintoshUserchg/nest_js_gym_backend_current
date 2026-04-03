@@ -1,10 +1,11 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { MaxLength, IsEmail, IsNotEmpty, IsOptional, IsString} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateGymDto {
   @ApiProperty({ description: 'Gym name', example: 'FitZone Fitness' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   name: string;
 
   @ApiPropertyOptional({

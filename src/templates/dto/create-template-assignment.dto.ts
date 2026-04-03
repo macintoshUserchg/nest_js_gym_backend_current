@@ -1,5 +1,4 @@
-import {
-  IsString,
+import { MaxLength, IsString,
   IsNotEmpty,
   IsOptional,
   IsEnum,
@@ -7,8 +6,7 @@ import {
   IsInt,
   IsDateString,
   IsArray,
-  ValidateNested,
-} from 'class-validator';
+  ValidateNested,} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -16,11 +14,13 @@ export class SubstitutionDto {
   @ApiProperty({ example: 'Push-ups' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(200)
   original_item: string;
 
   @ApiProperty({ example: 'Bench Press' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(200)
   substituted_item: string;
 
   @ApiPropertyOptional({ example: 'Wrist pain' })
@@ -30,6 +30,7 @@ export class SubstitutionDto {
 
   @ApiProperty()
   @IsDateString()
+  @MaxLength(255)
   date: string;
 }
 

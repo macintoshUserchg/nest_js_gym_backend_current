@@ -1,17 +1,16 @@
-import {
-  IsEnum,
+import { MaxLength, IsEnum,
   IsNotEmpty,
   IsString,
   IsOptional,
   IsInt,
-  IsNumber,
-} from 'class-validator';
+  IsNumber,} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateMealLibraryDto {
   @ApiProperty({ description: 'Meal name', example: 'Grilled Chicken Salad' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   meal_name: string;
 
   @ApiProperty({

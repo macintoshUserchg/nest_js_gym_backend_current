@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { pgConfig } from '../dbConfig';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { minioConfig } from './config/minio.config';
 import { UploadModule } from './upload/upload.module';
 import { Gym } from './entities/gym.entity';
@@ -60,10 +61,12 @@ import { ProgressTrackingModule } from './progress-tracking/progress-tracking.mo
 import { TemplateSharesModule } from './templates/template-shares.module';
 import { RenewalRequest } from './entities/renewal_requests.entity';
 import { ReminderLog } from './entities/reminder_logs.entity';
+import { PasswordResetToken } from './entities/password_reset_tokens.entity';
 import { RenewalsModule } from './renewals/renewals.module';
 import { RemindersModule } from './reminders/reminders.module';
 import { ExerciseLibraryModule } from './exercise-library/exercise-library.module';
 import { MealLibraryModule } from './meal-library/meal-library.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -72,6 +75,12 @@ import { MealLibraryModule } from './meal-library/meal-library.module';
       expandVariables: true,
       load: [minioConfig],
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     ScheduleModule.forRoot(),
     TypeOrmModule.forRoot(pgConfig),
     TypeOrmModule.forFeature([
@@ -98,6 +107,7 @@ import { MealLibraryModule } from './meal-library/meal-library.module';
       WorkoutPlanChartAssignment,
       RenewalRequest,
       ReminderLog,
+      PasswordResetToken,
     ]),
     AuthModule,
     UsersModule,
@@ -134,6 +144,7 @@ import { MealLibraryModule } from './meal-library/meal-library.module';
     UploadModule,
     ExerciseLibraryModule,
     MealLibraryModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

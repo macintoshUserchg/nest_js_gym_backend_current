@@ -1,10 +1,11 @@
-import { IsEnum, IsNotEmpty, IsString, IsOptional } from 'class-validator';
+import { MaxLength, IsEnum, IsNotEmpty, IsString, IsOptional} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateExerciseDto {
   @ApiProperty({ description: 'Exercise name', example: 'Bench Press' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   exercise_name: string;
 
   @ApiProperty({
