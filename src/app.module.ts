@@ -78,6 +78,7 @@ import { EmailModule } from './email/email.module';
     ConfigModule.forRoot({
       envFilePath: '.env',
       expandVariables: true,
+      isGlobal: true,
       load: [minioConfig, featureFlagsConfig],
     }),
     ThrottlerModule.forRoot([

@@ -14,7 +14,7 @@ import { Member } from '../entities/members.entity';
 import { MemberTrainerAssignment } from '../entities/member_trainer_assignments.entity';
 import {
   CreateTemplateAssignmentDto,
-  UpdateProgressDto,
+  UpdateTemplateAssignmentProgressDto,
   FilterTemplateAssignmentsDto,
   SubstitutionDto,
 } from './dto/create-template-assignment.dto';
@@ -193,7 +193,11 @@ export class TemplateAssignmentsService {
     return filtered;
   }
 
-  async updateProgress(id: string, dto: UpdateProgressDto, user: User) {
+  async updateProgress(
+    id: string,
+    dto: UpdateTemplateAssignmentProgressDto,
+    user: User,
+  ) {
     const assignment = await this.findOne(id, user);
 
     // Members can update progress only for their own assignments

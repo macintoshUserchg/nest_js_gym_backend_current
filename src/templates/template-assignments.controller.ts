@@ -20,7 +20,7 @@ import { User } from '../entities/users.entity';
 import { TemplateAssignmentsService } from './template-assignments.service';
 import {
   CreateTemplateAssignmentDto,
-  UpdateProgressDto,
+  UpdateTemplateAssignmentProgressDto,
   FilterTemplateAssignmentsDto,
   SubstitutionDto,
 } from './dto/create-template-assignment.dto';
@@ -80,7 +80,7 @@ export class TemplateAssignmentsController {
   @ApiOperation({ summary: 'Update assignment progress' })
   updateProgress(
     @Param('id') id: string,
-    @Body() dto: UpdateProgressDto,
+    @Body() dto: UpdateTemplateAssignmentProgressDto,
     @CurrentUser() user: User,
   ) {
     return this.templateAssignmentsService.updateProgress(id, dto, user);
