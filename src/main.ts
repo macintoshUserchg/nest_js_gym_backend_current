@@ -37,6 +37,10 @@ async function bootstrap() {
     }),
   );
   app.useGlobalInterceptors(new SanitizeInterceptor());
+
+  // API versioning
+  app.setGlobalPrefix('api/v1', { exclude: ['api', 'api/*path'] });
+
   // Swagger doc builder
   const config = new DocumentBuilder()
     .setTitle('Gym Management System')
@@ -78,6 +82,5 @@ async function bootstrap() {
   });
 
   await app.listen(process.env.PORT ?? 3000);
-  app.setGlobalPrefix('api/v1', { exclude: ['api', 'api/(.*)'] });
 }
 void bootstrap();
