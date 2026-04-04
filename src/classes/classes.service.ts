@@ -7,6 +7,7 @@ import { Trainer } from '../entities/trainers.entity';
 import { Gym } from '../entities/gym.entity';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class ClassesService {
@@ -65,7 +66,13 @@ export class ClassesService {
     return this.classesRepo.save(classEntity);
   }
 
-  async findAll(branchId?: string, timing?: string, day?: number) {
+  async findAll(
+    branchId?: string,
+    timing?: string,
+    day?: number,
+    page = 1,
+    limit = 20,
+  ) {
     const queryBuilder = this.classesRepo
       .createQueryBuilder('class')
       .leftJoinAndSelect('class.branch', 'branch')
@@ -87,7 +94,12 @@ export class ClassesService {
       });
     }
 
-    return queryBuilder.getMany();
+    const [data, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return paginate(data, total, page, limit);
   }
 
   async findOne(id: string) {

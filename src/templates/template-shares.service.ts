@@ -9,6 +9,7 @@ import { TemplateShare } from '../entities/template_shares.entity';
 import { WorkoutTemplate } from '../entities/workout_templates.entity';
 import { DietTemplate } from '../entities/diet_templates.entity';
 import { Trainer } from '../entities/trainers.entity';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class TemplateSharesService {
@@ -80,7 +81,7 @@ export class TemplateSharesService {
     return this.templateShareRepository.save(share);
   }
 
-  async findAll(trainerId?: number) {
+  async findAll(trainerId?: number, page = 1, limit = 20) {
     const queryBuilder = this.templateShareRepository
       .createQueryBuilder('share')
       .leftJoinAndSelect('share.shared_by_admin', 'shared_by_admin')
@@ -92,7 +93,12 @@ export class TemplateSharesService {
       });
     }
 
-    return queryBuilder.getMany();
+    const [data, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return paginate(data, total, page, limit);
   }
 
   async acceptShare(shareId: string, trainerId: number) {

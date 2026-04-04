@@ -7,6 +7,7 @@ import {
 } from '../entities/notifications.entity';
 import { User } from '../entities/users.entity';
 import { CreateNotificationDto } from './dto/create-notification.dto';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class NotificationsService {
@@ -26,7 +27,12 @@ export class NotificationsService {
     return this.notificationRepository.save(notification);
   }
 
-  async findByUser(userId: string, options?: { is_read?: boolean }) {
+  async findByUser(
+    userId: string,
+    options?: { is_read?: boolean },
+    page = 1,
+    limit = 20,
+  ) {
     const queryBuilder = this.notificationRepository
       .createQueryBuilder('n')
       .where('n.userId = :userId', { userId })
@@ -38,7 +44,12 @@ export class NotificationsService {
       });
     }
 
-    return queryBuilder.getMany();
+    const [data, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return paginate(data, total, page, limit);
   }
 
   async findUnread(userId: string) {

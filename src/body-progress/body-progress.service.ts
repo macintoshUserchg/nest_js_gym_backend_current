@@ -11,6 +11,7 @@ import { Trainer } from '../entities/trainers.entity';
 import { User } from '../entities/users.entity';
 import { CreateBodyProgressDto } from './dto/create-body-progress.dto';
 import { UpdateBodyProgressDto } from './dto/update-body-progress.dto';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class BodyProgressService {
@@ -102,10 +103,13 @@ export class BodyProgressService {
     return this.bodyProgressRepo.save(bodyProgress);
   }
 
-  async findAll() {
-    return this.bodyProgressRepo.find({
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.bodyProgressRepo.findAndCount({
       relations: ['member', 'trainer'],
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return paginate(data, total, page, limit);
   }
 
   async findOne(id: number) {

@@ -5,6 +5,9 @@ import {
   UnauthorizedException,
   HttpCode,
   HttpStatus,
+  Get,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -21,11 +24,23 @@ import { RequestMobileOtpDto } from './dto/request-mobile-otp.dto';
 import { VerifyMobileOtpDto } from './dto/verify-mobile-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { RegisterDto } from './dto/register.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { User } from '../entities/users.entity';
+import { FeatureFlagGuard } from '../common/guards/feature-flag.guard';
+import { FeatureFlag } from '../common/decorators/feature-flag.decorator';
+import { Request } from 'express';
+import { ConfigService } from '@nestjs/config';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private configService: ConfigService,
+  ) {}
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
@@ -76,7 +91,10 @@ export class AuthController {
       },
     },
   })
-  async login(@Body() loginDto: LoginUserDto): Promise<LoginResponseDto> {
+  async login(
+    @Body() loginDto: LoginUserDto,
+    @Req() req: Request,
+  ): Promise<any> {
     const user = await this.authService.validateUser(
       loginDto.email,
       loginDto.password,
@@ -85,6 +103,23 @@ export class AuthController {
       throw new UnauthorizedException('Invalid credentials');
     }
     const token = await this.authService.login(user);
+    const enableRefreshTokens = this.configService.get<boolean>(
+      'featureFlags.enableRefreshTokens',
+    );
+
+    if (enableRefreshTokens) {
+      const refreshToken = await this.authService.generateRefreshToken(
+        user,
+        req.ip,
+        req.headers['user-agent'],
+      );
+      return {
+        userid: user.userId,
+        access_token: token,
+        refresh_token: refreshToken,
+      };
+    }
+
     return {
       userid: user.userId,
       access_token: token,
@@ -195,7 +230,7 @@ export class AuthController {
     return this.authService.requestMobileOtp(body.phoneNumber);
   }
 
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @Post('otp/mobile/verify')
   @ApiOperation({
@@ -210,6 +245,45 @@ export class AuthController {
   })
   verifyMobileOtp(@Body() body: VerifyMobileOtpDto): Promise<LoginResponseDto> {
     return this.authService.verifyMobileOtp(body.phoneNumber, body.code);
+  }
+
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @HttpCode(HttpStatus.CREATED)
+  @UseGuards(FeatureFlagGuard)
+  @FeatureFlag('enableRegistration')
+  @Post('register')
+  @ApiOperation({
+    summary: 'Register a new user',
+    description:
+      'Creates a new user account with email verification. Feature flag controlled.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'User registered successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'User already exists or invalid data.',
+  })
+  async register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto.email, dto.password, dto.phoneNumber);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(FeatureFlagGuard)
+  @FeatureFlag('enableEmailVerification')
+  @Post('verify-email')
+  @ApiOperation({
+    summary: 'Verify email address',
+    description: 'Verifies the user email using the token sent via email.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Email verified successfully.',
+  })
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.verifyEmail(dto.token);
   }
 
   @HttpCode(HttpStatus.OK)
@@ -233,8 +307,68 @@ export class AuthController {
     },
   })
   async logout() {
-    // For JWT, logout is typically client-side by discarding the token.
-    // This endpoint can be used to acknowledge the logout or perform server-side cleanup if a token blacklist/revocation is implemented.
     return { message: 'Logged out successfully. Please discard your token.' };
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(FeatureFlagGuard)
+  @FeatureFlag('enableRefreshTokens')
+  @Post('refresh')
+  @ApiOperation({
+    summary: 'Refresh access token',
+    description: 'Uses a refresh token to get a new access/refresh token pair.',
+  })
+  @ApiBody({
+    schema: {
+      properties: {
+        refresh_token: { type: 'string', example: 'abc123...' },
+      },
+    },
+  })
+  async refresh(@Body() body: { refresh_token: string }, @Req() req: Request) {
+    return this.authService.refreshAccessToken(
+      body.refresh_token,
+      req.ip,
+      req.headers['user-agent'],
+    );
+  }
+
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @Get('sessions')
+  @ApiOperation({
+    summary: 'Get active sessions',
+    description: 'Returns all active sessions for the current user.',
+  })
+  async getSessions(@CurrentUser() user: User) {
+    return this.authService.getActiveSessions(user.userId);
+  }
+
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @Post('sessions/revoke')
+  @ApiOperation({
+    summary: 'Revoke all sessions',
+    description: 'Revokes all active sessions for the current user.',
+  })
+  @ApiBody({
+    schema: {
+      properties: {
+        tokenId: {
+          type: 'string',
+          description: 'Optional: revoke specific token only',
+        },
+      },
+    },
+  })
+  async revokeSessions(
+    @CurrentUser() user: User,
+    @Body() body?: { tokenId?: string },
+  ) {
+    if (body?.tokenId) {
+      return this.authService.revokeRefreshToken(body.tokenId);
+    }
+    return this.authService.revokeAllUserTokens(user.userId);
   }
 }

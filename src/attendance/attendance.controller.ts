@@ -7,6 +7,9 @@ import {
   Param,
   UseGuards,
   ParseIntPipe,
+  Query,
+  DefaultValuePipe,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,6 +22,7 @@ import {
 import { AttendanceService } from './attendance.service';
 import { MarkAttendanceDto } from './dto/mark-attendance.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { paginate } from '../common/dto/pagination.dto';
 
 @ApiTags('attendance')
 @Controller('attendance')
@@ -175,8 +179,44 @@ export class AttendanceController {
     status: 500,
     description: 'Internal server error while retrieving attendance records.',
   })
-  findAll() {
-    return this.attendanceService.findAll();
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.attendanceService.findAll(page, limit);
+  }
+
+  @Get('export/csv')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Export attendance as CSV' })
+  @ApiResponse({ status: 200, description: 'CSV file of attendance records.' })
+  async exportCsv(@Res() res: any) {
+    const records = await this.attendanceService.exportAll();
+    const data = records.map((r: any) => ({
+      id: r.id,
+      attendanceType: r.attendanceType,
+      checkInTime: r.checkInTime,
+      checkOutTime: r.checkOutTime,
+      date: r.date,
+      memberName: r.member?.fullName || '',
+      trainerName: r.trainer?.fullName || '',
+      branchName: r.branch?.name || '',
+    }));
+    const columns = [
+      'id',
+      'attendanceType',
+      'checkInTime',
+      'checkOutTime',
+      'date',
+      'memberName',
+      'trainerName',
+      'branchName',
+    ];
+    const csv = this.attendanceService.toCsv(data, columns);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=attendance.csv');
+    res.send(csv);
   }
 
   @Get(':id')

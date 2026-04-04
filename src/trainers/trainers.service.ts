@@ -13,6 +13,7 @@ import { CreateTrainerDto } from './dto/create-trainer.dto';
 import { UpdateTrainerDto } from './dto/update-trainer.dto';
 import * as bcrypt from 'bcrypt';
 import { normalizePhoneNumber } from '../common/utils/phone.util';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class TrainersService {
@@ -100,7 +101,12 @@ export class TrainersService {
     return savedTrainer;
   }
 
-  async findAll(branchId?: string, specialization?: string) {
+  async findAll(
+    branchId?: string,
+    specialization?: string,
+    page = 1,
+    limit = 20,
+  ) {
     const queryBuilder = this.trainersRepo
       .createQueryBuilder('trainer')
       .leftJoinAndSelect('trainer.branch', 'branch');
@@ -115,7 +121,12 @@ export class TrainersService {
       });
     }
 
-    return queryBuilder.getMany();
+    const [data, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return paginate(data, total, page, limit);
   }
 
   async findOne(id: number) {

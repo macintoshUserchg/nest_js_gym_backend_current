@@ -11,6 +11,7 @@ import { Trainer } from '../entities/trainers.entity';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserRole } from '../common/enums/permissions.enum';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class UsersService {
@@ -128,8 +129,13 @@ export class UsersService {
     return user;
   }
 
-  async findAll() {
-    return this.usersRepo.find({ relations: ['role'] });
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.usersRepo.findAndCount({
+      relations: ['role'],
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return paginate(data, total, page, limit);
   }
 
   async update(userId: string, updateUserDto: any) {

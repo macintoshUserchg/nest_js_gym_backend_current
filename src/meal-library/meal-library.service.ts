@@ -8,6 +8,7 @@ import { Repository, ILike } from 'typeorm';
 import { MealLibrary } from '../entities/meal_library.entity';
 import { CreateMealLibraryDto } from './dto/create-meal-library.dto';
 import { UpdateMealLibraryDto } from './dto/update-meal-library.dto';
+import { paginate } from '../common/dto/pagination.dto';
 import { FilterMealLibraryDto } from './dto/filter-meal-library.dto';
 
 @Injectable()
@@ -35,8 +36,16 @@ export class MealLibraryService {
 
   async findAll(
     filterDto: FilterMealLibraryDto,
-  ): Promise<{ data: MealLibrary[]; total: number }> {
+  ): Promise<{
+    data: MealLibrary[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
     const where: Record<string, unknown> = {};
+    const page = filterDto.page || 1;
+    const limit = filterDto.limit || 20;
 
     if (filterDto.meal_type) {
       where.meal_type = filterDto.meal_type;
@@ -51,9 +60,11 @@ export class MealLibraryService {
     const [data, total] = await this.mealLibraryRepo.findAndCount({
       where,
       order: { meal_name: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
 
-    return { data, total };
+    return paginate(data, total, page, limit);
   }
 
   async findOne(meal_id: string): Promise<MealLibrary> {

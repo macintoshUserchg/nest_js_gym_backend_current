@@ -11,6 +11,7 @@ import { Trainer } from '../entities/trainers.entity';
 import { User } from '../entities/users.entity';
 import { CreateProgressDto } from './dto/create-progress.dto';
 import { UpdateProgressDto } from './dto/update-progress.dto';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class ProgressTrackingService {
@@ -109,10 +110,13 @@ export class ProgressTrackingService {
     return this.progressTrackingRepo.save(progressRecord);
   }
 
-  async findAll() {
-    return this.progressTrackingRepo.find({
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.progressTrackingRepo.findAndCount({
       relations: ['member', 'recorded_by_trainer'],
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return paginate(data, total, page, limit);
   }
 
   async findOne(progress_id: string) {

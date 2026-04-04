@@ -8,6 +8,8 @@ import {
   Delete,
   UseGuards,
   ParseIntPipe,
+  Query,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,6 +24,7 @@ import { SubscriptionsService } from './subscriptions.service';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PaginationDto, paginate } from '../common/dto/pagination.dto';
 
 @ApiTags('subscriptions')
 @Controller('subscriptions')
@@ -345,8 +348,11 @@ export class SubscriptionsController {
     status: 403,
     description: 'Forbidden - Insufficient permissions to view subscriptions.',
   })
-  findAll() {
-    return this.subscriptionsService.findAll();
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.subscriptionsService.findAll(page, limit);
   }
 
   @Get(':id')

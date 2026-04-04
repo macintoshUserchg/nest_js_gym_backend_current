@@ -9,6 +9,7 @@ import {
   UseGuards,
   ParseIntPipe,
   Query,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,6 +24,7 @@ import { TrainersService } from './trainers.service';
 import { CreateTrainerDto } from './dto/create-trainer.dto';
 import { UpdateTrainerDto } from './dto/update-trainer.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { paginate } from '../common/dto/pagination.dto';
 import { Trainer } from '../entities/trainers.entity';
 
 @ApiTags('trainers')
@@ -98,8 +100,10 @@ export class TrainersController {
   findAll(
     @Query('branchId') branchId?: string,
     @Query('specialization') specialization?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
   ) {
-    return this.trainersService.findAll(branchId, specialization);
+    return this.trainersService.findAll(branchId, specialization, page, limit);
   }
 
   @Get(':id')

@@ -16,6 +16,10 @@ import { UsersService } from '../users/users.service';
 import { normalizePhoneNumber } from '../common/utils/phone.util';
 import { PasswordResetToken } from '../entities/password_reset_tokens.entity';
 import { EmailService } from '../email/email.service';
+import { Role } from '../entities/roles.entity';
+import { User } from '../entities/users.entity';
+import { RefreshToken } from '../entities/refresh_tokens.entity';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -26,8 +30,15 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private emailService: EmailService,
+    private configService: ConfigService,
     @InjectRepository(PasswordResetToken)
     private resetTokenRepo: Repository<PasswordResetToken>,
+    @InjectRepository(Role)
+    private roleRepo: Repository<Role>,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+    @InjectRepository(RefreshToken)
+    private refreshTokenRepo: Repository<RefreshToken>,
   ) {
     this.twilioClient =
       process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
@@ -239,5 +250,188 @@ export class AuthService {
     throw new ServiceUnavailableException(
       'OTP provider is currently unavailable. Please try again later.',
     );
+  }
+
+  async register(email: string, password: string, phoneNumber?: string) {
+    const existingUser = await this.usersService.findByEmail(email);
+    if (existingUser) {
+      throw new BadRequestException('User with this email already exists');
+    }
+
+    const memberRole = await this.roleRepo.findOne({
+      where: { name: 'MEMBER' },
+    });
+    if (!memberRole) {
+      throw new BadRequestException('MEMBER role not found');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const emailVerificationToken = crypto.randomBytes(32).toString('hex');
+    const emailVerificationTokenExpiresAt = new Date(
+      Date.now() + 24 * 60 * 60 * 1000,
+    );
+
+    const user = this.userRepo.create({
+      email,
+      passwordHash: hashedPassword,
+      role: memberRole,
+      phoneNumber: phoneNumber ? normalizePhoneNumber(phoneNumber) : undefined,
+      emailVerificationToken,
+      emailVerificationTokenExpiresAt,
+    });
+
+    const savedUser = await this.userRepo.save(user);
+
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${emailVerificationToken}`;
+    await this.emailService.sendWelcomeEmail(email, email);
+
+    const { passwordHash, ...result } = savedUser;
+    const token = this.jwtService.sign({
+      sub: result.userId,
+      email: result.email,
+      role: memberRole.name,
+    });
+
+    return { user: result, access_token: token };
+  }
+
+  async verifyEmail(token: string) {
+    const user = await this.userRepo.findOne({
+      where: {
+        emailVerificationToken: token,
+        emailVerificationTokenExpiresAt: new Date(),
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Invalid or expired verification token');
+    }
+
+    user.emailVerifiedAt = new Date();
+    user.emailVerificationToken = undefined;
+    user.emailVerificationTokenExpiresAt = undefined;
+    await this.userRepo.save(user);
+
+    return { message: 'Email verified successfully' };
+  }
+
+  async generateRefreshToken(
+    user: any,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
+    const token = crypto.randomBytes(40).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    const refreshToken = this.refreshTokenRepo.create({
+      user: { userId: user.userId },
+      token,
+      expiresAt,
+      ipAddress,
+      userAgent,
+    });
+
+    await this.refreshTokenRepo.save(refreshToken);
+    return token;
+  }
+
+  async refreshAccessToken(
+    oldRefreshToken: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
+    const refreshToken = await this.refreshTokenRepo.findOne({
+      where: { token: oldRefreshToken },
+      relations: ['user', 'user.role'],
+    });
+
+    if (!refreshToken || refreshToken.isRevoked) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (new Date() > refreshToken.expiresAt) {
+      refreshToken.isRevoked = true;
+      await this.refreshTokenRepo.save(refreshToken);
+      throw new UnauthorizedException('Refresh token expired');
+    }
+
+    const user = refreshToken.user;
+    const payload: AuthJwtPayload = {
+      sub: user.userId,
+      email: user.email,
+      role: user.role.name,
+    };
+    const newAccessToken = this.jwtService.sign(payload);
+
+    const newToken = crypto.randomBytes(40).toString('hex');
+    const newExpiresAt = new Date();
+    newExpiresAt.setDate(newExpiresAt.getDate() + 7);
+
+    const newRefreshToken = this.refreshTokenRepo.create({
+      user: { userId: user.userId },
+      token: newToken,
+      expiresAt: newExpiresAt,
+      ipAddress,
+      userAgent,
+      replacedByToken: newToken,
+    });
+
+    refreshToken.isRevoked = true;
+    refreshToken.replacedByToken = newToken;
+    await this.refreshTokenRepo.save(refreshToken);
+    await this.refreshTokenRepo.save(newRefreshToken);
+
+    return {
+      access_token: newAccessToken,
+      refresh_token: newToken,
+    };
+  }
+
+  async revokeRefreshToken(token: string) {
+    const refreshToken = await this.refreshTokenRepo.findOne({
+      where: { token },
+    });
+
+    if (!refreshToken) {
+      throw new BadRequestException('Invalid token');
+    }
+
+    refreshToken.isRevoked = true;
+    await this.refreshTokenRepo.save(refreshToken);
+    return { message: 'Token revoked successfully' };
+  }
+
+  async revokeAllUserTokens(userId: string) {
+    await this.refreshTokenRepo.update(
+      { user: { userId }, isRevoked: false },
+      { isRevoked: true },
+    );
+    return { message: 'All sessions revoked' };
+  }
+
+  async getActiveSessions(userId: string) {
+    const tokens = await this.refreshTokenRepo.find({
+      where: { user: { userId }, isRevoked: false },
+      select: [
+        'id',
+        'token',
+        'expiresAt',
+        'ipAddress',
+        'userAgent',
+        'createdAt',
+      ],
+      order: { createdAt: 'DESC' },
+    });
+
+    return tokens.map((t) => ({
+      id: t.id,
+      token: t.token.slice(-8),
+      expiresAt: t.expiresAt,
+      ipAddress: t.ipAddress,
+      userAgent: t.userAgent,
+      createdAt: t.createdAt,
+      isCurrent: new Date() < t.expiresAt,
+    }));
   }
 }

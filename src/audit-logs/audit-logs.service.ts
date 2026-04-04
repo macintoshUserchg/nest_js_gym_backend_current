@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { AuditLog } from '../entities/audit_logs.entity';
 import { User } from '../entities/users.entity';
 import { CreateAuditLogDto } from './dto/create-audit-log.dto';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class AuditLogsService {
@@ -34,11 +35,14 @@ export class AuditLogsService {
     return this.auditLogsRepo.save(auditLog);
   }
 
-  async findAll() {
-    return this.auditLogsRepo.find({
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.auditLogsRepo.findAndCount({
       relations: ['user'],
       order: { timestamp: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return paginate(data, total, page, limit);
   }
 
   async findOne(id: string) {

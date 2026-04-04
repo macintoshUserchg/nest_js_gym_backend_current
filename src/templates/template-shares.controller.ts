@@ -6,6 +6,9 @@ import {
   Body,
   Param,
   UseGuards,
+  Query,
+  ParseIntPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,9 +18,10 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { TemplateSharesService } from './template-shares.service';
-import { User } from '../entities/users.entity';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../entities/users.entity';
+import { paginate } from '../common/dto/pagination.dto';
+import { TemplateSharesService } from './template-shares.service';
 
 @ApiTags('template-shares')
 @Controller('template-shares')
@@ -120,10 +124,14 @@ export class TemplateShareController {
       },
     },
   })
-  findAll(@CurrentUser() user: User) {
+  findAll(
+    @CurrentUser() user: User,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
     // If user is a trainer, only show shares for them
     const trainerId = user.trainerId ? parseInt(user.trainerId) : undefined;
-    return this.templateSharesService.findAll(trainerId);
+    return this.templateSharesService.findAll(trainerId, page, limit);
   }
 
   @Post(':id/accept')

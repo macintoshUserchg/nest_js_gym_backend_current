@@ -9,6 +9,9 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersModule } from '../users/users.module';
 import { PasswordResetToken } from '../entities/password_reset_tokens.entity';
+import { Role } from '../entities/roles.entity';
+import { User } from '../entities/users.entity';
+import { RefreshToken } from '../entities/refresh_tokens.entity';
 import { EmailModule } from '../email/email.module';
 
 @Module({
@@ -18,7 +21,7 @@ import { EmailModule } from '../email/email.module';
     PassportModule,
     JwtModule.registerAsync(jwtConfig.asProvider()),
     ConfigModule.forFeature(jwtConfig),
-    TypeOrmModule.forFeature([PasswordResetToken]),
+    TypeOrmModule.forFeature([PasswordResetToken, Role, User, RefreshToken]),
   ],
   providers: [JwtStrategy, AuthService],
   controllers: [AuthController],

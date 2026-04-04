@@ -9,6 +9,7 @@ import {
   UseGuards,
   ParseIntPipe,
   Query,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,6 +21,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { paginate } from '../common/dto/pagination.dto';
 import { DietPlansService } from './diet-plans.service';
 import { CreateDietDto } from './dto/create-diet.dto';
 import { UpdateDietDto } from './dto/update-diet.dto';
@@ -158,8 +160,11 @@ export class DietPlansController {
     status: 403,
     description: 'Forbidden - Insufficient permissions to access diet plans.',
   })
-  findAll() {
-    return this.dietPlansService.findAll();
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.dietPlansService.findAll(page, limit);
   }
 
   @Get(':id')

@@ -20,6 +20,7 @@ import { AdminUpdateMemberDto } from './dto/admin-update-member.dto';
 import * as bcrypt from 'bcrypt';
 import { normalizePhoneNumber } from '../common/utils/phone.util';
 import { isSubscriptionCurrentlyActive } from '../common/utils/subscription.util';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class MembersService {
@@ -233,7 +234,13 @@ export class MembersService {
     return member;
   }
 
-  async findAll(branchId?: string, status?: string, search?: string) {
+  async findAll(
+    branchId?: string,
+    status?: string,
+    search?: string,
+    page = 1,
+    limit = 20,
+  ) {
     const queryBuilder = this.membersRepo
       .createQueryBuilder('member')
       .leftJoinAndSelect('member.branch', 'branch')
@@ -251,12 +258,39 @@ export class MembersService {
 
     if (search) {
       queryBuilder.andWhere(
-        '(member.fullName % :search OR member.email % :search)',
-        { search },
+        '(LOWER(member.fullName) LIKE LOWER(:search) OR LOWER(member.email) LIKE LOWER(:search))',
+        { search: `%${search}%` },
       );
     }
 
-    return queryBuilder.getMany();
+    const [data, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return paginate(data, total, page, limit);
+  }
+
+  async exportAll() {
+    return this.membersRepo.find({
+      relations: ['branch', 'subscription', 'subscription.plan'],
+    });
+  }
+
+  toCsv(data: Record<string, unknown>[], columns: string[]): string {
+    const header = columns.join(',');
+    const rows = data.map((row) =>
+      columns
+        .map((col) => {
+          const val = row[col] ?? '';
+          const str = String(val);
+          return str.includes(',') || str.includes('"') || str.includes('\n')
+            ? `"${str.replace(/"/g, '""')}"`
+            : str;
+        })
+        .join(','),
+    );
+    return [header, ...rows].join('\n');
   }
 
   async findOne(id: number) {

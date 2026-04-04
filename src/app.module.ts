@@ -7,7 +7,12 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { minioConfig } from './config/minio.config';
+import { featureFlagsConfig } from './config/feature-flags.config';
 import { UploadModule } from './upload/upload.module';
+import { BookingsModule } from './bookings/bookings.module';
+import { WebSocketModule } from './websocket/websocket.module';
+import { RefreshToken } from './entities/refresh_tokens.entity';
+import { Booking } from './entities/bookings.entity';
 import { Gym } from './entities/gym.entity';
 import { User } from './entities/users.entity';
 import { Branch } from './entities/branch.entity';
@@ -73,7 +78,7 @@ import { EmailModule } from './email/email.module';
     ConfigModule.forRoot({
       envFilePath: '.env',
       expandVariables: true,
-      load: [minioConfig],
+      load: [minioConfig, featureFlagsConfig],
     }),
     ThrottlerModule.forRoot([
       {
@@ -108,6 +113,8 @@ import { EmailModule } from './email/email.module';
       RenewalRequest,
       ReminderLog,
       PasswordResetToken,
+      RefreshToken,
+      Booking,
     ]),
     AuthModule,
     UsersModule,
@@ -145,6 +152,8 @@ import { EmailModule } from './email/email.module';
     ExerciseLibraryModule,
     MealLibraryModule,
     EmailModule,
+    BookingsModule,
+    WebSocketModule,
   ],
   controllers: [AppController],
   providers: [AppService],

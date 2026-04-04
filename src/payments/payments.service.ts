@@ -12,6 +12,7 @@ import { PaymentFilterDto } from './dto/payment-filter.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { RefundPaymentDto } from './dto/refund-payment.dto';
 import { RenewalsService } from '../renewals/renewals.service';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class PaymentsService {
@@ -113,7 +114,14 @@ export class PaymentsService {
 
     qb.orderBy('payment.created_at', 'DESC');
 
-    return qb.getMany();
+    const page = filterDto?.page || 1;
+    const limit = filterDto?.limit || 20;
+    const [data, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return paginate(data, total, page, limit);
   }
 
   async findOne(id: string) {
@@ -434,7 +442,6 @@ export class PaymentsService {
 
     const invoice = payment.invoice;
 
-    // Calculate total paid on this invoice (completed payments only)
     const completedPayments = await this.paymentsRepo.find({
       where: {
         invoice: { invoice_id: invoice.invoice_id },
@@ -477,5 +484,182 @@ export class PaymentsService {
         status: payment.status,
       },
     };
+  }
+
+  async getDailyCashReport(date?: string) {
+    const targetDate = date ? new Date(date) : new Date();
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const payments = await this.paymentsRepo
+      .createQueryBuilder('payment')
+      .leftJoinAndSelect('payment.invoice', 'invoice')
+      .leftJoinAndSelect('invoice.member', 'member')
+      .where('payment.created_at >= :start', { start: startOfDay })
+      .andWhere('payment.created_at <= :end', { end: endOfDay })
+      .andWhere('payment.status IN (:...statuses)', {
+        statuses: ['completed', 'refund'],
+      })
+      .orderBy('payment.created_at', 'ASC')
+      .getMany();
+
+    const cashPayments = payments.filter(
+      (p) => p.method === 'cash' && p.status === 'completed',
+    );
+    const nonCashPayments = payments.filter(
+      (p) => p.method !== 'cash' && p.status === 'completed',
+    );
+    const refunds = payments.filter((p) => p.status === 'refund');
+
+    const totalCash = cashPayments.reduce(
+      (sum, p) => sum + Number(p.amount),
+      0,
+    );
+    const totalNonCash = nonCashPayments.reduce(
+      (sum, p) => sum + Number(p.amount),
+      0,
+    );
+    const totalRefunds = refunds.reduce((sum, p) => sum + Number(p.amount), 0);
+
+    return {
+      date: targetDate.toISOString().split('T')[0],
+      cash: {
+        count: cashPayments.length,
+        total: totalCash,
+        payments: cashPayments,
+      },
+      nonCash: {
+        count: nonCashPayments.length,
+        total: totalNonCash,
+        payments: nonCashPayments,
+      },
+      refunds: {
+        count: refunds.length,
+        total: totalRefunds,
+        payments: refunds,
+      },
+      netCash: totalCash - totalRefunds,
+      grandTotal: totalCash + totalNonCash - totalRefunds,
+    };
+  }
+
+  async bulkCreatePayments(payments: CreatePaymentDto[], userId?: string) {
+    const results = { successful: 0, failed: 0, errors: [] as string[] };
+
+    for (let i = 0; i < payments.length; i++) {
+      try {
+        await this.create(payments[i], userId);
+        results.successful++;
+      } catch (error) {
+        results.errors.push(
+          `Payment ${i + 1} (${payments[i].invoiceId}): ${(error as Error).message}`,
+        );
+        results.failed++;
+      }
+    }
+
+    return results;
+  }
+
+  async getReconciliationReport(startDate?: string, endDate?: string) {
+    const start = startDate ? new Date(startDate) : new Date();
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+
+    const end = endDate ? new Date(endDate) : new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const payments = await this.paymentsRepo
+      .createQueryBuilder('payment')
+      .leftJoinAndSelect('payment.invoice', 'invoice')
+      .leftJoinAndSelect('invoice.member', 'member')
+      .where('payment.created_at >= :start', { start })
+      .andWhere('payment.created_at <= :end', { end })
+      .getMany();
+
+    const completed = payments.filter(
+      (p) => p.status === 'completed' && !p.original_transaction_id,
+    );
+    const refunds = payments.filter((p) => p.status === 'refund');
+
+    const byMethod: Record<string, { count: number; total: number }> = {};
+    for (const p of completed) {
+      if (!byMethod[p.method]) {
+        byMethod[p.method] = { count: 0, total: 0 };
+      }
+      byMethod[p.method].count++;
+      byMethod[p.method].total += Number(p.amount);
+    }
+
+    const totalExpected = completed.reduce(
+      (sum, p) => sum + Number(p.amount),
+      0,
+    );
+    const totalRefunded = refunds.reduce((sum, p) => sum + Number(p.amount), 0);
+
+    return {
+      period: { start: start.toISOString(), end: end.toISOString() },
+      summary: {
+        totalTransactions: completed.length,
+        totalRefunds: refunds.length,
+        totalExpected,
+        totalRefunded,
+        netRevenue: totalExpected - totalRefunded,
+      },
+      byMethod,
+      transactions: completed,
+    };
+  }
+
+  async exportAll(filterDto?: PaymentFilterDto) {
+    const qb = this.paymentsRepo
+      .createQueryBuilder('payment')
+      .leftJoinAndSelect('payment.invoice', 'invoice')
+      .leftJoinAndSelect('invoice.member', 'member');
+
+    if (filterDto) {
+      if (filterDto.startDate) {
+        qb.andWhere('payment.created_at >= :startDate', {
+          startDate: filterDto.startDate,
+        });
+      }
+      if (filterDto.endDate) {
+        qb.andWhere('payment.created_at <= :endDate', {
+          endDate: filterDto.endDate,
+        });
+      }
+      if (filterDto.method) {
+        qb.andWhere('payment.method = :method', { method: filterDto.method });
+      }
+      if (filterDto.status) {
+        qb.andWhere('payment.status = :status', { status: filterDto.status });
+      }
+      if (filterDto.branchId) {
+        qb.andWhere('member.branchBranchId = :branchId', {
+          branchId: filterDto.branchId,
+        });
+      }
+    }
+
+    qb.orderBy('payment.created_at', 'DESC');
+    return qb.getMany();
+  }
+
+  toCsv(data: Record<string, unknown>[], columns: string[]): string {
+    const header = columns.join(',');
+    const rows = data.map((row) =>
+      columns
+        .map((col) => {
+          const val = row[col] ?? '';
+          const str = String(val);
+          return str.includes(',') || str.includes('"') || str.includes('\n')
+            ? `"${str.replace(/"/g, '""')}"`
+            : str;
+        })
+        .join(','),
+    );
+    return [header, ...rows].join('\n');
   }
 }

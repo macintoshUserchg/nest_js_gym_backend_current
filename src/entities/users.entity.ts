@@ -43,6 +43,15 @@ export class User {
   @Column({ type: 'timestamp', nullable: true })
   phoneVerifiedAt?: Date;
 
+  @Column({ type: 'timestamp', nullable: true })
+  emailVerifiedAt?: Date;
+
+  @Column({ nullable: true })
+  emailVerificationToken?: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  emailVerificationTokenExpiresAt?: Date;
+
   @CreateDateColumn()
   createdAt: Date;
 

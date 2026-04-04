@@ -9,6 +9,7 @@ import {
   UseGuards,
   ParseIntPipe,
   Query,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,6 +24,7 @@ import { MembershipPlansService } from './membership-plans.service';
 import { CreateMembershipPlanDto } from './dto/create-membership-plan.dto';
 import { UpdateMembershipPlanDto } from './dto/update-membership-plan.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { paginate } from '../common/dto/pagination.dto';
 import { MembershipPlan } from '../entities/membership_plans.entity';
 
 @ApiTags('membership-plans')
@@ -124,8 +126,10 @@ export class MembershipPlansController {
     @Query('branchId') branchId?: string,
     @Query('minPrice') minPrice?: number,
     @Query('maxPrice') maxPrice?: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
   ) {
-    return this.plansService.findAll(branchId, minPrice, maxPrice);
+    return this.plansService.findAll(branchId, minPrice, maxPrice, page, limit);
   }
 
   @Get(':id')

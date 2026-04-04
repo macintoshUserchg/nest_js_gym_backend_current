@@ -11,6 +11,7 @@ import { Trainer } from '../entities/trainers.entity';
 import { User } from '../entities/users.entity';
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateGoalDto } from './dto/update-goal.dto';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class GoalsService {
@@ -104,10 +105,13 @@ export class GoalsService {
     return this.goalsRepo.save(goal);
   }
 
-  async findAll() {
-    return this.goalsRepo.find({
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.goalsRepo.findAndCount({
       relations: ['member', 'trainer'],
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return paginate(data, total, page, limit);
   }
 
   async findOne(id: number) {

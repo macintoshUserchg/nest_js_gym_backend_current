@@ -14,6 +14,7 @@ import { CreateGymDto } from './dto/create-gym.dto';
 import { UpdateGymDto } from './dto/update-gym.dto';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class GymsService {
@@ -72,7 +73,7 @@ export class GymsService {
     }
   }
 
-  async findAll(location?: string, search?: string) {
+  async findAll(location?: string, search?: string, page = 1, limit = 20) {
     const queryBuilder = this.gymsRepo
       .createQueryBuilder('gym')
       .leftJoinAndSelect('gym.branches', 'branches');
@@ -89,7 +90,12 @@ export class GymsService {
       });
     }
 
-    return queryBuilder.getMany();
+    const [data, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return paginate(data, total, page, limit);
   }
 
   async findOne(id: string) {

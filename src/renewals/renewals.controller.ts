@@ -7,11 +7,14 @@ import {
   Post,
   Body,
   UseGuards,
+  Query,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RenewalsService } from './renewals.service';
 import { CreateRenewalRequestDto } from './dto/create-renewal-request.dto';
+import { paginate } from '../common/dto/pagination.dto';
 
 @ApiTags('renewals')
 @Controller('renewals')
@@ -22,8 +25,11 @@ export class RenewalsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all renewal requests' })
-  findAll() {
-    return this.renewalsService.findAll();
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.renewalsService.findAll(page, limit);
   }
 
   @Patch(':id/cancel')

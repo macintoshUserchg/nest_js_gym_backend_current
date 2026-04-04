@@ -14,7 +14,9 @@ import { MembershipPlan } from '../entities/membership_plans.entity';
 import { Invoice } from '../entities/invoices.entity';
 import { MemberSubscription } from '../entities/member_subscriptions.entity';
 import { CreateRenewalRequestDto } from './dto/create-renewal-request.dto';
+import { EmailService } from '../email/email.service';
 import { RemindersService } from '../reminders/reminders.service';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class RenewalsService {
@@ -98,10 +100,13 @@ export class RenewalsService {
     return savedRequest;
   }
 
-  async findAll() {
-    return this.renewalRequestsRepo.find({
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.renewalRequestsRepo.findAndCount({
       order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return paginate(data, total, page, limit);
   }
 
   async findByMember(memberId: number) {

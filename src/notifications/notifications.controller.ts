@@ -6,6 +6,8 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseIntPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,6 +19,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../entities/users.entity';
 import { NotificationsService } from './notifications.service';
+import { paginate } from '../common/dto/pagination.dto';
 
 @ApiTags('notifications')
 @Controller('notifications')
@@ -28,10 +31,20 @@ export class NotificationsController {
   @Get()
   @ApiOperation({ summary: 'Get all notifications for current user' })
   @ApiQuery({ name: 'is_read', required: false, type: Boolean })
-  findAll(@CurrentUser() user: User, @Query('is_read') is_read?: string) {
+  findAll(
+    @CurrentUser() user: User,
+    @Query('is_read') is_read?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+  ) {
     const options =
       is_read !== undefined ? { is_read: is_read === 'true' } : undefined;
-    return this.notificationsService.findByUser(user.userId, options);
+    return this.notificationsService.findByUser(
+      user.userId,
+      options,
+      page,
+      limit,
+    );
   }
 
   @Get('unread')

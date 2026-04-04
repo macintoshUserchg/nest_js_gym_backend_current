@@ -11,6 +11,7 @@ import { Trainer } from '../entities/trainers.entity';
 import { WorkoutTemplate } from '../entities/workout_templates.entity';
 import { DietTemplate } from '../entities/diet_templates.entity';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
+import { paginate } from '../common/dto/pagination.dto';
 
 export interface AssignTemplateDto {
   workout_template_id?: string;
@@ -73,10 +74,13 @@ export class AssignmentsService {
     return this.assignmentsRepo.save(assignment);
   }
 
-  async findAll() {
-    return this.assignmentsRepo.find({
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.assignmentsRepo.findAndCount({
       relations: ['member', 'trainer'],
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return paginate(data, total, page, limit);
   }
 
   async findOne(id: string) {

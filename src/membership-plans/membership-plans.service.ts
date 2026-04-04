@@ -6,6 +6,7 @@ import { Branch } from '../entities/branch.entity';
 import { Gym } from '../entities/gym.entity';
 import { CreateMembershipPlanDto } from './dto/create-membership-plan.dto';
 import { UpdateMembershipPlanDto } from './dto/update-membership-plan.dto';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class MembershipPlansService {
@@ -42,7 +43,13 @@ export class MembershipPlansService {
     return this.plansRepo.save(plan);
   }
 
-  async findAll(branchId?: string, minPrice?: number, maxPrice?: number) {
+  async findAll(
+    branchId?: string,
+    minPrice?: number,
+    maxPrice?: number,
+    page = 1,
+    limit = 20,
+  ) {
     const queryBuilder = this.plansRepo
       .createQueryBuilder('plan')
       .leftJoinAndSelect('plan.branch', 'branch');
@@ -59,7 +66,12 @@ export class MembershipPlansService {
       queryBuilder.andWhere('plan.price <= :maxPrice', { maxPrice });
     }
 
-    return queryBuilder.getMany();
+    const [data, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return paginate(data, total, page, limit);
   }
 
   async findOne(id: number) {

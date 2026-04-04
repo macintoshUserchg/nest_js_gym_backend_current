@@ -11,6 +11,7 @@ import { Trainer } from '../entities/trainers.entity';
 import { User } from '../entities/users.entity';
 import { CreateWorkoutLogDto } from './dto/create-workout-log.dto';
 import { UpdateWorkoutLogDto } from './dto/update-workout-log.dto';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class WorkoutLogsService {
@@ -103,10 +104,13 @@ export class WorkoutLogsService {
     return this.workoutLogsRepo.save(workoutLog);
   }
 
-  async findAll() {
-    return this.workoutLogsRepo.find({
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.workoutLogsRepo.findAndCount({
       relations: ['member', 'trainer'],
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return paginate(data, total, page, limit);
   }
 
   async findOne(id: number) {

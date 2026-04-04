@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { MemberSubscription } from '../entities/member_subscriptions.entity';
 import { Member } from '../entities/members.entity';
 import { MembershipPlan } from '../entities/membership_plans.entity';
+import { paginate } from '../common/dto/pagination.dto';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import { isSubscriptionCurrentlyActive } from '../common/utils/subscription.util';
@@ -66,14 +67,18 @@ export class SubscriptionsService {
     return this.subscriptionsRepo.save(subscription);
   }
 
-  async findAll() {
-    const subscriptions = await this.subscriptionsRepo.find({
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.subscriptionsRepo.findAndCount({
       relations: ['member', 'plan'],
+      skip: (page - 1) * limit,
+      take: limit,
     });
 
-    return subscriptions.map((subscription) =>
+    const result = data.map((subscription) =>
       this.withEffectiveActiveState(subscription),
     );
+
+    return paginate(result, total, page, limit);
   }
 
   async findOne(id: number) {

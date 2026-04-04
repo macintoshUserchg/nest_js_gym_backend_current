@@ -8,6 +8,8 @@ import {
   Query,
   UseGuards,
   ParseIntPipe,
+  DefaultValuePipe,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,6 +25,7 @@ import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { RefundPaymentDto } from './dto/refund-payment.dto';
 import { PaymentFilterDto } from './dto/payment-filter.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { paginate } from '../common/dto/pagination.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../entities/users.entity';
 import { PaymentTransaction } from '../entities/payment_transactions.entity';
@@ -153,6 +156,37 @@ export class PaymentsController {
   })
   findAll(@Query() filterDto: PaymentFilterDto) {
     return this.paymentsService.findAll(filterDto);
+  }
+
+  @Get('export/csv')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Export payments as CSV' })
+  @ApiResponse({ status: 200, description: 'CSV file of payments.' })
+  async exportCsv(@Query() filterDto: PaymentFilterDto, @Res() res: any) {
+    const payments = await this.paymentsService.exportAll(filterDto);
+    const data = payments.map((p: any) => ({
+      transaction_id: p.transaction_id,
+      amount: p.amount,
+      method: p.method,
+      status: p.status,
+      reference_number: p.reference_number,
+      payment_date: p.payment_date,
+      created_at: p.created_at,
+    }));
+    const columns = [
+      'transaction_id',
+      'amount',
+      'method',
+      'status',
+      'reference_number',
+      'payment_date',
+      'created_at',
+    ];
+    const csv = this.paymentsService.toCsv(data, columns);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=payments.csv');
+    res.send(csv);
   }
 
   @Get('summary')
@@ -663,5 +697,78 @@ export class MemberPaymentsController {
   })
   findByMember(@Param('memberId', ParseIntPipe) memberId: number) {
     return this.paymentsService.findByMember(memberId);
+  }
+
+  @Get('daily-cash-report')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get daily cash report',
+    description:
+      'Returns a breakdown of cash vs non-cash payments for a specific date.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Daily cash report.',
+  })
+  getDailyCashReport(@Query('date') date?: string) {
+    return this.paymentsService.getDailyCashReport(date);
+  }
+
+  @Post('bulk')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Bulk create payments',
+    description: 'Record multiple payments in a single request.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Bulk payments processed.',
+  })
+  bulkCreatePayments(
+    @Body() payments: CreatePaymentDto[],
+    @CurrentUser() user: User,
+  ) {
+    return this.paymentsService.bulkCreatePayments(payments, user?.userId);
+  }
+
+  @Get('reconciliation')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get reconciliation report',
+    description:
+      'Returns a reconciliation report for a date range (defaults to current month).',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Reconciliation report.',
+  })
+  getReconciliationReport(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.paymentsService.getReconciliationReport(startDate, endDate);
+  }
+
+  @Get(':id/receipt')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get payment receipt',
+    description: 'Returns a formatted receipt for a specific payment.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Payment transaction ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment receipt.',
+  })
+  getReceipt(@Param('id') id: string) {
+    return this.paymentsService.getReceipt(id);
   }
 }

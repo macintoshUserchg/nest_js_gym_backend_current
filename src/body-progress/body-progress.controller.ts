@@ -9,6 +9,7 @@ import {
   UseGuards,
   ParseIntPipe,
   Query,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,6 +21,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { paginate } from '../common/dto/pagination.dto';
 import { BodyProgressService } from './body-progress.service';
 import { CreateBodyProgressDto } from './dto/create-body-progress.dto';
 import { UpdateBodyProgressDto } from './dto/update-body-progress.dto';
@@ -266,8 +268,11 @@ export class BodyProgressController {
     description:
       'Forbidden - Insufficient permissions to view progress records.',
   })
-  findAll() {
-    return this.bodyProgressService.findAll();
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.bodyProgressService.findAll(page, limit);
   }
 
   @Get(':id')

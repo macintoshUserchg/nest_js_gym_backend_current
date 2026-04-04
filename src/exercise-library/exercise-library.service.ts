@@ -8,6 +8,7 @@ import { Repository, ILike } from 'typeorm';
 import { ExerciseLibrary } from '../entities/exercise_library.entity';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
+import { paginate } from '../common/dto/pagination.dto';
 import { FilterExerciseDto } from './dto/filter-exercise.dto';
 
 @Injectable()
@@ -55,9 +56,11 @@ export class ExerciseLibraryService {
     const [data, total] = await this.exerciseLibraryRepo.findAndCount({
       where,
       order: { exercise_name: 'ASC' },
+      skip: ((filterDto.page || 1) - 1) * (filterDto.limit || 20),
+      take: filterDto.limit || 20,
     });
 
-    return { data, total };
+    return paginate(data, total, filterDto.page || 1, filterDto.limit || 20);
   }
 
   async findOne(exercise_id: string): Promise<ExerciseLibrary> {

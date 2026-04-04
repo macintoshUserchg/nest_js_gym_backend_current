@@ -2,13 +2,15 @@ import {
   Controller,
   Get,
   Post,
-  Body,
   Patch,
-  Param,
   Delete,
+  Body,
+  Param,
   UseGuards,
   ParseIntPipe,
   Query,
+  DefaultValuePipe,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -269,8 +271,45 @@ export class MembersController {
     @Query('branchId') branchId?: string,
     @Query('status') status?: string,
     @Query('search') search?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
   ) {
-    return this.membersService.findAll(branchId, status, search);
+    return this.membersService.findAll(branchId, status, search, page, limit);
+  }
+
+  @Get('export/csv')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Export members as CSV' })
+  @ApiResponse({ status: 200, description: 'CSV file of members.' })
+  async exportCsv(@Res() res: any) {
+    const members = await this.membersService.exportAll();
+    const data = members.map((m: any) => ({
+      id: m.id,
+      fullName: m.fullName,
+      email: m.email,
+      phone: m.phone,
+      gender: m.gender,
+      isActive: m.isActive,
+      branch: m.branch?.name || '',
+      subscription: m.subscription?.plan?.name || '',
+      createdAt: m.createdAt,
+    }));
+    const columns = [
+      'id',
+      'fullName',
+      'email',
+      'phone',
+      'gender',
+      'isActive',
+      'branch',
+      'subscription',
+      'createdAt',
+    ];
+    const csv = this.membersService.toCsv(data, columns);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=members.csv');
+    res.send(csv);
   }
 
   @Get(':id')

@@ -8,6 +8,8 @@ import {
   Delete,
   UseGuards,
   Query,
+  ParseIntPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,6 +27,7 @@ import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 import { GymMemberResponseDto } from './dto/gym-member-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { paginate } from '../common/dto/pagination.dto';
 import { Gym } from '../entities/gym.entity';
 
 @ApiTags('gyms')
@@ -558,11 +561,13 @@ export class BranchesController {
       },
     },
   })
-  async findAll() {
-    // This will get all branches across all gyms
-    const gyms = await this.gymsService.findAll();
-    const branches = gyms.flatMap((gym) => gym.branches || []);
-    return branches;
+  async findAll(
+    @Query('location') location?: string,
+    @Query('search') search?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+  ) {
+    return this.gymsService.findAll(location, search, page, limit);
   }
 
   @Get(':id')

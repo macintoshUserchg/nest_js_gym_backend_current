@@ -6,6 +6,7 @@ import { Member } from '../entities/members.entity';
 import { MemberSubscription } from '../entities/member_subscriptions.entity';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class InvoicesService {
@@ -53,11 +54,14 @@ export class InvoicesService {
     return this.invoicesRepo.save(invoice);
   }
 
-  async findAll() {
-    return this.invoicesRepo.find({
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.invoicesRepo.findAndCount({
       relations: ['member', 'subscription', 'payments'],
       order: { created_at: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return paginate(data, total, page, limit);
   }
 
   async findOne(id: string) {

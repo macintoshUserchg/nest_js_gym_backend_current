@@ -7,6 +7,8 @@ import {
   Param,
   UseGuards,
   ParseIntPipe,
+  Query,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,6 +22,7 @@ import { InvoicesService } from './invoices.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { paginate } from '../common/dto/pagination.dto';
 import { Invoice } from '../entities/invoices.entity';
 
 @ApiTags('invoices')
@@ -119,8 +122,11 @@ export class InvoicesController {
     status: 403,
     description: 'Forbidden - Insufficient permissions to access invoices.',
   })
-  findAll() {
-    return this.invoicesService.findAll();
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.invoicesService.findAll(page, limit);
   }
 
   @Get(':id')

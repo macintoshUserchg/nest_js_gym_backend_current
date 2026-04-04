@@ -8,4 +8,6 @@ export const pgConfig: PostgresConnectionOptions = {
   type: 'postgres',
   synchronize: (process.env.NODE_ENV || 'development') === 'development',
   entities: [__dirname + '/**/*.entity{.ts,.js}'],
+  migrations: [__dirname + '/src/migrations/*{.ts,.js}'],
+  migrationsTableName: 'migrations',
 };

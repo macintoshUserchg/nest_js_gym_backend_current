@@ -9,6 +9,7 @@ import {
   UseGuards,
   Query,
   ParseIntPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,6 +24,7 @@ import { ClassesService } from './classes.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { paginate } from '../common/dto/pagination.dto';
 import { Class } from '../entities/classes.entity';
 import { log } from 'console';
 
@@ -81,8 +83,14 @@ export class ClassesController {
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token.',
   })
-  findAll() {
-    return this.classesService.findAll();
+  findAll(
+    @Query('branchId') branchId?: string,
+    @Query('timing') timing?: string,
+    @Query('day', ParseIntPipe) day?: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+  ) {
+    return this.classesService.findAll(branchId, timing, day, page, limit);
   }
 
   @Get(':id')

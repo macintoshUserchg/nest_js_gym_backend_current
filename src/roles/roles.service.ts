@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role } from '../entities/roles.entity';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class RolesService {
@@ -10,8 +11,12 @@ export class RolesService {
     private rolesRepo: Repository<Role>,
   ) {}
 
-  async findAll() {
-    return this.rolesRepo.find();
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.rolesRepo.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return paginate(data, total, page, limit);
   }
 
   async findById(id: string) {

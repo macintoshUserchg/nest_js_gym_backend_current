@@ -7,6 +7,8 @@ import {
   Delete,
   UseGuards,
   ParseIntPipe,
+  Query,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,6 +21,7 @@ import {
 import { AssignmentsService } from './assignments.service';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { paginate } from '../common/dto/pagination.dto';
 
 @ApiTags('assignments')
 @Controller('assignments')
@@ -126,8 +129,11 @@ export class AssignmentsController {
     status: 500,
     description: 'Internal server error while retrieving assignments.',
   })
-  findAll() {
-    return this.assignmentsService.findAll();
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.assignmentsService.findAll(page, limit);
   }
 
   @Get(':id')

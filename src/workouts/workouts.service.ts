@@ -12,6 +12,7 @@ import { Trainer } from '../entities/trainers.entity';
 import { User } from '../entities/users.entity';
 import { CreateWorkoutPlanDto } from './dto/create-workout-plan.dto';
 import { UpdateWorkoutPlanDto } from './dto/update-workout-plan.dto';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class WorkoutsService {
@@ -124,10 +125,13 @@ export class WorkoutsService {
     });
   }
 
-  async findAll() {
-    return this.workoutPlansRepo.find({
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.workoutPlansRepo.findAndCount({
       relations: ['member', 'assigned_by_trainer', 'exercises'],
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return paginate(data, total, page, limit);
   }
 
   async findOne(plan_id: string) {

@@ -36,4 +36,10 @@ export class Class {
 
   @Column({ type: 'int', array: true, nullable: true })
   days_of_week: number[];
+
+  @Column({ type: 'int', default: 0 })
+  capacity: number;
+
+  @Column({ type: 'int', default: 0 })
+  enrolledCount: number;
 }

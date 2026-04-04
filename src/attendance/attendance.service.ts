@@ -13,6 +13,7 @@ import { AttendanceGoal } from '../entities/attendance_goals.entity';
 import { MarkAttendanceDto } from './dto/mark-attendance.dto';
 import { CreateAttendanceGoalDto } from './dto/create-attendance-goal.dto';
 import { MonthlyAttendanceDto } from './dto/monthly-attendance.dto';
+import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class AttendanceService {
@@ -114,10 +115,13 @@ export class AttendanceService {
     return this.attendanceRepo.save(attendance);
   }
 
-  async findAll() {
-    return this.attendanceRepo.find({
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.attendanceRepo.findAndCount({
       relations: ['member', 'trainer', 'branch'],
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return paginate(data, total, page, limit);
   }
 
   async findOne(id: string) {
@@ -390,5 +394,28 @@ export class AttendanceService {
 
       await this.goalsRepo.save(goal);
     }
+  }
+
+  async exportAll() {
+    return this.attendanceRepo.find({
+      relations: ['member', 'trainer', 'branch'],
+      order: { date: 'DESC', checkInTime: 'DESC' },
+    });
+  }
+
+  toCsv(data: Record<string, unknown>[], columns: string[]): string {
+    const header = columns.join(',');
+    const rows = data.map((row) =>
+      columns
+        .map((col) => {
+          const val = row[col] ?? '';
+          const str = String(val);
+          return str.includes(',') || str.includes('"') || str.includes('\n')
+            ? `"${str.replace(/"/g, '""')}"`
+            : str;
+        })
+        .join(','),
+    );
+    return [header, ...rows].join('\n');
   }
 }
