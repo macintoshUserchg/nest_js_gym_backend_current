@@ -1,13 +1,23 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  UseGuards,
+  Query,
+  ParseIntPipe,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiResponse,
   ApiOperation,
   ApiParam,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { BranchAccessGuard } from '../auth/guards/branch-access.guard';
+import { RequireBranchOwner } from '../auth/decorators/branch-access.decorator';
 
 @ApiTags('analytics')
 @Controller('analytics')
@@ -16,7 +26,8 @@ export class AnalyticsController {
 
   @Get('gym/:gymId/dashboard')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({ summary: 'Get gym dashboard analytics' })
   @ApiParam({ name: 'gymId', description: 'Gym ID', example: 'gym-123' })
   @ApiResponse({
@@ -137,7 +148,8 @@ export class AnalyticsController {
 
   @Get('branch/:branchId/dashboard')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({ summary: 'Get branch dashboard analytics' })
   @ApiParam({
     name: 'branchId',
@@ -255,7 +267,8 @@ export class AnalyticsController {
 
   @Get('gym/:gymId/members')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({ summary: 'Get gym member analytics' })
   @ApiParam({ name: 'gymId', description: 'Gym ID', example: 'gym-123' })
   @ApiResponse({
@@ -300,7 +313,8 @@ export class AnalyticsController {
 
   @Get('branch/:branchId/members')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({ summary: 'Get branch member analytics' })
   @ApiParam({
     name: 'branchId',
@@ -349,7 +363,8 @@ export class AnalyticsController {
 
   @Get('gym/:gymId/attendance')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({ summary: 'Get gym attendance analytics' })
   @ApiParam({ name: 'gymId', description: 'Gym ID', example: 'gym-123' })
   @ApiResponse({
@@ -384,7 +399,8 @@ export class AnalyticsController {
 
   @Get('branch/:branchId/attendance')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({ summary: 'Get branch attendance analytics' })
   @ApiParam({
     name: 'branchId',
@@ -423,7 +439,8 @@ export class AnalyticsController {
 
   @Get('gym/:gymId/payments/recent')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({
     summary: 'Get 10 most recent payment transactions for a gym',
   })
@@ -478,7 +495,8 @@ export class AnalyticsController {
 
   @Get('branch/:branchId/payments/recent')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({
     summary: 'Get 10 most recent payment transactions for a branch',
   })
@@ -591,5 +609,115 @@ export class AnalyticsController {
   })
   getTrainerDashboard(@Param('trainerId') trainerId: string) {
     return this.analyticsService.getTrainerDashboard(trainerId);
+  }
+
+  @Get('monthly-report')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get monthly financial report',
+    description:
+      'Generates a comprehensive monthly financial report including revenue breakdown, payment methods, membership trends, and key performance metrics for a specified month and year.',
+  })
+  @ApiQuery({
+    name: 'year',
+    required: true,
+    type: Number,
+    description: 'Year for the report',
+    example: 2025,
+  })
+  @ApiQuery({
+    name: 'month',
+    required: true,
+    type: Number,
+    description: 'Month (1-12) for the report',
+    example: 12,
+  })
+  @ApiQuery({
+    name: 'gymId',
+    required: false,
+    type: String,
+    description: 'Filter by gym ID (optional)',
+    example: 'gym-123',
+  })
+  @ApiQuery({
+    name: 'branchId',
+    required: false,
+    type: String,
+    description: 'Filter by branch ID (optional)',
+    example: 'branch-123',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Monthly report generated successfully.',
+    schema: {
+      example: {
+        period: {
+          year: 2025,
+          month: 12,
+          monthName: 'December',
+        },
+        summary: {
+          totalRevenue: 15000.0,
+          totalTransactions: 150,
+          newMembers: 25,
+          renewals: 75,
+          averageRevenuePerMember: 100.0,
+        },
+        revenueByMethod: {
+          cash: { count: 40, amount: 4000.0, percentage: 26.67 },
+          card: { count: 80, amount: 8000.0, percentage: 53.33 },
+          online: { count: 20, amount: 2000.0, percentage: 13.33 },
+          bank_transfer: { count: 10, amount: 1000.0, percentage: 6.67 },
+        },
+        membership: {
+          activeAtEnd: 60,
+          activeAtStart: 50,
+          growth: 10,
+          growthPercentage: 20.0,
+          expiringThisMonth: 8,
+          expiredThisMonth: 3,
+          renewedThisMonth: 75,
+        },
+        attendance: {
+          totalCheckIns: 1200,
+          averageDaily: 40.0,
+          peakDay: '2025-12-15',
+          peakDayCount: 65,
+        },
+        invoices: {
+          total: 155,
+          paid: 150,
+          pending: 5,
+          overdue: 0,
+          collectionRate: 96.77,
+        },
+        topPlans: [
+          { planName: 'Monthly Premium', count: 45, revenue: 4500.0 },
+          { planName: 'Quarterly Standard', count: 30, revenue: 3000.0 },
+          { planName: 'Annual Elite', count: 20, revenue: 4000.0 },
+        ],
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid year or month parameters.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error while generating monthly report.',
+  })
+  getMonthlyReport(
+    @Query('year', ParseIntPipe) year: number,
+    @Query('month', ParseIntPipe) month: number,
+    @Query('gymId') gymId?: string,
+    @Query('branchId') branchId?: string,
+  ) {
+    return this.analyticsService.getMonthlyReport(year, month, gymId, branchId);
   }
 }

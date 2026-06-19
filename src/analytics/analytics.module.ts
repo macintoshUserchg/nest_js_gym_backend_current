@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AnalyticsService } from './analytics.service';
 import { AnalyticsController } from './analytics.controller';
+import { BranchAccessGuard } from '../auth/guards/branch-access.guard';
 import { Gym } from '../entities/gym.entity';
 import { Branch } from '../entities/branch.entity';
 import { Member } from '../entities/members.entity';
@@ -29,7 +30,7 @@ import { PaymentTransaction } from '../entities/payment_transactions.entity';
     ]),
   ],
   controllers: [AnalyticsController],
-  providers: [AnalyticsService],
+  providers: [AnalyticsService, BranchAccessGuard],
   exports: [AnalyticsService],
 })
 export class AnalyticsModule {}

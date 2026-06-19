@@ -9,7 +9,15 @@ import { Reflector } from '@nestjs/core';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Branch } from '../../entities/branch.entity';
-import { Gym } from '../../entities/gym.entity';
+import { Role } from '../../common/enums/role.enum';
+
+interface BranchAccessRequest {
+  user?: {
+    role?: string;
+    gymId?: string;
+  };
+  params: Record<string, string | undefined>;
+}
 
 @Injectable()
 export class BranchAccessGuard implements CanActivate {
@@ -17,8 +25,6 @@ export class BranchAccessGuard implements CanActivate {
     private reflector: Reflector,
     @InjectRepository(Branch)
     private branchRepository: Repository<Branch>,
-    @InjectRepository(Gym)
-    private gymRepository: Repository<Gym>,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -31,40 +37,50 @@ export class BranchAccessGuard implements CanActivate {
       return true;
     }
 
-    const { user, params } = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<BranchAccessRequest>();
+    const { user, params } = request;
 
     if (!user) {
       return true;
     }
 
-    const userRole = user.role?.name;
-    const isSuperAdmin = userRole === 'SUPERADMIN';
-    const isAdmin = userRole === 'ADMIN';
+    const userRole = user.role;
+    const isSuperAdmin = userRole === Role.SUPERADMIN;
 
-    // Admins can only access their own gym/branch
-    if (isAdmin && !isSuperAdmin) {
-      const branchId = params.branchId || params.id;
-      const gymId = params.gymId || params.id;
+    // SUPERADMIN can read any tenant. MEMBER/TRAINER scoping is handled at
+    // the service layer for their own records; this guard confines admins.
+    if (isSuperAdmin || userRole !== Role.ADMIN) {
+      return true;
+    }
 
-      if (branchId) {
-        const branch = await this.branchRepository.findOne({
-          where: { branchId },
-          relations: ['gym'],
-        });
+    // From here the caller is an ADMIN: restrict to their own gym.
+    const adminGymId = user.gymId;
+    if (!adminGymId) {
+      throw new ForbiddenException('Your account is not associated with a gym');
+    }
 
-        if (!branch) {
-          throw new NotFoundException('Branch not found');
-        }
+    const branchId = params.branchId;
+    const gymId = params.gymId;
 
-        // Check if user belongs to the same gym as the branch
-        if (branch.gym && user.gymId !== branch.gym.gymId) {
-          throw new ForbiddenException('You do not have access to this branch');
-        }
-      } else if (gymId) {
-        if (user.gymId !== gymId) {
-          throw new ForbiddenException('You do not have access to this gym');
-        }
+    if (branchId) {
+      const branch = await this.branchRepository.findOne({
+        where: { branchId },
+        relations: ['gym'],
+      });
+
+      if (!branch) {
+        throw new NotFoundException('Branch not found');
       }
+
+      if (!branch.gym || branch.gym.gymId !== adminGymId) {
+        throw new ForbiddenException('You do not have access to this branch');
+      }
+
+      return true;
+    }
+
+    if (gymId && gymId !== adminGymId) {
+      throw new ForbiddenException('You do not have access to this gym');
     }
 
     return true;
