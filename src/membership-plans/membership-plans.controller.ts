@@ -24,6 +24,8 @@ import { MembershipPlansService } from './membership-plans.service';
 import { CreateMembershipPlanDto } from './dto/create-membership-plan.dto';
 import { UpdateMembershipPlanDto } from './dto/update-membership-plan.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { BranchAccessGuard } from '../auth/guards/branch-access.guard';
+import { RequireBranchOwner } from '../auth/decorators/branch-access.decorator';
 import { paginate } from '../common/dto/pagination.dto';
 import { MembershipPlan } from '../entities/membership_plans.entity';
 
@@ -314,7 +316,8 @@ export class BranchMembershipPlansController {
 
   @Get(':branchId/membership-plans')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({ summary: 'Get all membership plans for a branch' })
   @ApiParam({ name: 'branchId', description: 'Branch ID' })
   @ApiResponse({
@@ -334,7 +337,8 @@ export class GymMembershipPlansController {
 
   @Get(':gymId/membership-plans')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({ summary: 'Get all membership plans for a gym' })
   @ApiParam({ name: 'gymId', description: 'Gym ID' })
   @ApiResponse({

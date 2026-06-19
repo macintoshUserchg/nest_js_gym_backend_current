@@ -7,6 +7,7 @@ import {
   TrainerAttendanceController,
   BranchAttendanceController,
 } from './attendance.controller';
+import { BranchAccessGuard } from '../auth/guards/branch-access.guard';
 import { Attendance } from '../entities/attendance.entity';
 import { Member } from '../entities/members.entity';
 import { Trainer } from '../entities/trainers.entity';
@@ -29,7 +30,7 @@ import { AttendanceGoal } from '../entities/attendance_goals.entity';
     TrainerAttendanceController,
     BranchAttendanceController,
   ],
-  providers: [AttendanceService],
+  providers: [AttendanceService, BranchAccessGuard],
   exports: [AttendanceService],
 })
 export class AttendanceModule {}

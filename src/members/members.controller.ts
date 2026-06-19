@@ -27,6 +27,8 @@ import { UpdateMemberDto } from './dto/update-member.dto';
 import { AdminUpdateMemberDto } from './dto/admin-update-member.dto';
 import { BranchMemberResponseDto } from './dto/branch-member-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { BranchAccessGuard } from '../auth/guards/branch-access.guard';
+import { RequireBranchOwner } from '../auth/decorators/branch-access.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../entities/users.entity';
 import { Member } from '../entities/members.entity';
@@ -275,6 +277,75 @@ export class MembersController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
   ) {
     return this.membersService.findAll(branchId, status, search, page, limit);
+  }
+
+  @Get('expiring')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get expiring memberships',
+    description:
+      'Retrieves members whose memberships are expiring soon. Returns full member details including subscription information, plan details, and expiry dates. Useful for renewal outreach and membership retention.',
+  })
+  @ApiQuery({
+    name: 'days',
+    required: false,
+    type: Number,
+    description:
+      'Number of days ahead to look for expiring memberships (default: 30)',
+    example: 30,
+  })
+  @ApiQuery({
+    name: 'branchId',
+    required: false,
+    type: String,
+    description: 'Filter by branch ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Expiring memberships retrieved successfully.',
+    schema: {
+      example: {
+        totalMembers: 5,
+        days: 30,
+        members: [
+          {
+            id: 1001,
+            fullName: 'John Doe',
+            email: 'john@example.com',
+            phone: '1234567890',
+            subscription: {
+              id: 123,
+              plan: {
+                id: 1,
+                name: 'Monthly Premium',
+                price: 99.99,
+              },
+              startDate: '2024-12-01T00:00:00Z',
+              endDate: '2024-12-31T23:59:59Z',
+              isActive: true,
+            },
+            daysUntilExpiry: 5,
+            expiryDate: '2024-12-31T23:59:59Z',
+          },
+        ],
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error while retrieving expiring memberships.',
+  })
+  getExpiringMemberships(
+    @Query('days', new DefaultValuePipe(30), ParseIntPipe) days?: number,
+    @Query('branchId') branchId?: string,
+  ) {
+    return this.membersService.getExpiringMemberships(days, branchId);
   }
 
   @Get('export/csv')
@@ -603,7 +674,8 @@ export class BranchMembersController {
 
   @Get(':branchId/members')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({
     summary: 'Get all members for a branch',
     description:

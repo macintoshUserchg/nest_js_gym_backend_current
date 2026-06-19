@@ -22,6 +22,8 @@ import {
 import { AttendanceService } from './attendance.service';
 import { MarkAttendanceDto } from './dto/mark-attendance.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { BranchAccessGuard } from '../auth/guards/branch-access.guard';
+import { RequireBranchOwner } from '../auth/decorators/branch-access.decorator';
 import { paginate } from '../common/dto/pagination.dto';
 
 @ApiTags('attendance')
@@ -184,6 +186,35 @@ export class AttendanceController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
     return this.attendanceService.findAll(page, limit);
+  }
+
+  @Get('today')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: "Get today's attendance records",
+    description:
+      'Retrieves all attendance records for the current day including check-ins, check-outs, and session details. Useful for monitoring daily gym activity and member attendance.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Today's attendance records retrieved successfully.",
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Insufficient permissions to access attendance data.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error while retrieving attendance records.',
+  })
+  getTodayAttendance() {
+    return this.attendanceService.getTodayAttendance();
   }
 
   @Get('export/csv')
@@ -359,7 +390,8 @@ export class BranchAttendanceController {
 
   @Get(':branchId/attendance')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({
     summary: 'Get attendance records for a branch',
     description:

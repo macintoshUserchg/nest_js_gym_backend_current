@@ -27,6 +27,8 @@ import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 import { GymMemberResponseDto } from './dto/gym-member-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { BranchAccessGuard } from '../auth/guards/branch-access.guard';
+import { RequireBranchOwner } from '../auth/decorators/branch-access.decorator';
 import { paginate } from '../common/dto/pagination.dto';
 import { Gym } from '../entities/gym.entity';
 
@@ -256,7 +258,8 @@ export class GymsController {
 
   @Post(':gymId/branches')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({
     summary: 'Create a branch for a gym',
     description:
@@ -330,7 +333,8 @@ export class GymsController {
 
   @Get(':gymId/branches')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({ summary: 'Get all branches for a gym' })
   @ApiParam({ name: 'gymId', description: 'Gym ID' })
   @ApiResponse({ status: 200, description: 'Return all branches for the gym.' })
@@ -341,7 +345,8 @@ export class GymsController {
 
   @Get(':gymId/members')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({
     summary: 'Get all members for a gym',
     description:
@@ -514,7 +519,8 @@ export class GymsController {
 
   @Get(':gymId/trainers')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({ summary: 'Get all trainers for a gym' })
   @ApiParam({ name: 'gymId', description: 'Gym ID' })
   @ApiResponse({ status: 200, description: 'Return all trainers for the gym.' })
@@ -770,7 +776,8 @@ export class BranchesController {
 
   @Get(':branchId/trainers')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({
     summary: 'Get all trainers for a specific branch',
     description:

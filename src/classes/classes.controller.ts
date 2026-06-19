@@ -24,6 +24,8 @@ import { ClassesService } from './classes.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { BranchAccessGuard } from '../auth/guards/branch-access.guard';
+import { RequireBranchOwner } from '../auth/decorators/branch-access.decorator';
 import { paginate } from '../common/dto/pagination.dto';
 import { Class } from '../entities/classes.entity';
 import { log } from 'console';
@@ -264,7 +266,8 @@ export class BranchClassesController {
 
   @Get(':branchId/classes')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({
     summary: 'Get all classes for a branch',
     description:
@@ -311,7 +314,8 @@ export class GymClassesController {
 
   @Get(':gymId/classes')
   @ApiBearerAuth('JWT-auth')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BranchAccessGuard)
+  @RequireBranchOwner()
   @ApiOperation({
     summary: 'Get all classes for a gym',
     description:

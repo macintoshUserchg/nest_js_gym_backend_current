@@ -5,6 +5,7 @@ import {
   MembersController,
   BranchMembersController,
 } from './members.controller';
+import { BranchAccessGuard } from '../auth/guards/branch-access.guard';
 import { Member } from '../entities/members.entity';
 import { Branch } from '../entities/branch.entity';
 import { User } from '../entities/users.entity';
@@ -30,7 +31,7 @@ import { Class } from '../entities/classes.entity';
     ]),
   ],
   controllers: [MembersController, BranchMembersController],
-  providers: [MembersService],
+  providers: [MembersService, BranchAccessGuard],
   exports: [MembersService],
 })
 export class MembersModule {}
