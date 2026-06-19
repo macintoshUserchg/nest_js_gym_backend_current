@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import twilio from 'twilio';
+import * as twilio from 'twilio';
 
 @Injectable()
 export class SMSService {
@@ -13,7 +13,7 @@ export class SMSService {
     const authToken = this.configService.get<string>('TWILIO_AUTH_TOKEN');
     this.fromNumber = this.configService.get<string>('TWILIO_PHONE_NUMBER');
 
-    if (accountSid && authToken) {
+    if (accountSid && authToken && typeof twilio === 'function') {
       this.client = twilio(accountSid, authToken);
     } else {
       this.logger.warn(
@@ -39,11 +39,11 @@ export class SMSService {
       return { sid: result.sid };
     } catch (error) {
       this.logger.error(
-        `Failed to send SMS to ${phone}: ${error.message}`,
-        error.stack,
+        `Failed to send SMS to ${phone}: ${(error as Error).message}`,
+        (error as Error).stack,
       );
       throw new BadRequestException(
-        `Failed to send SMS: ${error.message || 'Unknown error'}`,
+        `Failed to send SMS: ${(error as Error).message || 'Unknown error'}`,
       );
     }
   }
@@ -70,11 +70,11 @@ export class SMSService {
       return { status: verificationCheck.status, valid: isValid };
     } catch (error) {
       this.logger.error(
-        `Failed to verify phone ${phone}: ${error.message}`,
-        error.stack,
+        `Failed to verify phone ${phone}: ${(error as Error).message}`,
+        (error as Error).stack,
       );
       throw new BadRequestException(
-        `Failed to verify phone: ${error.message || 'Unknown error'}`,
+        `Failed to verify phone: ${(error as Error).message || 'Unknown error'}`,
       );
     }
   }
