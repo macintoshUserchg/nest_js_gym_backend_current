@@ -12,7 +12,38 @@ import { PaymentFilterDto } from './dto/payment-filter.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { RefundPaymentDto } from './dto/refund-payment.dto';
 import { RenewalsService } from '../renewals/renewals.service';
-import { paginate } from '../common/dto/pagination.dto';
+
+interface SummaryResultRow {
+  grandTotal: string | null;
+  totalCount: string | null;
+}
+
+interface MethodResultRow {
+  method: string;
+  total: string;
+  count: string;
+}
+
+export interface PendingInvoiceLine {
+  invoice_id: string;
+  total_amount: number;
+  paid_amount: number;
+  outstanding_amount: number;
+  due_date: Date | undefined;
+  status: string;
+  created_at: Date;
+}
+
+export interface MemberDues {
+  member: {
+    id: number;
+    fullName: string;
+    email: string;
+    phone: string;
+  };
+  invoices: PendingInvoiceLine[];
+  totalOutstanding: number;
+}
 
 @Injectable()
 export class PaymentsService {
@@ -88,22 +119,26 @@ export class PaymentsService {
       .leftJoinAndSelect('payment.invoice', 'invoice')
       .leftJoinAndSelect('invoice.member', 'member');
 
+    // Apply filters
     if (filterDto) {
       if (filterDto.startDate) {
-        qb.andWhere('payment.created_at >= :startDate', {
-          startDate: filterDto.startDate,
+        qb.andWhere('payment.payment_date >= :startDate', {
+          startDate: new Date(filterDto.startDate),
         });
       }
       if (filterDto.endDate) {
-        qb.andWhere('payment.created_at <= :endDate', {
-          endDate: filterDto.endDate,
+        qb.andWhere('payment.payment_date <= :endDate', {
+          endDate: new Date(filterDto.endDate),
         });
+      }
+      if (filterDto.status) {
+        qb.andWhere('payment.status = :status', { status: filterDto.status });
       }
       if (filterDto.method) {
         qb.andWhere('payment.method = :method', { method: filterDto.method });
       }
-      if (filterDto.status) {
-        qb.andWhere('payment.status = :status', { status: filterDto.status });
+      if (filterDto.memberId) {
+        qb.andWhere('member.id = :memberId', { memberId: filterDto.memberId });
       }
       if (filterDto.branchId) {
         qb.andWhere('member.branchBranchId = :branchId', {
@@ -113,15 +148,71 @@ export class PaymentsService {
     }
 
     qb.orderBy('payment.created_at', 'DESC');
+    return qb.getMany();
+  }
 
-    const page = filterDto?.page || 1;
-    const limit = filterDto?.limit || 20;
-    const [data, total] = await qb
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
+  async getPendingDues() {
+    const pendingInvoices = await this.invoicesRepo.find({
+      where: {
+        status: 'pending',
+      },
+      relations: ['member', 'payments'],
+      order: {
+        due_date: 'ASC',
+      },
+    });
 
-    return paginate(data, total, page, limit);
+    const memberMap = new Map<number, MemberDues>();
+
+    for (const invoice of pendingInvoices) {
+      const memberId = invoice.member.id;
+      if (!memberMap.has(memberId)) {
+        memberMap.set(memberId, {
+          member: {
+            id: invoice.member.id,
+            fullName: invoice.member.fullName,
+            email: invoice.member.email,
+            phone: invoice.member.phone,
+          },
+          invoices: [],
+          totalOutstanding: 0,
+        });
+      }
+
+      const paidAmount =
+        invoice.payments
+          .filter((p) => p.status === 'completed' && !p.original_transaction_id)
+          .reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+
+      const outstandingAmount = Number(invoice.total_amount) - paidAmount;
+
+      const entry = memberMap.get(memberId);
+      if (entry) {
+        entry.invoices.push({
+          invoice_id: invoice.invoice_id,
+          total_amount: Number(invoice.total_amount),
+          paid_amount: paidAmount,
+          outstanding_amount: outstandingAmount,
+          due_date: invoice.due_date,
+          status: invoice.status,
+          created_at: invoice.created_at,
+        });
+
+        entry.totalOutstanding += outstandingAmount;
+      }
+    }
+
+    const dues = Array.from(memberMap.values()).sort(
+      (a, b) => b.totalOutstanding - a.totalOutstanding,
+    );
+
+    const totalAmount = dues.reduce((sum, d) => sum + d.totalOutstanding, 0);
+
+    return {
+      totalMembers: dues.length,
+      totalAmount,
+      dues,
+    };
   }
 
   async findOne(id: string) {
@@ -377,7 +468,7 @@ export class PaymentsService {
     const summaryResult = await qb
       .select('SUM(payment.amount)', 'grandTotal')
       .addSelect('COUNT(payment.transaction_id)', 'totalCount')
-      .getRawOne();
+      .getRawOne<SummaryResultRow>();
 
     const grandTotal = Number(summaryResult?.grandTotal) || 0;
     const totalCount = Number(summaryResult?.totalCount) || 0;
@@ -415,7 +506,7 @@ export class PaymentsService {
       .addSelect('SUM(payment.amount)', 'total')
       .addSelect('COUNT(payment.transaction_id)', 'count')
       .groupBy('payment.method')
-      .getRawMany();
+      .getRawMany<MethodResultRow>();
 
     const totalByMethod = methodResults.map((r) => ({
       method: r.method,
@@ -465,6 +556,7 @@ export class PaymentsService {
         status: invoice.status,
         due_date: invoice.due_date,
         description: invoice.description,
+        remainingBalance,
       },
       member: member
         ? {
@@ -647,13 +739,33 @@ export class PaymentsService {
     return qb.getMany();
   }
 
+  private serializeCsvValue(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    if (
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean'
+    ) {
+      return String(value);
+    }
+
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+
+    return JSON.stringify(value);
+  }
+
   toCsv(data: Record<string, unknown>[], columns: string[]): string {
     const header = columns.join(',');
     const rows = data.map((row) =>
       columns
         .map((col) => {
           const val = row[col] ?? '';
-          const str = String(val);
+          const str = this.serializeCsvValue(val);
           return str.includes(',') || str.includes('"') || str.includes('\n')
             ? `"${str.replace(/"/g, '""')}"`
             : str;
