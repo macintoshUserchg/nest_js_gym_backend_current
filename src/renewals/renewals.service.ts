@@ -14,7 +14,6 @@ import { MembershipPlan } from '../entities/membership_plans.entity';
 import { Invoice } from '../entities/invoices.entity';
 import { MemberSubscription } from '../entities/member_subscriptions.entity';
 import { CreateRenewalRequestDto } from './dto/create-renewal-request.dto';
-import { EmailService } from '../email/email.service';
 import { RemindersService } from '../reminders/reminders.service';
 import { paginate } from '../common/dto/pagination.dto';
 

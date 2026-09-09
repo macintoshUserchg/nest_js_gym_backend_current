@@ -48,6 +48,11 @@ export class PaymentFilterDto {
   @IsOptional()
   branchId?: string;
 
+  @ApiPropertyOptional({ description: 'Member ID' })
+  @IsInt()
+  @IsOptional()
+  memberId?: number;
+
   @ApiPropertyOptional({ description: 'Page number', default: 1 })
   @IsOptional()
   @Type(() => Number)

@@ -15,6 +15,7 @@ export enum ReminderType {
 export enum ReminderChannel {
   EMAIL = 'email',
   IN_APP = 'in_app',
+  SMS = 'sms',
 }
 
 @Entity('reminder_logs')

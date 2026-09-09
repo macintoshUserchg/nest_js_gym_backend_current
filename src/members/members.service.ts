@@ -271,6 +271,54 @@ export class MembersService {
     return paginate(data, total, page, limit);
   }
 
+  async getExpiringMemberships(days = 30, branchId?: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const expiryDate = new Date(today);
+    expiryDate.setDate(today.getDate() + days);
+    expiryDate.setHours(23, 59, 59, 999);
+
+    const queryBuilder = this.membersRepo
+      .createQueryBuilder('member')
+      .leftJoinAndSelect('member.subscription', 'subscription')
+      .leftJoinAndSelect('subscription.plan', 'plan')
+      .leftJoinAndSelect('member.branch', 'branch')
+      .where('subscription.endDate BETWEEN :today AND :expiryDate', {
+        today,
+        expiryDate,
+      })
+      .andWhere('subscription.isActive = :isActive', { isActive: true })
+      .andWhere('member.isActive = :memberActive', { memberActive: true });
+
+    if (branchId) {
+      queryBuilder.andWhere('branch.branchId = :branchId', { branchId });
+    }
+
+    const members = await queryBuilder
+      .orderBy('subscription.endDate', 'ASC')
+      .getMany();
+
+    const membersWithExpiryInfo = members.map((member) => {
+      const endDate = new Date(member.subscription!.endDate);
+      const daysUntilExpiry = Math.ceil(
+        (endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      return {
+        ...member,
+        daysUntilExpiry,
+        expiryDate: endDate,
+      };
+    });
+
+    return {
+      totalMembers: membersWithExpiryInfo.length,
+      days,
+      members: membersWithExpiryInfo,
+    };
+  }
+
   async exportAll() {
     return this.membersRepo.find({
       relations: ['branch', 'subscription', 'subscription.plan'],

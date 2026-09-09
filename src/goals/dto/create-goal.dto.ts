@@ -1,4 +1,10 @@
-import { MaxLength, IsNumber, IsOptional, IsString, IsBoolean} from 'class-validator';
+import {
+  MaxLength,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsBoolean,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateGoalDto {

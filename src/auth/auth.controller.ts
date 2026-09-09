@@ -94,7 +94,9 @@ export class AuthController {
   async login(
     @Body() loginDto: LoginUserDto,
     @Req() req: Request,
-  ): Promise<any> {
+  ): Promise<
+    LoginResponseDto | (LoginResponseDto & { refresh_token: string })
+  > {
     const user = await this.authService.validateUser(
       loginDto.email,
       loginDto.password,
@@ -102,16 +104,17 @@ export class AuthController {
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    const token = await this.authService.login(user);
+    const token = this.authService.login(user);
     const enableRefreshTokens = this.configService.get<boolean>(
       'featureFlags.enableRefreshTokens',
     );
+    const userAgent = this.extractUserAgent(req);
 
     if (enableRefreshTokens) {
       const refreshToken = await this.authService.generateRefreshToken(
         user,
-        req.ip,
-        req.headers['user-agent'],
+        this.extractIp(req),
+        userAgent,
       );
       return {
         userid: user.userId,
@@ -306,7 +309,7 @@ export class AuthController {
       },
     },
   })
-  async logout() {
+  logout() {
     return { message: 'Logged out successfully. Please discard your token.' };
   }
 
@@ -327,10 +330,11 @@ export class AuthController {
     },
   })
   async refresh(@Body() body: { refresh_token: string }, @Req() req: Request) {
+    const userAgent = this.extractUserAgent(req);
     return this.authService.refreshAccessToken(
       body.refresh_token,
-      req.ip,
-      req.headers['user-agent'],
+      this.extractIp(req),
+      userAgent,
     );
   }
 
@@ -370,5 +374,17 @@ export class AuthController {
       return this.authService.revokeRefreshToken(body.tokenId);
     }
     return this.authService.revokeAllUserTokens(user.userId);
+  }
+
+  private extractUserAgent(req: Request): string | undefined {
+    const userAgent = req.get('user-agent');
+    return userAgent ? userAgent : undefined;
+  }
+
+  private extractIp(req: Request): string {
+    if (typeof req.ip === 'string' && req.ip.length > 0) {
+      return req.ip;
+    }
+    return (req.socket?.remoteAddress as string) || 'unknown';
   }
 }

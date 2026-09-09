@@ -1,4 +1,10 @@
-import { MaxLength, IsNotEmpty, IsString, IsOptional, IsObject} from 'class-validator';
+import {
+  MaxLength,
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsObject,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateAuditLogDto {

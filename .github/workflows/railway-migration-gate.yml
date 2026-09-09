@@ -1,0 +1,42 @@
+name: Railway Migration Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target Railway environment
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  migration-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Run migration in Railway environment
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "Running migrations in ${{ inputs.environment }}"
+          railway run --environment "${{ inputs.environment }}" -- npm run migration:run:prod
+
+      - name: Post-migration note
+        run: |
+          echo "Migration gate completed. Trigger deploy/promotion only after this workflow succeeds."

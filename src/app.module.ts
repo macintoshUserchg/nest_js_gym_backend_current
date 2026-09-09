@@ -6,8 +6,9 @@ import { pgConfig } from '../dbConfig';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { minioConfig } from './config/minio.config';
+import { storageConfig } from './config/storage.config';
 import { featureFlagsConfig } from './config/feature-flags.config';
+import { envValidationSchema } from './config/env.validation';
 import { UploadModule } from './upload/upload.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { WebSocketModule } from './websocket/websocket.module';
@@ -76,10 +77,16 @@ import { EmailModule } from './email/email.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: '.env',
       expandVariables: true,
       isGlobal: true,
-      load: [minioConfig, featureFlagsConfig],
+      envFilePath: [
+        `.env.${process.env.NODE_ENV || 'development'}.local`,
+        `.env.${process.env.NODE_ENV || 'development'}`,
+        '.env.local',
+        '.env',
+      ],
+      validationSchema: envValidationSchema,
+      load: [storageConfig, featureFlagsConfig],
     }),
     ThrottlerModule.forRoot([
       {

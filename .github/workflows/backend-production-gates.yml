@@ -1,0 +1,87 @@
+name: Backend Production Gates
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  backend-quality-gates:
+    name: Build, Lint, Test, E2E, Audit
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gym_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: test
+      JWT_SECRET: test-jwt-secret-key-should-be-long-enough-12345
+      JWT_EXPIRES_IN: 1d
+      CORS_ORIGINS: http://localhost:3000
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gym_test
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gym_e2e
+      S3_ENDPOINT: http://localhost:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: gym-media
+      S3_ACCESS_KEY_ID: minio
+      S3_SECRET_ACCESS_KEY: minio123
+      S3_PUBLIC_URL: http://localhost:9000
+      S3_FORCE_PATH_STYLE: 'true'
+      SMTP_HOST: localhost
+      SMTP_PORT: '1025'
+      SMTP_USER: test-user
+      SMTP_PASS: test-pass
+      SMTP_FROM: no-reply@gympilot.local
+      FEATURE_ENABLE_REFRESH_TOKENS: 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Prepare isolated E2E database
+        run: |
+          psql "postgresql://postgres:postgres@localhost:5432/postgres" -c "CREATE DATABASE gym_e2e;" || true
+
+      - name: Build
+        run: npm run build
+
+      - name: Critical lint profile
+        run: npm run lint:critical
+
+      - name: Unit tests
+        run: npm test -- --runInBand
+
+      - name: Migration gate
+        run: npm run migration:run
+
+      - name: E2E tests
+        run: npm run test:e2e:ci
+
+      - name: Dependency audit (prod only)
+        run: npm audit --omit=dev --audit-level=high

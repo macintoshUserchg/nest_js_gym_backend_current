@@ -34,9 +34,7 @@ export class MealLibraryService {
     return this.mealLibraryRepo.save(meal);
   }
 
-  async findAll(
-    filterDto: FilterMealLibraryDto,
-  ): Promise<{
+  async findAll(filterDto: FilterMealLibraryDto): Promise<{
     data: MealLibrary[];
     total: number;
     page: number;

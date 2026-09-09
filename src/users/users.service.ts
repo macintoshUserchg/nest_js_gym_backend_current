@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,7 +11,6 @@ import { Member } from '../entities/members.entity';
 import { Trainer } from '../entities/trainers.entity';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UserRole } from '../common/enums/permissions.enum';
 import { paginate } from '../common/dto/pagination.dto';
 
 @Injectable()
@@ -57,7 +57,7 @@ export class UsersService {
     }
 
     // Fetch member data if memberId exists
-    let memberData: Member | null = null;
+    let memberData: Omit<Member, 'branch'> | null = null;
     if (user.memberId) {
       const member = await this.membersRepo.findOne({
         where: { id: parseInt(user.memberId) },
@@ -67,12 +67,13 @@ export class UsersService {
       // Remove branch from member to avoid duplication (it's already at user level)
       if (member) {
         const { branch, ...memberWithoutBranch } = member;
-        memberData = memberWithoutBranch as Member;
+        void branch;
+        memberData = memberWithoutBranch;
       }
     }
 
     // Fetch trainer data if trainerId exists
-    let trainerData: Trainer | null = null;
+    let trainerData: Omit<Trainer, 'branch'> | null = null;
     if (user.trainerId) {
       const trainer = await this.trainersRepo.findOne({
         where: { id: parseInt(user.trainerId) },
@@ -81,12 +82,14 @@ export class UsersService {
       // Remove branch from trainer to avoid duplication (it's already at user level)
       if (trainer) {
         const { branch, ...trainerWithoutBranch } = trainer;
-        trainerData = trainerWithoutBranch as Trainer;
+        void branch;
+        trainerData = trainerWithoutBranch;
       }
     }
 
     // Remove passwordHash from response
     const { passwordHash, ...userWithoutPassword } = user;
+    void passwordHash;
 
     // Return user with additional data
     return {
@@ -113,16 +116,17 @@ export class UsersService {
       return null;
     }
 
-    const allowedRoles = new Set([UserRole.MEMBER, UserRole.TRAINER]);
-    if (!allowedRoles.has(user.role?.name as UserRole)) {
+    const roleName = String(user.role?.name || '');
+    const allowedRoles = new Set(['MEMBER', 'TRAINER']);
+    if (!allowedRoles.has(roleName)) {
       return null;
     }
 
-    if (user.role?.name === UserRole.MEMBER && !user.memberId) {
+    if (roleName === 'MEMBER' && !user.memberId) {
       return null;
     }
 
-    if (user.role?.name === UserRole.TRAINER && !user.trainerId) {
+    if (roleName === 'TRAINER' && !user.trainerId) {
       return null;
     }
 
@@ -138,7 +142,7 @@ export class UsersService {
     return paginate(data, total, page, limit);
   }
 
-  async update(userId: string, updateUserDto: any) {
+  async update(userId: string, updateUserDto: Partial<User>) {
     await this.usersRepo.update({ userId }, updateUserDto);
     return this.findById(userId);
   }
@@ -152,8 +156,6 @@ export class UsersService {
     currentPassword: string,
     newPassword: string,
   ) {
-    const user = await this.findById(userId);
-
     // Get the full user with password hash
     const userWithPassword = await this.usersRepo.findOne({
       where: { userId },
@@ -163,7 +165,10 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    const bcrypt = require('bcrypt');
+    if (!userWithPassword.passwordHash) {
+      throw new BadRequestException('Password is not set for this user');
+    }
+
     const isPasswordValid = await bcrypt.compare(
       currentPassword,
       userWithPassword.passwordHash,

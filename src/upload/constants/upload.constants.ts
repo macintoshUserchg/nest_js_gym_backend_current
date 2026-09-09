@@ -38,5 +38,6 @@ export const FILE_CATEGORIES = {
 
 export type FileCategory = keyof typeof FILE_CATEGORIES;
 
-// Bucket name
-export const MINIO_BUCKET = 'gym-media';
+// Bucket name (S3)
+export const S3_BUCKET = 'gym-media';
+export const STORAGE_BUCKET = S3_BUCKET;

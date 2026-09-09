@@ -13,7 +13,11 @@
     },
     "github": {
       "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
       "environment": {
         "GITHUB_TOKEN": ""
       },
@@ -21,7 +25,18 @@
     },
     "jcodemunch": {
       "type": "local",
-      "command": ["uvx", "jcodemunch-mcp"],
+      "command": [
+        "uvx",
+        "jcodemunch-mcp"
+      ],
+      "enabled": true
+    },
+    "graft": {
+      "type": "local",
+      "command": [
+        "graft",
+        "mcp"
+      ],
       "enabled": true
     }
   }

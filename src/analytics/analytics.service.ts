@@ -1454,4 +1454,312 @@ export class AnalyticsService {
       })),
     };
   }
+
+  /**
+   * Get comprehensive monthly report
+   */
+  async getMonthlyReport(
+    year: number,
+    month: number,
+    gymId?: string,
+    branchId?: string,
+  ) {
+    if (year < 2000 || year > 2100) {
+      throw new Error('Year must be between 2000 and 2100');
+    }
+    if (month < 1 || month > 12) {
+      throw new Error('Month must be between 1 and 12');
+    }
+
+    const monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    const startDate = new Date(year, month - 1, 1);
+    startDate.setHours(0, 0, 0, 0);
+
+    const endDate = new Date(year, month, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    const prevMonthStart = new Date(year, month - 2, 1);
+    prevMonthStart.setHours(0, 0, 0, 0);
+
+    const prevMonthEnd = new Date(year, month - 1, 0);
+    prevMonthEnd.setHours(23, 59, 59, 999);
+
+    let memberFilter = 'member.isActive = :memberActive';
+    const memberParams: any = { memberActive: true };
+
+    if (branchId) {
+      memberFilter += ' AND member.branchBranchId = :branchId';
+      memberParams.branchId = branchId;
+    } else if (gymId) {
+      const gym = await this.gymsRepo.findOne({ where: { gymId } });
+      if (!gym) {
+        throw new NotFoundException(`Gym with ID ${gymId} not found`);
+      }
+
+      const branches = await this.branchesRepo
+        .createQueryBuilder('branch')
+        .where('branch.gym.gymId = :gymId', { gymId })
+        .getMany();
+
+      if (branches.length > 0) {
+        const branchIds = branches.map((b) => b.branchId);
+        memberFilter += ' AND member.branchBranchId IN (:...branchIds)';
+        memberParams.branchIds = branchIds;
+      }
+    }
+
+    const completedPayments = await this.paymentsRepo
+      .createQueryBuilder('payment')
+      .innerJoin('payment.invoice', 'invoice')
+      .innerJoin('invoice.member', 'member')
+      .where('payment.status = :status', { status: 'completed' })
+      .andWhere('payment.payment_date BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere(memberFilter, memberParams)
+      .getMany();
+
+    const totalRevenue = completedPayments.reduce(
+      (sum, p) => sum + Number(p.amount),
+      0,
+    );
+
+    const revenueByMethod = {
+      cash: { count: 0, amount: 0, percentage: 0 },
+      card: { count: 0, amount: 0, percentage: 0 },
+      online: { count: 0, amount: 0, percentage: 0 },
+      bank_transfer: { count: 0, amount: 0, percentage: 0 },
+    };
+
+    completedPayments.forEach((payment) => {
+      const method = payment.method;
+      if (revenueByMethod[method]) {
+        revenueByMethod[method].count++;
+        revenueByMethod[method].amount += Number(payment.amount);
+      }
+    });
+
+    Object.keys(revenueByMethod).forEach((key) => {
+      if (totalRevenue > 0) {
+        revenueByMethod[key].percentage =
+          (revenueByMethod[key].amount / totalRevenue) * 100;
+      }
+    });
+
+    const activeAtStart = await this.subscriptionsRepo
+      .createQueryBuilder('subscription')
+      .innerJoin('subscription.member', 'member')
+      .where(
+        'subscription.endDate >= :prevMonthStart AND subscription.endDate <= :prevMonthEnd',
+        { prevMonthStart, prevMonthEnd },
+      )
+      .andWhere(memberFilter, memberParams)
+      .andWhere('subscription.isActive = :subscriptionActive', {
+        subscriptionActive: true,
+      })
+      .getCount();
+
+    const activeAtEnd = await this.subscriptionsRepo
+      .createQueryBuilder('subscription')
+      .innerJoin('subscription.member', 'member')
+      .where('subscription.endDate >= :endDate', { endDate })
+      .andWhere(memberFilter, memberParams)
+      .andWhere('subscription.isActive = :subscriptionActive', {
+        subscriptionActive: true,
+      })
+      .getCount();
+
+    const newMembers = await this.membersRepo
+      .createQueryBuilder('member')
+      .where('member.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere(memberFilter, memberParams)
+      .getCount();
+
+    const attendanceRecords = await this.attendanceRepo
+      .createQueryBuilder('attendance')
+      .innerJoin('attendance.branch', 'branch')
+      .where('attendance.date BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .getMany();
+
+    const totalCheckIns = attendanceRecords.length;
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const averageDaily = totalCheckIns / daysInMonth;
+
+    const attendanceByDate = new Map<string, number>();
+    attendanceRecords.forEach((att) => {
+      const dateStr = att.date.toISOString().split('T')[0];
+      attendanceByDate.set(dateStr, (attendanceByDate.get(dateStr) || 0) + 1);
+    });
+
+    let peakDay = '';
+    let peakDayCount = 0;
+    attendanceByDate.forEach((count, date) => {
+      if (count > peakDayCount) {
+        peakDay = date;
+        peakDayCount = count;
+      }
+    });
+
+    const invoicesInMonth = await this.invoicesRepo
+      .createQueryBuilder('invoice')
+      .innerJoin('invoice.member', 'member')
+      .where('invoice.created_at BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere(memberFilter, memberParams)
+      .getMany();
+
+    const invoices = {
+      total: invoicesInMonth.length,
+      paid: invoicesInMonth.filter((inv) => inv.status === 'paid').length,
+      pending: invoicesInMonth.filter((inv) => inv.status === 'pending').length,
+      overdue: invoicesInMonth.filter(
+        (inv) =>
+          inv.status === 'pending' &&
+          inv.due_date &&
+          new Date(inv.due_date) < new Date(),
+      ).length,
+      collectionRate: 0,
+    };
+
+    if (invoices.total > 0) {
+      invoices.collectionRate = (invoices.paid / invoices.total) * 100;
+    }
+
+    const expiringThisMonth = await this.subscriptionsRepo
+      .createQueryBuilder('subscription')
+      .innerJoin('subscription.member', 'member')
+      .where('subscription.endDate BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere(memberFilter, memberParams)
+      .andWhere('subscription.isActive = :subscriptionActive', {
+        subscriptionActive: true,
+      })
+      .getCount();
+
+    const expiredThisMonth = await this.subscriptionsRepo
+      .createQueryBuilder('subscription')
+      .innerJoin('subscription.member', 'member')
+      .where('subscription.endDate BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere(memberFilter, memberParams)
+      .andWhere('subscription.isActive = :subscriptionActive', {
+        subscriptionActive: false,
+      })
+      .getCount();
+
+    const renewals = await this.paymentsRepo
+      .createQueryBuilder('payment')
+      .innerJoin('payment.invoice', 'invoice')
+      .innerJoin('invoice.member', 'member')
+      .innerJoin('invoice.subscription', 'currentSub')
+      .where('payment.payment_date BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere('payment.status = :status', { status: 'completed' })
+      .andWhere(memberFilter, memberParams)
+      .andWhere((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select('1')
+          .from(MemberSubscription, 'prevSub')
+          .where('prevSub.member = member.id')
+          .andWhere('prevSub.endDate < currentSub.startDate')
+          .getQuery();
+        return `EXISTS ${subQuery}`;
+      })
+      .getCount();
+
+    const topPlansRaw = await this.paymentsRepo
+      .createQueryBuilder('payment')
+      .innerJoin('payment.invoice', 'invoice')
+      .innerJoin('invoice.member', 'member')
+      .innerJoin('invoice.subscription', 'subscription')
+      .innerJoin('subscription.plan', 'plan')
+      .where('payment.status = :status', { status: 'completed' })
+      .andWhere('payment.payment_date BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere(memberFilter, memberParams)
+      .select('plan.name', 'planName')
+      .addSelect('COUNT(payment.transaction_id)', 'count')
+      .addSelect('SUM(payment.amount)', 'revenue')
+      .groupBy('plan.name')
+      .orderBy('SUM(payment.amount)', 'DESC')
+      .limit(5)
+      .getRawMany();
+
+    const topPlans = topPlansRaw.map((row) => ({
+      planName: row.planName,
+      count: parseInt(row.count, 10),
+      revenue: parseFloat(row.revenue),
+    }));
+
+    const membershipGrowth = activeAtEnd - activeAtStart;
+    const growthPercentage =
+      activeAtStart > 0 ? (membershipGrowth / activeAtStart) * 100 : 0;
+
+    const summary = {
+      totalRevenue,
+      totalTransactions: completedPayments.length,
+      newMembers,
+      renewals,
+      averageRevenuePerMember: activeAtEnd > 0 ? totalRevenue / activeAtEnd : 0,
+    };
+
+    return {
+      period: {
+        year,
+        month,
+        monthName: monthNames[month - 1],
+      },
+      summary,
+      revenueByMethod,
+      membership: {
+        activeAtEnd,
+        activeAtStart,
+        growth: membershipGrowth,
+        growthPercentage,
+        expiringThisMonth,
+        expiredThisMonth,
+        renewedThisMonth: renewals,
+      },
+      attendance: {
+        totalCheckIns,
+        averageDaily,
+        peakDay,
+        peakDayCount,
+      },
+      invoices,
+      topPlans,
+    };
+  }
 }

@@ -1,16 +1,15 @@
 import {
   BadRequestException,
   Injectable,
-  Logger,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan } from 'typeorm';
+import { Repository, LessThan, MoreThan } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import twilio = require('twilio');
+import * as twilio from 'twilio';
 import { AuthJwtPayload } from './types/auth-jwtPayload';
 import { UsersService } from '../users/users.service';
 import { normalizePhoneNumber } from '../common/utils/phone.util';
@@ -19,18 +18,26 @@ import { EmailService } from '../email/email.service';
 import { Role } from '../entities/roles.entity';
 import { User } from '../entities/users.entity';
 import { RefreshToken } from '../entities/refresh_tokens.entity';
-import { ConfigService } from '@nestjs/config';
+
+interface AuthenticatedUser {
+  userId: string;
+  email: string;
+  role: { name: string };
+  phoneVerifiedAt?: Date | null;
+}
+
+interface TwilioVerificationCheck {
+  status?: string;
+}
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
   private readonly twilioClient: twilio.Twilio | null;
 
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
     private emailService: EmailService,
-    private configService: ConfigService,
     @InjectRepository(PasswordResetToken)
     private resetTokenRepo: Repository<PasswordResetToken>,
     @InjectRepository(Role)
@@ -40,13 +47,18 @@ export class AuthService {
     @InjectRepository(RefreshToken)
     private refreshTokenRepo: Repository<RefreshToken>,
   ) {
+    const hasTwilioCreds =
+      !!process.env.TWILIO_ACCOUNT_SID && !!process.env.TWILIO_AUTH_TOKEN;
     this.twilioClient =
-      process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
+      hasTwilioCreds && typeof twilio === 'function'
         ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
         : null;
   }
 
-  async validateUser(email: string, password: string): Promise<any> {
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<AuthenticatedUser> {
     const user = await this.usersService.findByEmail(email);
     if (!user) throw new UnauthorizedException('User not found');
     if (!user.passwordHash) {
@@ -56,10 +68,11 @@ export class AuthService {
     if (!isPasswordMatch)
       throw new UnauthorizedException('Invalid credentials');
     const { passwordHash, ...result } = user;
-    return result;
+    void passwordHash;
+    return result as AuthenticatedUser;
   }
 
-  async login(user: any) {
+  login(user: AuthenticatedUser): string {
     const payload: AuthJwtPayload = {
       sub: user.userId,
       email: user.email,
@@ -100,14 +113,14 @@ export class AuthService {
   async verifyMobileOtp(phoneNumber: string, code: string) {
     const normalizedPhone = normalizePhoneNumber(phoneNumber);
     const client = this.getTwilioClient();
-    let verificationCheck;
+    let verificationCheck: TwilioVerificationCheck = {};
     try {
-      verificationCheck = await client.verify.v2
+      verificationCheck = (await client.verify.v2
         .services(this.getVerifyServiceSid())
         .verificationChecks.create({
           to: normalizedPhone,
           code,
-        });
+        })) as TwilioVerificationCheck;
     } catch (error) {
       this.throwOtpProviderError(error);
     }
@@ -128,7 +141,7 @@ export class AuthService {
       });
     }
 
-    const token = await this.login(user);
+    const token = this.login(user);
     return {
       userid: user.userId,
       access_token: token,
@@ -282,10 +295,10 @@ export class AuthService {
 
     const savedUser = await this.userRepo.save(user);
 
-    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${emailVerificationToken}`;
     await this.emailService.sendWelcomeEmail(email, email);
 
     const { passwordHash, ...result } = savedUser;
+    void passwordHash;
     const token = this.jwtService.sign({
       sub: result.userId,
       email: result.email,
@@ -299,7 +312,7 @@ export class AuthService {
     const user = await this.userRepo.findOne({
       where: {
         emailVerificationToken: token,
-        emailVerificationTokenExpiresAt: new Date(),
+        emailVerificationTokenExpiresAt: MoreThan(new Date()),
       },
     });
 
@@ -316,7 +329,7 @@ export class AuthService {
   }
 
   async generateRefreshToken(
-    user: any,
+    user: Pick<AuthenticatedUser, 'userId'>,
     ipAddress?: string,
     userAgent?: string,
   ) {

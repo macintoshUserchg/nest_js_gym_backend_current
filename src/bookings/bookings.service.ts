@@ -75,13 +75,17 @@ export class BookingsService {
     return booking;
   }
 
-  findAll(filters?: {
-    classId?: string;
-    memberId?: number;
-    status?: BookingStatus;
-    dateFrom?: string;
-    dateTo?: string;
-  }, page = 1, limit = 20) {
+  findAll(
+    filters?: {
+      classId?: string;
+      memberId?: number;
+      status?: BookingStatus;
+      dateFrom?: string;
+      dateTo?: string;
+    },
+    page = 1,
+    limit = 20,
+  ) {
     const where: Record<string, unknown> = {};
 
     if (filters?.classId) {
@@ -122,7 +126,7 @@ export class BookingsService {
     const booking = await this.findOne(id);
 
     if (updateBookingDto.status && updateBookingDto.status !== booking.status) {
-      const classEntity = booking.class as Class;
+      const classEntity = booking.class;
       const capacity = classEntity.capacity || 0;
       const enrolledCount = classEntity.enrolledCount || 0;
 
@@ -168,7 +172,7 @@ export class BookingsService {
 
   async remove(id: string) {
     const booking = await this.findOne(id);
-    const classEntity = booking.class as Class;
+    const classEntity = booking.class;
 
     if (booking.status === BookingStatus.CONFIRMED) {
       classEntity.enrolledCount = Math.max(

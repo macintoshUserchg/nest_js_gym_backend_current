@@ -1,8 +1,11 @@
-import { MaxLength, IsNotEmpty,
-  IsNumber,
+import {
   IsEnum,
+  IsNotEmpty,
+  IsNumber,
   IsOptional,
-  IsString,} from 'class-validator';
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RefundPaymentDto {

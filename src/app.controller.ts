@@ -1,16 +1,16 @@
-import { Controller, Get } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { Controller, Get, Res } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { DataSource } from 'typeorm';
+import { Response } from 'express';
 import { AppService } from './app.service';
 
 @ApiTags('application')
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly dataSource: DataSource,
+  ) {}
 
   @Get()
   @ApiOperation({
@@ -128,11 +128,69 @@ export class AppController {
     return this.appService.getHello();
   }
 
+  @Get('health/live')
+  @ApiOperation({
+    summary: 'Liveness probe',
+    description:
+      'Returns process-level liveness. Use this for container liveness probes.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Application process is alive.',
+  })
+  getLiveHealth() {
+    return {
+      status: 'ok',
+      check: 'liveness',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+    };
+  }
+
+  @Get('health/ready')
+  @ApiOperation({
+    summary: 'Readiness probe',
+    description:
+      'Checks service dependencies needed to serve traffic. Use this for load balancer readiness.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Application is ready to serve traffic.',
+  })
+  @ApiResponse({
+    status: 503,
+    description: 'Application is not ready to serve traffic.',
+  })
+  async getReadyHealth(@Res() res: Response) {
+    let databaseReady = false;
+    try {
+      await this.dataSource.query('SELECT 1');
+      databaseReady = true;
+    } catch {
+      databaseReady = false;
+    }
+
+    const payload = {
+      status: databaseReady ? 'ready' : 'not_ready',
+      check: 'readiness',
+      timestamp: new Date().toISOString(),
+      checks: {
+        database: databaseReady ? 'ok' : 'error',
+      },
+    };
+
+    if (!databaseReady) {
+      return res.status(503).json(payload);
+    }
+
+    return res.json(payload);
+  }
+
   @Get('health')
   @ApiOperation({
-    summary: 'Health check endpoint',
+    summary: '[Legacy] Health check endpoint',
     description:
-      'Simple health check endpoint that can be used by monitoring systems, load balancers, and deployment pipelines to verify the application is running and responding to requests. Returns basic application status.',
+      'Backward-compatible health endpoint retained for Phase 1. Prefer /health/live and /health/ready for production probes.',
   })
   @ApiResponse({
     status: 200,

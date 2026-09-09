@@ -1,4 +1,6 @@
-import { MaxLength, IsArray,
+import {
+  MaxLength,
+  IsArray,
   IsDateString,
   IsEnum,
   IsNotEmpty,
@@ -6,7 +8,8 @@ import { MaxLength, IsArray,
   IsOptional,
   IsString,
   IsInt,
-  Min,} from 'class-validator';
+  Min,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateWorkoutPlanExerciseDto {

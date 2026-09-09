@@ -1,4 +1,4 @@
-import { MaxLength, IsString, IsEnum, IsOptional} from 'class-validator';
+import { IsEnum, IsString, MaxLength } from 'class-validator';
 
 export enum UploadCategory {
   AVATAR = 'avatar',

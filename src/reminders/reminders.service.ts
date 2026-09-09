@@ -7,7 +7,9 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as nodemailer from 'nodemailer';
+import type { Transporter } from 'nodemailer';
 import { NotificationType } from '../entities/notifications.entity';
+import { NotificationPreference } from '../entities/notification_preferences.entity';
 import {
   ReminderChannel,
   ReminderLog,
@@ -22,6 +24,7 @@ import {
 } from '../entities/renewal_requests.entity';
 import { User } from '../entities/users.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { SMSService } from '../notifications/sms.service';
 
 @Injectable()
 export class RemindersService {
@@ -38,7 +41,10 @@ export class RemindersService {
     private invoicesRepo: Repository<Invoice>,
     @InjectRepository(RenewalRequest)
     private renewalRequestsRepo: Repository<RenewalRequest>,
+    @InjectRepository(NotificationPreference)
+    private notificationPreferenceRepo: Repository<NotificationPreference>,
     private notificationsService: NotificationsService,
+    private smsService: SMSService,
   ) {}
 
   @Cron(CronExpression.EVERY_DAY_AT_9AM)
@@ -287,6 +293,20 @@ export class RemindersService {
     }
 
     const referenceDate = this.toDateOnly(args.referenceDate);
+    const preferences = await this.notificationPreferenceRepo.findOne({
+      where: { memberId: args.memberId },
+      relations: ['member'],
+    });
+
+    const smsEnabled = preferences?.smsEnabled ?? true;
+    const emailEnabled = preferences?.emailEnabled ?? true;
+
+    const smsAlreadySent = await this.hasReminderBeenSent(
+      args.userId,
+      args.reminderType,
+      ReminderChannel.SMS,
+      referenceDate,
+    );
     const emailAlreadySent = await this.hasReminderBeenSent(
       args.userId,
       args.reminderType,
@@ -300,7 +320,19 @@ export class RemindersService {
       referenceDate,
     );
 
-    if (!emailAlreadySent && args.email) {
+    if (smsEnabled && !smsAlreadySent) {
+      await this.smsService.sendSMS(
+        preferences?.member?.phone || '',
+        `${args.title}: ${args.message}`,
+      );
+      await this.logReminder({
+        ...args,
+        channel: ReminderChannel.SMS,
+        referenceDate,
+      });
+    }
+
+    if (emailEnabled && !emailAlreadySent && args.email) {
       await this.sendEmail(args.email, args.title, args.message);
       await this.logReminder({
         ...args,
@@ -382,7 +414,7 @@ export class RemindersService {
     });
   }
 
-  private createTransport() {
+  private createTransport(): Transporter {
     if (
       !process.env.SMTP_HOST ||
       !process.env.SMTP_PORT ||

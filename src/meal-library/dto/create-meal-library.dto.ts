@@ -1,9 +1,12 @@
-import { MaxLength, IsEnum,
+import {
+  MaxLength,
+  IsEnum,
   IsNotEmpty,
   IsString,
   IsOptional,
   IsInt,
-  IsNumber,} from 'class-validator';
+  IsNumber,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateMealLibraryDto {

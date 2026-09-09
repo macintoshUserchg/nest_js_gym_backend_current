@@ -40,13 +40,7 @@ export class UploadController {
       throw new BadRequestException('No file provided');
     }
     // Store in role-based folder: avatars/{role}/{userId}/
-    const roleFolder = user.role.name.toLowerCase();
-    return this.uploadService.uploadFileForUser(
-      file,
-      'avatar',
-      user,
-      roleFolder,
-    );
+    return this.uploadService.uploadFileForUser(file, 'avatar', user);
   }
 
   /**
@@ -65,14 +59,9 @@ export class UploadController {
       throw new BadRequestException('No file provided');
     }
     // Check permissions based on role
-    if (user.role.name === UserRole.MEMBER) {
+    if (user.role.name === 'MEMBER') {
       // Members can only upload to their own documents folder
-      return this.uploadService.uploadFileForUser(
-        file,
-        'document',
-        user,
-        `documents/member/${user.userId}`,
-      );
+      return this.uploadService.uploadFileForUser(file, 'document', user);
     }
     // ADMIN/SUPERADMIN/TRAINER can upload to general documents folder
     return this.uploadService.uploadFile(file, 'document');
@@ -94,13 +83,7 @@ export class UploadController {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
-    const roleFolder = user.role.name.toLowerCase();
-    return this.uploadService.uploadFileForUser(
-      file,
-      'media',
-      user,
-      `templates/${roleFolder}`,
-    );
+    return this.uploadService.uploadFileForUser(file, 'media', user);
   }
 
   /**
@@ -117,12 +100,7 @@ export class UploadController {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
-    return this.uploadService.uploadFileForUser(
-      file,
-      'progress',
-      user,
-      `progress/${user.userId}`,
-    );
+    return this.uploadService.uploadFileForUser(file, 'progress', user);
   }
 
   /**
@@ -136,13 +114,10 @@ export class UploadController {
     @CurrentUser() user: User,
   ) {
     // Users can only generate presigned URLs for their own role folder
-    const roleFolder = user.role.name.toLowerCase();
     return this.uploadService.getPresignedUploadUrlForUser(
       dto.folder,
       dto.filename,
-      dto.contentType,
       user,
-      roleFolder,
     );
   }
 
@@ -169,7 +144,7 @@ export class UploadController {
    */
   @Delete(':key')
   @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
-  async deleteFile(@Param('key') key: string, @CurrentUser() user: User) {
+  async deleteFile(@Param('key') key: string) {
     await this.uploadService.deleteFile(key);
     return { success: true, message: 'File deleted successfully' };
   }

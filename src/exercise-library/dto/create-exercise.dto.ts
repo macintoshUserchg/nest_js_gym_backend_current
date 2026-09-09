@@ -1,4 +1,10 @@
-import { MaxLength, IsEnum, IsNotEmpty, IsString, IsOptional} from 'class-validator';
+import {
+  MaxLength,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateExerciseDto {

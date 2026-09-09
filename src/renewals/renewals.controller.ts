@@ -14,7 +14,6 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RenewalsService } from './renewals.service';
 import { CreateRenewalRequestDto } from './dto/create-renewal-request.dto';
-import { paginate } from '../common/dto/pagination.dto';
 
 @ApiTags('renewals')
 @Controller('renewals')

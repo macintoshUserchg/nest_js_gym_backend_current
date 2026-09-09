@@ -124,6 +124,22 @@ export class AttendanceService {
     return paginate(data, total, page, limit);
   }
 
+  async getTodayAttendance() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return this.attendanceRepo.find({
+      where: {
+        date: Between(today, tomorrow),
+      },
+      relations: ['member', 'trainer', 'branch'],
+      order: { checkInTime: 'DESC' },
+    });
+  }
+
   async findOne(id: string) {
     const attendance = await this.attendanceRepo.findOne({
       where: { id },

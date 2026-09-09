@@ -3,7 +3,11 @@
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
+  "setupFiles": ["<rootDir>/setup-e2e.ts"],
+  "modulePathIgnorePatterns": ["<rootDir>/../dist/"],
+  "testPathIgnorePatterns": ["<rootDir>/../dist/"],
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
-  }
+    "^.+\\.ts$": "ts-jest"
+  },
+  "detectOpenHandles": true
 }

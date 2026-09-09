@@ -7,9 +7,8 @@ import {
   Param,
   Query,
   UseGuards,
-  ParseIntPipe,
-  DefaultValuePipe,
   Res,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,10 +24,10 @@ import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { RefundPaymentDto } from './dto/refund-payment.dto';
 import { PaymentFilterDto } from './dto/payment-filter.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { paginate } from '../common/dto/pagination.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../entities/users.entity';
 import { PaymentTransaction } from '../entities/payment_transactions.entity';
+import { Response } from 'express';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -158,21 +157,77 @@ export class PaymentsController {
     return this.paymentsService.findAll(filterDto);
   }
 
+  @Get('pending-dues')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get members with pending dues',
+    description:
+      'Retrieves all members with unpaid or partially paid invoices. Returns member details along with outstanding invoice amounts, due dates, and payment status. Useful for following up on pending payments and managing collections.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Members with pending dues retrieved successfully.',
+    schema: {
+      example: {
+        totalMembers: 5,
+        totalAmount: 2499.95,
+        dues: [
+          {
+            member: {
+              id: 1001,
+              fullName: 'John Doe',
+              email: 'john@example.com',
+              phone: '1234567890',
+            },
+            invoices: [
+              {
+                invoice_id: 'inv-123',
+                total_amount: 499.99,
+                paid_amount: 0,
+                outstanding_amount: 499.99,
+                due_date: '2025-12-31',
+                status: 'pending',
+              },
+            ],
+            totalOutstanding: 499.99,
+          },
+        ],
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Insufficient permissions to access payment records.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error while retrieving pending dues.',
+  })
+  getPendingDues() {
+    return this.paymentsService.getPendingDues();
+  }
+
   @Get('export/csv')
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Export payments as CSV' })
   @ApiResponse({ status: 200, description: 'CSV file of payments.' })
-  async exportCsv(@Query() filterDto: PaymentFilterDto, @Res() res: any) {
+  async exportCsv(@Query() filterDto: PaymentFilterDto, @Res() res: Response) {
     const payments = await this.paymentsService.exportAll(filterDto);
-    const data = payments.map((p: any) => ({
-      transaction_id: p.transaction_id,
-      amount: p.amount,
-      method: p.method,
-      status: p.status,
-      reference_number: p.reference_number,
-      payment_date: p.payment_date,
-      created_at: p.created_at,
+    const data = payments.map((payment) => ({
+      transaction_id: payment.transaction_id,
+      amount: payment.amount,
+      method: payment.method,
+      status: payment.status,
+      reference_number: payment.reference_number,
+      payment_date: payment.payment_date,
+      created_at: payment.created_at,
     }));
     const columns = [
       'transaction_id',

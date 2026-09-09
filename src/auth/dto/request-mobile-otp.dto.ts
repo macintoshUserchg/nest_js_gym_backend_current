@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MaxLength, IsNotEmpty, IsString} from 'class-validator';
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 export class RequestMobileOtpDto {
   @ApiProperty({

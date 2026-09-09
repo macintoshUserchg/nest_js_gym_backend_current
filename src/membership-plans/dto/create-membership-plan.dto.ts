@@ -1,9 +1,12 @@
-import { MaxLength, IsNotEmpty,
+import {
+  MaxLength,
+  IsNotEmpty,
   IsString,
   IsInt,
   IsOptional,
   Min,
-  IsUUID,} from 'class-validator';
+  IsUUID,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateMembershipPlanDto {

@@ -52,12 +52,13 @@ export const envValidationSchema = Joi.object({
   FEATURE_ENABLE_SOFT_DELETE: Joi.string()
     .valid('true', 'false')
     .default('false'),
-  MINIO_ENDPOINT: Joi.string().allow('').optional(),
-  MINIO_ACCESS_KEY: Joi.string().allow('').optional(),
-  MINIO_SECRET_KEY: Joi.string().allow('').optional(),
-  MINIO_BUCKET: Joi.string().allow('').optional(),
-  MINIO_PUBLIC_URL: Joi.string().allow('').optional(),
-  MINIO_USE_SSL: Joi.string().valid('true', 'false').default('false'),
+  S3_ENDPOINT: Joi.string().allow('').optional(),
+  S3_REGION: Joi.string().allow('').default('us-east-1'),
+  S3_BUCKET: Joi.string().allow('').optional(),
+  S3_ACCESS_KEY_ID: Joi.string().allow('').optional(),
+  S3_SECRET_ACCESS_KEY: Joi.string().allow('').optional(),
+  S3_PUBLIC_URL: Joi.string().allow('').optional(),
+  S3_FORCE_PATH_STYLE: Joi.string().valid('true', 'false').default('true'),
   MAX_FILE_SIZE: Joi.number().integer().positive().default(10485760),
   SMTP_HOST: Joi.string().allow('').optional(),
   SMTP_PORT: Joi.number().port().default(587),
@@ -87,11 +88,9 @@ export const envValidationSchema = Joi.object({
     const requiredInProduction = [
       'JWT_SECRET',
       'CORS_ORIGINS',
-      'MINIO_ENDPOINT',
-      'MINIO_ACCESS_KEY',
-      'MINIO_SECRET_KEY',
-      'MINIO_BUCKET',
-      'MINIO_PUBLIC_URL',
+      'S3_BUCKET',
+      'S3_ACCESS_KEY_ID',
+      'S3_SECRET_ACCESS_KEY',
       'SMTP_HOST',
       'SMTP_USER',
       'SMTP_PASS',
@@ -134,26 +133,26 @@ export const envValidationSchema = Joi.object({
       }
     }
 
-    if (value.MINIO_ACCESS_KEY === 'minioadmin') {
+    if (value.S3_ACCESS_KEY_ID === 'minioadmin') {
       return helpers.error('any.custom', {
         message:
-          'MINIO_ACCESS_KEY cannot use default insecure value in production.',
+          'S3_ACCESS_KEY_ID cannot use default insecure value in production.',
       });
     }
 
-    if (value.MINIO_SECRET_KEY === 'minioadmin') {
+    if (value.S3_SECRET_ACCESS_KEY === 'minioadmin') {
       return helpers.error('any.custom', {
         message:
-          'MINIO_SECRET_KEY cannot use default insecure value in production.',
+          'S3_SECRET_ACCESS_KEY cannot use default insecure value in production.',
       });
     }
 
     if (
-      typeof value.MINIO_ENDPOINT === 'string' &&
-      /(localhost|127\.0\.0\.1)/i.test(value.MINIO_ENDPOINT)
+      typeof value.S3_ENDPOINT === 'string' &&
+      /(localhost|127\.0\.0\.1)/i.test(value.S3_ENDPOINT)
     ) {
       return helpers.error('any.custom', {
-        message: 'MINIO_ENDPOINT must not point to localhost in production.',
+        message: 'S3_ENDPOINT must not point to localhost in production.',
       });
     }
 

@@ -14,7 +14,6 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { paginate } from '../common/dto/pagination.dto';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import {
@@ -28,6 +27,13 @@ import {
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserRole } from '../common/enums/permissions.enum';
+import { Request as ExpressRequest } from 'express';
+
+interface AuthenticatedRequest extends ExpressRequest {
+  user: {
+    userId: string;
+  };
+}
 
 @ApiTags('users')
 @Controller('users')
@@ -152,7 +158,7 @@ export class UsersController {
     },
   })
   async changePassword(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Body()
     body: {
       currentPassword: string;
@@ -192,7 +198,7 @@ export class UsersController {
       },
     },
   })
-  getProfile(@Request() req) {
+  getProfile(@Request() req: AuthenticatedRequest) {
     return this.usersService.findById(req.user.userId);
   }
 

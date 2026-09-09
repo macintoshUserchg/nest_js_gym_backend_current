@@ -31,6 +31,32 @@ import { ProgressTracking } from '../entities/progress_tracking.entity';
 import { Goal } from '../entities/goals.entity';
 import { AttendanceGoal } from '../entities/attendance_goals.entity';
 import { WorkoutLog } from '../entities/workout_logs.entity';
+import { Booking, BookingStatus } from '../entities/bookings.entity';
+import {
+  WorkoutTemplate,
+  ChartVisibility,
+  ChartType,
+  DifficultyLevel,
+  PlanType,
+} from '../entities/workout_templates.entity';
+import { WorkoutTemplateExercise } from '../entities/workout_template_exercises.entity';
+import { DietTemplate } from '../entities/diet_templates.entity';
+import { DietTemplateMeal } from '../entities/diet_template_meals.entity';
+import { GoalTemplate } from '../entities/goal_templates.entity';
+import { TemplateAssignment } from '../entities/template_assignments.entity';
+import { GoalSchedule } from '../entities/goal_schedules.entity';
+import { GoalScheduleMilestone } from '../entities/goal_schedule_milestones.entity';
+import {
+  RenewalRequest,
+  RenewalStatus,
+} from '../entities/renewal_requests.entity';
+import { NotificationPreference } from '../entities/notification_preferences.entity';
+import { ReminderLog } from '../entities/reminder_logs.entity';
+import { WorkoutPlanChartAssignment } from '../entities/workout_plan_chart_assignments.entity';
+import { TemplateShare } from '../entities/template_shares.entity';
+import { MealLibrary } from '../entities/meal_library.entity';
+import { DietPlanAssignment } from '../entities/diet_plan_assignments.entity';
+import { BodyProgress } from '../entities/body_progress.entity';
 import * as bcrypt from 'bcrypt';
 
 interface UserCredential {
@@ -129,6 +155,47 @@ class FitnessFirstEliteSeeder {
       const attendanceGoals = await this.seedAttendanceGoals(members, branches);
       const workoutLogs = await this.seedWorkoutLogs(members, trainers);
 
+      // Seed missing entities
+      console.log('Seeding missing entities for Fitness First Elite...');
+      const bookings = await this.seedBookings(members, classes);
+      const workoutTemplates = await this.seedWorkoutTemplates(
+        trainers,
+        branches,
+      );
+      const workoutTemplateExercises =
+        await this.seedWorkoutTemplateExercises(workoutTemplates);
+      const dietTemplates = await this.seedDietTemplates(trainers, branches);
+      const dietTemplateMeals = await this.seedDietTemplateMeals(dietTemplates);
+      const goalTemplates = await this.seedGoalTemplates(trainers);
+      const templateAssignments = await this.seedTemplateAssignments(
+        members,
+        workoutTemplates,
+        dietTemplates,
+        goalTemplates,
+        trainers,
+      );
+      const goalSchedules = await this.seedGoalSchedules(members, trainers);
+      const goalScheduleMilestones =
+        await this.seedGoalScheduleMilestones(goalSchedules);
+      const renewalRequests = await this.seedRenewalRequests(members, trainers);
+      const notificationPreferences =
+        await this.seedNotificationPreferences(users);
+      const reminderLogs = await this.seedReminderLogs(
+        users,
+        trainers,
+        members,
+      );
+      const workoutPlanChartAssignments =
+        await this.seedWorkoutPlanChartAssignments(workoutPlans);
+      const templateShares = await this.seedTemplateShares(users, trainers);
+      const mealLibrary = await this.seedMealLibrary();
+      const dietPlanAssignments = await this.seedDietPlanAssignments(
+        members,
+        dietPlans,
+        trainers,
+      );
+      const bodyProgress = await this.seedBodyProgress(members, trainers);
+
       console.log('\n=== FITNESS FIRST ELITE SEEDING COMPLETED ===');
       console.log('\n=== USER CREDENTIALS ===');
       this.displayUserCredentials();
@@ -161,6 +228,24 @@ class FitnessFirstEliteSeeder {
       console.log(`Goals: ${goals.length}`);
       console.log(`Attendance Goals: ${attendanceGoals.length}`);
       console.log(`Workout Logs: ${workoutLogs.length}`);
+      console.log('\n=== MISSING ENTITIES NOW SEEDED ===');
+      console.log(`Bookings: ${bookings.length}`);
+      console.log(`Workout Templates: ${workoutTemplates.length}`);
+      console.log(`Workout Template Exercises: ${workoutTemplateExercises.length}`);
+      console.log(`Diet Templates: ${dietTemplates.length}`);
+      console.log(`Diet Template Meals: ${dietTemplateMeals.length}`);
+      console.log(`Goal Templates: ${goalTemplates.length}`);
+      console.log(`Template Assignments: ${templateAssignments.length}`);
+      console.log(`Goal Schedules: ${goalSchedules.length}`);
+      console.log(`Goal Schedule Milestones: ${goalScheduleMilestones.length}`);
+      console.log(`Renewal Requests: ${renewalRequests.length}`);
+      console.log(`Notification Preferences: ${notificationPreferences.length}`);
+      console.log(`Reminder Logs: ${reminderLogs.length}`);
+      console.log(`Workout Plan Chart Assignments: ${workoutPlanChartAssignments.length}`);
+      console.log(`Template Shares: ${templateShares.length}`);
+      console.log(`Meal Library: ${mealLibrary.length}`);
+      console.log(`Diet Plan Assignments: ${dietPlanAssignments.length}`);
+      console.log(`Body Progress: ${bodyProgress.length}`);
     } catch (error) {
       console.error('\n❌ Seeding failed:', error.message);
 
@@ -2453,6 +2538,777 @@ class FitnessFirstEliteSeeder {
 
     console.log(`Seeded ${logs.length} workout logs`);
     return logs;
+  }
+
+  private async seedBookings(
+    members: Member[],
+    classes: Class[],
+  ): Promise<Booking[]> {
+    const bookingRepository = this.dataSource.getRepository(Booking);
+
+    const bookings: Booking[] = [];
+    for (const cls of classes) {
+      const numBookings = 5 + Math.floor(Math.random() * 10);
+      const shuffledMembers = [...members].sort(() => 0.5 - Math.random());
+      const activeMembers = shuffledMembers.slice(0, numBookings);
+
+      for (const member of activeMembers) {
+        const daysAgo = Math.floor(Math.random() * 30);
+        const bookingDate = new Date();
+        bookingDate.setDate(bookingDate.getDate() - daysAgo);
+
+        const statuses = [
+          BookingStatus.CONFIRMED,
+          BookingStatus.WAITLIST,
+          BookingStatus.CANCELLED,
+          BookingStatus.COMPLETED,
+          BookingStatus.NO_SHOW,
+        ];
+        const status = statuses[Math.floor(Math.random() * statuses.length)];
+
+        bookings.push({
+          class: cls,
+          member: member,
+          bookingDate: bookingDate,
+          status: status,
+          waitlistPosition: status === BookingStatus.WAITLIST ? Math.floor(Math.random() * 5) + 1 : 0,
+          notes: status === BookingStatus.CANCELLED ? 'Cancelled by member' : null,
+          cancelledAt: status === BookingStatus.CANCELLED ? new Date() : null,
+          cancelledBy: status === BookingStatus.CANCELLED ? member.id.toString() : null,
+        } as any);
+      }
+    }
+
+    await bookingRepository.save(bookings);
+    console.log(`Seeded ${bookings.length} bookings`);
+    return bookings;
+  }
+
+  private async seedWorkoutTemplates(
+    trainers: Trainer[],
+    branches: Branch[],
+  ): Promise<WorkoutTemplate[]> {
+    const templateRepository = this.dataSource.getRepository(WorkoutTemplate);
+
+    const titles = [
+      'Elite Strength Foundation',
+      'Advanced Cardio Blast',
+      'Power HIIT Protocol',
+      'Flexibility Masterclass',
+      'Complete Body Transformation',
+      'Athletic Performance Elite',
+      'Muscle Building Pro',
+      'Fat Burn Elite',
+      'Core Strength Mastery',
+      'Endurance Builder Elite',
+    ];
+
+    const templates: WorkoutTemplate[] = [];
+    for (let i = 0; i < 10; i++) {
+      const trainer = trainers[Math.floor(Math.random() * trainers.length)];
+      const branch = branches[Math.floor(Math.random() * branches.length)];
+      const chartTypes = [ChartType.STRENGTH, ChartType.CARDIO, ChartType.HIIT, ChartType.FLEXIBILITY, ChartType.COMPOUND];
+      const difficulties = [DifficultyLevel.BEGINNER, DifficultyLevel.INTERMEDIATE, DifficultyLevel.ADVANCED];
+      const visibilities = [ChartVisibility.PRIVATE, ChartVisibility.GYM_PUBLIC];
+
+      templates.push({
+        trainerId: trainer.id,
+        trainer: trainer,
+        branch: branch,
+        title: titles[i],
+        description: `Elite ${chartTypes[Math.floor(Math.random() * chartTypes.length)].toLowerCase()} program for premium members`,
+        visibility: visibilities[Math.floor(Math.random() * visibilities.length)],
+        chart_type: chartTypes[Math.floor(Math.random() * chartTypes.length)],
+        difficulty_level: difficulties[Math.floor(Math.random() * difficulties.length)],
+        plan_type: PlanType.GENERAL,
+        duration_days: 30 + Math.floor(Math.random() * 60),
+        is_shared_gym: Math.random() < 0.3,
+        is_active: true,
+        version: 1,
+        parent_template_id: null,
+        usage_count: Math.floor(Math.random() * 50),
+        avg_rating: (3 + Math.random() * 2).toFixed(2),
+        rating_count: Math.floor(Math.random() * 20),
+        notes: 'Elite template for Fitness First Elite members',
+        tags: ['elite', 'premium', 'advanced'],
+      } as any);
+    }
+
+    await templateRepository.save(templates);
+    console.log(`Seeded ${templates.length} workout templates`);
+    return templates;
+  }
+
+  private async seedWorkoutTemplateExercises(
+    templates: WorkoutTemplate[],
+  ): Promise<WorkoutTemplateExercise[]> {
+    const exerciseRepository = this.dataSource.getRepository(WorkoutTemplateExercise);
+
+    const exerciseNames = [
+      'Bench Press', 'Squats', 'Deadlift', 'Shoulder Press', 'Pull-ups',
+      'Lunges', 'Plank', 'Burpees', 'Mountain Climbers', 'Jump Rope',
+      'Kettlebell Swings', 'Box Jumps', 'Battle Ropes', 'Rowing', 'Cycling',
+    ];
+
+    const exercises: WorkoutTemplateExercise[] = [];
+    for (const template of templates) {
+      const numExercises = 6 + Math.floor(Math.random() * 6);
+      for (let i = 0; i < numExercises; i++) {
+        const exerciseName = exerciseNames[i % exerciseNames.length];
+        exercises.push({
+          template: template,
+          template_id: template.template_id,
+          exercise_name: exerciseName,
+          sets: 3 + Math.floor(Math.random() * 3),
+          reps: 8 + Math.floor(Math.random() * 8),
+          duration: 30 + Math.floor(Math.random() * 60),
+          rest_time: 30 + Math.floor(Math.random() * 60),
+          notes: `Elite ${exerciseName} technique`,
+          sequence_order: i + 1,
+        } as any);
+      }
+    }
+
+    await exerciseRepository.save(exercises);
+    console.log(`Seeded ${exercises.length} workout template exercises`);
+    return exercises;
+  }
+
+  private async seedDietTemplates(
+    trainers: Trainer[],
+    branches: Branch[],
+  ): Promise<DietTemplate[]> {
+    const templateRepository = this.dataSource.getRepository(DietTemplate);
+
+    const titles = [
+      'Weight Loss Elite',
+      'Muscle Gain Pro',
+      'Maintenance Plan',
+      'Cutting Protocol',
+      'Bulking Elite',
+      'Athletic Performance',
+      'Body Builder Diet',
+      'Fat Loss Accelerator',
+      'Lean Muscle Builder',
+      'Competition Prep',
+    ];
+
+    const goalTypes = ['weight_loss', 'muscle_gain', 'maintenance', 'cutting', 'bulking', 'custom'];
+
+    const templates: DietTemplate[] = [];
+    for (let i = 0; i < 10; i++) {
+      const trainer = trainers[Math.floor(Math.random() * trainers.length)];
+      const branch = branches[Math.floor(Math.random() * branches.length)];
+      const goalType = goalTypes[i % goalTypes.length];
+
+      templates.push({
+        trainerId: trainer.id,
+        trainer: trainer,
+        branch: branch,
+        title: titles[i],
+        description: `Elite ${goalType.replace('_', ' ')} diet plan for premium results`,
+        goal_type: goalType,
+        target_calories: 1800 + Math.floor(Math.random() * 1200),
+        protein_g: parseFloat((100 + Math.random() * 100).toFixed(2)),
+        carbs_g: parseFloat((150 + Math.random() * 150).toFixed(2)),
+        fat_g: parseFloat((40 + Math.random() * 60).toFixed(2)),
+        is_shared_gym: Math.random() < 0.3,
+        is_active: true,
+        version: 1,
+        parent_template_id: null,
+        usage_count: Math.floor(Math.random() * 50),
+        avg_rating: (3 + Math.random() * 2).toFixed(2),
+        rating_count: Math.floor(Math.random() * 20),
+        notes: 'Elite nutrition plan',
+        tags: ['elite', 'nutrition', 'healthy'],
+      } as any);
+    }
+
+    await templateRepository.save(templates);
+    console.log(`Seeded ${templates.length} diet templates`);
+    return templates;
+  }
+
+  private async seedDietTemplateMeals(
+    templates: DietTemplate[],
+  ): Promise<DietTemplateMeal[]> {
+    const mealRepository = this.dataSource.getRepository(DietTemplateMeal);
+
+    const mealNames = [
+      'Oatmeal with Berries', 'Grilled Chicken Salad', 'Salmon with Quinoa',
+      'Protein Smoothie', 'Greek Yogurt Parfait', 'Egg White Omelette',
+      'Lean Beef Stir-fry', 'Sweet Potato with Turkey', 'Cauliflower Rice Bowl',
+    ];
+
+    const meals: DietTemplateMeal[] = [];
+    for (const template of templates) {
+      const numMeals = 4 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < numMeals; i++) {
+        const mealName = mealNames[i % mealNames.length];
+        meals.push({
+          template: template,
+          template_id: template.template_id,
+          meal_name: mealName,
+          meal_type: ['breakfast', 'lunch', 'dinner', 'snack'][i % 4],
+          calories: 250 + Math.floor(Math.random() * 400),
+          protein_g: parseFloat((15 + Math.random() * 30).toFixed(2)),
+          carbs_g: parseFloat((20 + Math.random() * 40).toFixed(2)),
+          fat_g: parseFloat((5 + Math.random() * 15).toFixed(2)),
+          ingredients: 'Premium ingredients for elite nutrition',
+          preparation: 'Simple preparation instructions',
+          sequence_order: i + 1,
+        } as any);
+      }
+    }
+
+    await mealRepository.save(meals);
+    console.log(`Seeded ${meals.length} diet template meals`);
+    return meals;
+  }
+
+  private async seedGoalTemplates(
+    trainers: Trainer[],
+  ): Promise<GoalTemplate[]> {
+    const templateRepository = this.dataSource.getRepository(GoalTemplate);
+
+    const titles = [
+      'Weekly Fitness Goals',
+      'Monthly Performance Targets',
+      'Quarterly Transformation',
+      'Strength Building Weekly',
+      'Cardio Improvement Monthly',
+      'Weight Loss Weekly',
+      'Muscle Gain Quarterly',
+      'Flexibility Goals Monthly',
+      'Endurance Weekly',
+      'Body Composition Quarterly',
+    ];
+
+    const scheduleTypes = ['weekly', 'monthly', 'quarterly'];
+
+    const templates: GoalTemplate[] = [];
+    for (let i = 0; i < 10; i++) {
+      const trainer = trainers[Math.floor(Math.random() * trainers.length)];
+      const scheduleType = scheduleTypes[i % scheduleTypes.length];
+
+      templates.push({
+        trainerId: trainer.id,
+        trainer: trainer,
+        title: titles[i],
+        description: `Elite ${scheduleType} goal template for motivated members`,
+        default_schedule_type: scheduleType,
+        default_goals: [
+          {
+            goal_type: 'workout_sessions',
+            target_value: 3 + Math.floor(Math.random() * 4),
+            unit: 'sessions',
+            description: 'Complete workout sessions',
+            priority: 'high',
+          },
+          {
+            goal_type: 'cardio_minutes',
+            target_value: 60 + Math.floor(Math.random() * 120),
+            unit: 'minutes',
+            description: 'Cardio exercise time',
+            priority: 'medium',
+          },
+        ],
+        tags: ['goals', 'fitness', 'tracking'],
+        is_active: true,
+        usage_count: Math.floor(Math.random() * 30),
+      } as any);
+    }
+
+    await templateRepository.save(templates);
+    console.log(`Seeded ${templates.length} goal templates`);
+    return templates;
+  }
+
+  private async seedTemplateAssignments(
+    members: Member[],
+    workoutTemplates: WorkoutTemplate[],
+    dietTemplates: DietTemplate[],
+    goalTemplates: GoalTemplate[],
+    trainers: Trainer[],
+  ): Promise<TemplateAssignment[]> {
+    const assignmentRepository = this.dataSource.getRepository(TemplateAssignment);
+
+    const assignments: TemplateAssignment[] = [];
+    for (const member of members) {
+      const numAssignments = 2 + Math.floor(Math.random() * 3);
+      
+      for (let i = 0; i < numAssignments; i++) {
+        const templateType = ['workout', 'diet'][i % 2];
+        let templateId: string;
+        
+        if (templateType === 'workout' && workoutTemplates.length > 0) {
+          templateId = workoutTemplates[Math.floor(Math.random() * workoutTemplates.length)].template_id;
+        } else if (dietTemplates.length > 0) {
+          templateId = dietTemplates[Math.floor(Math.random() * dietTemplates.length)].template_id;
+        } else {
+          continue;
+        }
+
+        const daysAgo = Math.floor(Math.random() * 60);
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - daysAgo);
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + 30 + Math.floor(Math.random() * 30));
+
+        const statuses = ['active', 'completed', 'cancelled', 'paused'];
+
+        assignments.push({
+          template_id: templateId,
+          template_type: templateType as 'workout' | 'diet',
+          memberId: member.id,
+          member: member,
+          trainer_assignmentId: null,
+          start_date: startDate,
+          end_date: endDate,
+          status: statuses[Math.floor(Math.random() * statuses.length)],
+          completion_percent: Math.floor(Math.random() * 100),
+        } as any);
+      }
+    }
+
+    await assignmentRepository.save(assignments);
+    console.log(`Seeded ${assignments.length} template assignments`);
+    return assignments;
+  }
+
+  private async seedGoalSchedules(
+    members: Member[],
+    trainers: Trainer[],
+  ): Promise<GoalSchedule[]> {
+    const scheduleRepository = this.dataSource.getRepository(GoalSchedule);
+
+    const titles = [
+      'Personal Fitness Journey',
+      'Strength Building Path',
+      'Cardio Improvement Plan',
+      'Weight Loss Journey',
+      'Muscle Building Program',
+    ];
+
+    const schedules: GoalSchedule[] = [];
+    for (const member of members) {
+      const numSchedules = 1 + Math.floor(Math.random() * 2);
+      
+      for (let i = 0; i < numSchedules; i++) {
+        const trainer = trainers[Math.floor(Math.random() * trainers.length)];
+        const scheduleType = ['weekly', 'monthly', 'quarterly'][i % 3];
+        const daysAgo = Math.floor(Math.random() * 30);
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - daysAgo);
+        const endDate = new Date(startDate);
+        
+        if (scheduleType === 'weekly') endDate.setDate(endDate.getDate() + 7);
+        else if (scheduleType === 'monthly') endDate.setMonth(endDate.getMonth() + 1);
+        else endDate.setMonth(endDate.getMonth() + 3);
+
+        schedules.push({
+          assigned_trainerId: trainer.id,
+          assigned_trainer: trainer,
+          member: member,
+          title: titles[i % titles.length],
+          description: `Personalized ${scheduleType} goal schedule`,
+          schedule_type: scheduleType,
+          start_date: startDate,
+          end_date: endDate,
+          current_period: 1,
+          target_goals: [
+            {
+              goal_type: 'workout_sessions',
+              target_value: 3 + Math.floor(Math.random() * 3),
+              unit: 'sessions',
+              description: 'Complete workout sessions',
+              priority: 'high',
+            },
+          ],
+          status: ['active', 'completed', 'cancelled', 'paused'][Math.floor(Math.random() * 4)],
+          is_active: true,
+        } as any);
+      }
+    }
+
+    await scheduleRepository.save(schedules);
+    console.log(`Seeded ${schedules.length} goal schedules`);
+    return schedules;
+  }
+
+  private async seedGoalScheduleMilestones(
+    schedules: GoalSchedule[],
+  ): Promise<GoalScheduleMilestone[]> {
+    const milestoneRepository = this.dataSource.getRepository(GoalScheduleMilestone);
+
+    const milestones: GoalScheduleMilestone[] = [];
+    for (const schedule of schedules) {
+      const numMilestones = 3 + Math.floor(Math.random() * 4);
+      
+      for (let i = 0; i < numMilestones; i++) {
+        const daysToAdd = (i + 1) * 7;
+        const dueDate = new Date(schedule.start_date);
+        dueDate.setDate(dueDate.getDate() + daysToAdd);
+
+        const statuses = ['pending', 'in_progress', 'completed', 'missed'];
+        const priorities = ['high', 'medium', 'low'];
+
+        milestones.push({
+          schedule: schedule,
+          period_label: `Week ${i + 1}`,
+          sequence_order: i + 1,
+          target_value: parseFloat((10 + i * 5).toFixed(2)),
+          unit: 'sessions',
+          description: `Complete ${10 + i * 5} workout sessions`,
+          priority: priorities[Math.floor(Math.random() * priorities.length)],
+          status: statuses[Math.floor(Math.random() * statuses.length)],
+          current_value: statuses[Math.floor(Math.random() * statuses.length)] === 'completed' 
+            ? parseFloat((10 + i * 5).toFixed(2)) 
+            : parseFloat((Math.random() * (10 + i * 5)).toFixed(2)),
+          completed_at: statuses[Math.floor(Math.random() * statuses.length)] === 'completed' 
+            ? dueDate 
+            : null,
+          due_date: dueDate,
+        } as any);
+      }
+    }
+
+    await milestoneRepository.save(milestones);
+    console.log(`Seeded ${milestones.length} goal schedule milestones`);
+    return milestones;
+  }
+
+  private async seedRenewalRequests(
+    members: Member[],
+    trainers: Trainer[],
+  ): Promise<RenewalRequest[]> {
+    const renewalRepository = this.dataSource.getRepository(RenewalRequest);
+    const membershipPlanRepository = this.dataSource.getRepository(MembershipPlan);
+    const subscriptionRepository = this.dataSource.getRepository(MemberSubscription);
+
+    const plans = await membershipPlanRepository.find();
+    const subscriptions = await subscriptionRepository.find();
+
+    const requests: RenewalRequest[] = [];
+    for (const member of members) {
+      if (Math.random() > 0.5) {
+        const plan = plans[Math.floor(Math.random() * plans.length)];
+        const subscription = subscriptions.find(s => s.member?.id === member.id);
+        const requestedStartDate = new Date();
+        requestedStartDate.setDate(requestedStartDate.getDate() + 7);
+
+        const statuses = [RenewalStatus.REQUESTED, RenewalStatus.INVOICED, RenewalStatus.PAID, RenewalStatus.ACTIVATED, RenewalStatus.CANCELLED];
+
+        requests.push({
+          member: member,
+          requestedPlan: plan,
+          currentSubscription: subscription,
+          invoice: null,
+          status: statuses[Math.floor(Math.random() * statuses.length)],
+          requestedStartDate: requestedStartDate,
+          activatedAt: Math.random() < 0.3 ? new Date() : null,
+          cancelledAt: Math.random() < 0.2 ? new Date() : null,
+        } as any);
+      }
+    }
+
+    await renewalRepository.save(requests);
+    console.log(`Seeded ${requests.length} renewal requests`);
+    return requests;
+  }
+
+  private async seedNotificationPreferences(
+    users: User[],
+  ): Promise<NotificationPreference[]> {
+    const preferenceRepository = this.dataSource.getRepository(NotificationPreference);
+    const memberRepository = this.dataSource.getRepository(Member);
+
+    const members = await memberRepository.find();
+
+    const preferences: NotificationPreference[] = [];
+    for (const member of members) {
+      preferences.push({
+        memberId: member.id,
+        member: member,
+        smsEnabled: Math.random() > 0.3,
+        emailEnabled: Math.random() > 0.2,
+        phoneVerified: Math.random() > 0.7,
+      } as any);
+    }
+
+    await preferenceRepository.save(preferences);
+    console.log(`Seeded ${preferences.length} notification preferences`);
+    return preferences;
+  }
+
+  private async seedReminderLogs(
+    users: User[],
+    trainers: Trainer[],
+    members: Member[],
+  ): Promise<ReminderLog[]> {
+    const reminderRepository = this.dataSource.getRepository(ReminderLog);
+
+    const reminderTypes = [
+      'subscription_expiry',
+      'due_payment',
+      'renewal_invoice',
+      'renewal_activated',
+    ] as const;
+    const channels = ['email', 'in_app', 'sms'] as const;
+
+    const logs: ReminderLog[] = [];
+    for (const member of members) {
+      const numLogs = 3 + Math.floor(Math.random() * 5);
+      
+      for (let i = 0; i < numLogs; i++) {
+        const daysAgo = Math.floor(Math.random() * 60);
+        const referenceDate = new Date();
+        referenceDate.setDate(referenceDate.getDate() - daysAgo);
+
+        logs.push({
+          userId: member.userId || '',
+          memberId: member.id,
+          invoiceId: Math.random() < 0.3 ? `inv-${Math.floor(Math.random() * 1000)}` : null,
+          renewalRequestId: Math.random() < 0.3 ? `req-${Math.floor(Math.random() * 1000)}` : null,
+          reminderType: reminderTypes[Math.floor(Math.random() * reminderTypes.length)],
+          channel: channels[Math.floor(Math.random() * channels.length)],
+          referenceDate: referenceDate,
+          metadata: { sent_to: member.email },
+        } as any);
+      }
+    }
+
+    await reminderRepository.save(logs);
+    console.log(`Seeded ${logs.length} reminder logs`);
+    return logs;
+  }
+
+  private async seedWorkoutPlanChartAssignments(
+    workoutPlans: WorkoutPlan[],
+  ): Promise<WorkoutPlanChartAssignment[]> {
+    const assignmentRepository = this.dataSource.getRepository(WorkoutPlanChartAssignment);
+    const templateRepository = this.dataSource.getRepository(WorkoutTemplate);
+    const memberRepository = this.dataSource.getRepository(Member);
+    const trainerAssignmentRepository = this.dataSource.getRepository(MemberTrainerAssignment);
+    const userRepository = this.dataSource.getRepository(User);
+
+    const templates = await templateRepository.find();
+    const members = await memberRepository.find();
+    const trainerAssignments = await trainerAssignmentRepository.find();
+    const users = await userRepository.find();
+
+    const assignments: WorkoutPlanChartAssignment[] = [];
+    for (const plan of workoutPlans) {
+      if (Math.random() > 0.5 && templates.length > 0) {
+        const template = templates[Math.floor(Math.random() * templates.length)];
+        const trainerAssignment = trainerAssignments.find(ta => ta.member?.id === plan.member.id);
+        const user = users[Math.floor(Math.random() * users.length)];
+
+        const daysAgo = Math.floor(Math.random() * 30);
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - daysAgo);
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + 30 + Math.floor(Math.random() * 30));
+
+        const statuses = ['ACTIVE', 'COMPLETED', 'CANCELLED', 'PAUSED'];
+
+        assignments.push({
+          chart: template,
+          chart_id: template.template_id,
+          member: plan.member,
+          memberId: plan.member.id,
+          trainer_assignment: trainerAssignment,
+          trainer_assignment_id: trainerAssignment?.assignment_id,
+          assigned_by: user,
+          assigned_by_user_id: user.userId,
+          start_date: startDate,
+          end_date: endDate,
+          status: statuses[Math.floor(Math.random() * statuses.length)],
+          completion_percent: Math.floor(Math.random() * 100),
+          customizations: null,
+          member_substitutions: null,
+          last_activity_at: new Date(),
+        } as any);
+      }
+    }
+
+    await assignmentRepository.save(assignments);
+    console.log(`Seeded ${assignments.length} workout plan chart assignments`);
+    return assignments;
+  }
+
+  private async seedTemplateShares(
+    users: User[],
+    trainers: Trainer[],
+  ): Promise<TemplateShare[]> {
+    const shareRepository = this.dataSource.getRepository(TemplateShare);
+    const workoutTemplateRepository = this.dataSource.getRepository(WorkoutTemplate);
+    const dietTemplateRepository = this.dataSource.getRepository(DietTemplate);
+    const goalTemplateRepository = this.dataSource.getRepository(GoalTemplate);
+
+    const workoutTemplates = await workoutTemplateRepository.find();
+    const dietTemplates = await dietTemplateRepository.find();
+    const goalTemplates = await goalTemplateRepository.find();
+
+    const shares: TemplateShare[] = [];
+    const adminUser = users.find(u => u.role?.name === 'admin');
+
+    if (adminUser) {
+      for (const template of [...workoutTemplates, ...dietTemplates, ...goalTemplates].slice(0, 20)) {
+        const trainer = trainers[Math.floor(Math.random() * trainers.length)];
+        
+        shares.push({
+          template_id: template['template_id'] || template.template_id,
+          template_type: template instanceof WorkoutTemplate 
+            ? 'workout' 
+            : template instanceof DietTemplate 
+              ? 'diet' 
+              : 'goal',
+          shared_with_trainerId: trainer.id,
+          shared_with_trainer: trainer,
+          shared_by_admin: adminUser,
+          admin_note: 'Share for elite program',
+          is_accepted: Math.random() > 0.3,
+          accepted_at: Math.random() > 0.3 ? new Date() : null,
+        } as any);
+      }
+    }
+
+    await shareRepository.save(shares);
+    console.log(`Seeded ${shares.length} template shares`);
+    return shares;
+  }
+
+  private async seedMealLibrary(): Promise<MealLibrary[]> {
+    const mealRepository = this.dataSource.getRepository(MealLibrary);
+
+    const meals: MealLibrary[] = [];
+    const mealNames = [
+      'Protein Power Bowl',
+      'Grilled Chicken Salad',
+      'Salmon Supreme',
+      'Oatmeal Paradise',
+      'Egg White Delight',
+      'Lean Beef Stir-fry',
+      'Quinoa Veggie Bowl',
+      'Greek Yogurt Bowl',
+      'Turkey Wrap',
+      'Sweet Potato Power',
+      'Protein Smoothie',
+      'Tuna Salad',
+      'Chicken Curry',
+      'Veggie Stir-fry',
+      'Fruit Smoothie Bowl',
+    ];
+
+    const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack', 'pre_workout', 'post_workout'];
+
+    for (let i = 0; i < 15; i++) {
+      meals.push({
+        meal_name: mealNames[i],
+        meal_type: mealTypes[i % mealTypes.length],
+        description: `Delicious and nutritious ${mealTypes[i % mealTypes.length]} option for elite members`,
+        ingredients: 'Premium quality ingredients',
+        preparation: 'Simple and easy preparation',
+        calories: 200 + Math.floor(Math.random() * 400),
+        protein_g: parseFloat((15 + Math.random() * 25).toFixed(2)),
+        carbs_g: parseFloat((20 + Math.random() * 40).toFixed(2)),
+        fat_g: parseFloat((5 + Math.random() * 15).toFixed(2)),
+        image_url: null,
+        is_active: true,
+      } as any);
+    }
+
+    await mealRepository.save(meals);
+    console.log(`Seeded ${meals.length} meal library entries`);
+    return meals;
+  }
+
+  private async seedDietPlanAssignments(
+    members: Member[],
+    dietPlans: DietPlan[],
+    trainers: Trainer[],
+  ): Promise<DietPlanAssignment[]> {
+    const assignmentRepository = this.dataSource.getRepository(DietPlanAssignment);
+    const userRepository = this.dataSource.getRepository(User);
+
+    const users = await userRepository.find();
+
+    const assignments: DietPlanAssignment[] = [];
+    for (const member of members) {
+      if (Math.random() > 0.4 && dietPlans.length > 0) {
+        const plan = dietPlans[Math.floor(Math.random() * dietPlans.length)];
+        const user = users[Math.floor(Math.random() * users.length)];
+
+        const daysAgo = Math.floor(Math.random() * 30);
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - daysAgo);
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + 30 + Math.floor(Math.random() * 30));
+
+        const statuses = ['ACTIVE', 'COMPLETED', 'CANCELLED', 'PAUSED'];
+
+        assignments.push({
+          diet_plan: plan,
+          diet_plan_id: plan.plan_id,
+          member: member,
+          memberId: member.id,
+          assigned_by: user,
+          assigned_by_user_id: user.userId,
+          start_date: startDate,
+          end_date: endDate,
+          status: statuses[Math.floor(Math.random() * statuses.length)],
+          completion_percent: Math.floor(Math.random() * 100),
+          member_substitutions: null,
+          progress_log: null,
+          last_activity_at: new Date(),
+        } as any);
+      }
+    }
+
+    await assignmentRepository.save(assignments);
+    console.log(`Seeded ${assignments.length} diet plan assignments`);
+    return assignments;
+  }
+
+  private async seedBodyProgress(
+    members: Member[],
+    trainers: Trainer[],
+  ): Promise<BodyProgress[]> {
+    const progressRepository = this.dataSource.getRepository(BodyProgress);
+
+    const records: BodyProgress[] = [];
+    for (const member of members) {
+      const numRecords = 3 + Math.floor(Math.random() * 5);
+      
+      for (let i = 0; i < numRecords; i++) {
+        const daysAgo = i * 15;
+        const recordDate = new Date();
+        recordDate.setDate(recordDate.getDate() - daysAgo);
+
+        const trainer = trainers[Math.floor(Math.random() * trainers.length)];
+
+        records.push({
+          member: member,
+          trainer: trainer,
+          weight: parseFloat((60 + Math.random() * 50).toFixed(2)),
+          body_fat: parseFloat((10 + Math.random() * 25).toFixed(2)),
+          bmi: parseFloat((18 + Math.random() * 12).toFixed(2)),
+          measurements: {
+            chest: 90 + Math.floor(Math.random() * 30),
+            waist: 70 + Math.floor(Math.random() * 20),
+            hips: 85 + Math.floor(Math.random() * 25),
+            arms: 25 + Math.floor(Math.random() * 15),
+          },
+          progress_photos: null,
+          date: recordDate,
+        } as any);
+      }
+    }
+
+    await progressRepository.save(records);
+    console.log(`Seeded ${records.length} body progress records`);
+    return records;
   }
 
   private determineBillingCycle(subscription: MemberSubscription): string {
