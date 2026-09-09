@@ -47,8 +47,12 @@ async function bootstrap() {
   const nodeEnv = process.env.NODE_ENV || 'development';
   const isProduction = nodeEnv === 'production';
 
-  // Security headers
-  app.use(helmet());
+  // Security headers (disable CSP so Swagger UI assets are not blocked or force-upgraded to HTTPS)
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+    }),
+  );
 
   // Body size limits
   app.use(json({ limit: '1mb' }));
@@ -109,10 +113,12 @@ async function bootstrap() {
     !isProduction || process.env.SWAGGER_ENABLED === 'true';
 
   if (swaggerEnabled) {
-    if (isProduction) {
-      const allowedSwaggerIps = splitCsv(process.env.SWAGGER_ALLOWED_IPS).map(
-        normalizeIp,
-      );
+    const allowedSwaggerIps = splitCsv(process.env.SWAGGER_ALLOWED_IPS).map(
+      normalizeIp,
+    );
+    const allowAllIps = allowedSwaggerIps.includes('*');
+
+    if (isProduction && !allowAllIps) {
       if (allowedSwaggerIps.length === 0) {
         throw new Error(
           'SWAGGER_ALLOWED_IPS must be configured when enabling Swagger in production.',
@@ -130,6 +136,15 @@ async function bootstrap() {
         next();
       });
     }
+
+    // Redirect /api to /api/ so Swagger UI relative assets (CSS/JS) resolve correctly
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      if (req.path === '/api' || req.originalUrl === '/api') {
+        res.redirect(301, '/api/');
+        return;
+      }
+      next();
+    });
 
     const config = new DocumentBuilder()
       .setTitle('Gym Management System')
