@@ -86,9 +86,13 @@ class FitnessFirstEliteSeeder {
         throw new Error('DATABASE_URL environment variable is not set');
       }
 
-      if (process.env.NODE_ENV === 'production') {
+      if (
+        process.env.NODE_ENV === 'production' &&
+        process.env.ALLOW_SEED_IN_PROD !== 'true' &&
+        process.env.FORCE_SEED !== 'true'
+      ) {
         throw new Error(
-          'Cannot seed data in production environment. Use migrations instead.',
+          'Cannot seed data in production environment without ALLOW_SEED_IN_PROD=true. Use migrations instead.',
         );
       }
 
@@ -98,6 +102,9 @@ class FitnessFirstEliteSeeder {
       // Clear existing data for Fitness First Elite (except roles)
       await this.clearExistingFitnessFirstEliteData();
 
+      // Seed roles first (if they don't exist)
+      const roles = await this.seedRoles();
+
       // Seed data in proper order
       const gyms = await this.seedGyms();
       const branches = await this.seedBranches(gyms);
@@ -105,10 +112,20 @@ class FitnessFirstEliteSeeder {
       const trainers = await this.seedTrainers(branches);
       const members = await this.seedMembers(branches);
       const classes = await this.seedClasses(branches);
+
+      // Seed users (needs roles, gyms, branches, members, trainers)
+      const users = await this.seedUsers(
+        gyms,
+        branches,
+        members,
+        trainers,
+        roles,
+      );
+
       const memberSubscriptions = await this.seedMemberSubscriptions(
         members,
         membershipPlans,
-        classes, // NEW: Pass classes for subscription assignment
+        classes,
       );
       const memberTrainerAssignments = await this.seedMemberTrainerAssignments(
         members,
@@ -122,18 +139,6 @@ class FitnessFirstEliteSeeder {
         members,
         trainers,
         branches,
-      );
-
-      // Seed roles first (if they don't exist)
-      const roles = await this.seedRoles();
-
-      // Seed users (needs roles, gyms, branches, members, trainers)
-      const users = await this.seedUsers(
-        gyms,
-        branches,
-        members,
-        trainers,
-        roles,
       );
 
       const notifications = await this.seedNotifications(users);
@@ -343,131 +348,74 @@ class FitnessFirstEliteSeeder {
     console.log('\n--- Deleting in dependency order ---\n');
     console.log('NOTE: Roles table data will be preserved (not cleared)\n');
 
-    // Level 1: Deep children that depend on members/trainers/users
-    // These must be deleted BEFORE members/trainers/users
-    if (memberIds.length > 0) {
-      await safeDelete(
-        `DELETE FROM "payment_transactions" WHERE "invoiceInvoiceId" IN (SELECT "invoice_id" FROM invoices WHERE "memberId" IN (${memberIdsStr}))`,
-        'payment_transactions',
-      );
-      await safeDelete(
-        `DELETE FROM "invoices" WHERE "memberId" IN (${memberIdsStr})`,
-        'invoices',
-      );
-      await safeDelete(
-        `DELETE FROM "diet_plan_meals" WHERE "dietPlanPlanId" IN (SELECT "plan_id" FROM diet_plans WHERE "memberId" IN (${memberIdsStr}))`,
-        'diet_plan_meals',
-      );
-      await safeDelete(
-        `DELETE FROM "workout_plan_exercises" WHERE "workoutPlanPlanId" IN (SELECT "plan_id" FROM workout_plans WHERE "memberId" IN (${memberIdsStr}))`,
-        'workout_plan_exercises',
-      );
-      await safeDelete(
-        `DELETE FROM "diet_plans" WHERE "memberId" IN (${memberIdsStr})`,
-        'diet_plans',
-      );
-      await safeDelete(
-        `DELETE FROM "workout_plans" WHERE "memberId" IN (${memberIdsStr})`,
-        'workout_plans',
-      );
-      await safeDelete(
-        `DELETE FROM "member_trainer_assignments" WHERE "member_id" IN (${memberIdsStr}) OR "trainer_id" IN (${trainerIdsStr})`,
-        'member_trainer_assignments',
-      );
-      await safeDelete(
-        `DELETE FROM "attendance" WHERE "memberId" IN (${memberIdsStr}) OR "trainerId" IN (${trainerIdsStr})`,
-        'attendance',
-      );
-      await safeDelete(
-        `DELETE FROM "workout_logs" WHERE "memberId" IN (${memberIdsStr}) OR "trainerId" IN (${trainerIdsStr})`,
-        'workout_logs',
-      );
-      await safeDelete(
-        `DELETE FROM "goals" WHERE "memberId" IN (${memberIdsStr}) OR "trainerId" IN (${trainerIdsStr})`,
-        'goals',
-      );
-      await safeDelete(
-        `DELETE FROM "progress_tracking" WHERE "memberId" IN (${memberIdsStr}) OR "recordedByTrainerId" IN (${trainerIdsStr})`,
-        'progress_tracking',
-      );
-      await safeDelete(
-        `DELETE FROM "attendance_goals" WHERE "memberId" IN (${memberIdsStr})`,
-        'attendance_goals',
-      );
-    }
+    // Level 1: Deepest child entities
+    await safeDelete(`DELETE FROM "workout_plan_chart_assignments"`, 'workout_plan_chart_assignments');
+    await safeDelete(`DELETE FROM "diet_plan_assignments"`, 'diet_plan_assignments');
+    await safeDelete(`DELETE FROM "body_progress"`, 'body_progress');
+    await safeDelete(`DELETE FROM "reminder_logs"`, 'reminder_logs');
+    await safeDelete(`DELETE FROM "notification_preferences"`, 'notification_preferences');
+    await safeDelete(`DELETE FROM "template_shares"`, 'template_shares');
+    await safeDelete(`DELETE FROM "template_assignments"`, 'template_assignments');
+    await safeDelete(`DELETE FROM "goal_schedule_milestones"`, 'goal_schedule_milestones');
+    await safeDelete(`DELETE FROM "goal_schedules"`, 'goal_schedules');
+    await safeDelete(`DELETE FROM "bookings"`, 'bookings');
+    await safeDelete(`DELETE FROM "renewal_requests"`, 'renewal_requests');
+    await safeDelete(`DELETE FROM "workout_template_exercises"`, 'workout_template_exercises');
+    await safeDelete(`DELETE FROM "workout_templates"`, 'workout_templates');
+    await safeDelete(`DELETE FROM "diet_template_meals"`, 'diet_template_meals');
+    await safeDelete(`DELETE FROM "diet_templates"`, 'diet_templates');
+    await safeDelete(`DELETE FROM "goal_templates"`, 'goal_templates');
+    await safeDelete(`DELETE FROM "meal_library"`, 'meal_library');
+    await safeDelete(`DELETE FROM "exercise_library"`, 'exercise_library');
 
-    // Level 2: Direct children of users
-    if (userIds.length > 0) {
-      await safeDelete(
-        `DELETE FROM "template_shares" WHERE "sharedByAdminUserId" IN (${userIdsStr})`,
-        'template_shares',
-      );
-      await safeDelete(
-        `DELETE FROM "audit_logs" WHERE "userUserId" IN (${userIdsStr})`,
-        'audit_logs',
-      );
-      await safeDelete(
-        `DELETE FROM "notifications" WHERE "userUserId" IN (${userIdsStr})`,
-        'notifications',
-      );
-    }
+    // Level 2: Payments and Invoices
+    await safeDelete(`DELETE FROM "payment_transactions"`, 'payment_transactions');
+    await safeDelete(`DELETE FROM "invoices"`, 'invoices');
 
-    // Level 3: Classes and inquiries (depend on branches)
-    if (branchIds.length > 0) {
-      await safeDelete(
-        `DELETE FROM "classes" WHERE "branchBranchId" IN (${branchIdsStr})`,
-        'classes',
-      );
-      await safeDelete(
-        `DELETE FROM "inquiries" WHERE "branchBranchId" IN (${branchIdsStr})`,
-        'inquiries',
-      );
-    }
+    // Level 3: Workouts and Diets
+    await safeDelete(`DELETE FROM "diet_plan_meals"`, 'diet_plan_meals');
+    await safeDelete(`DELETE FROM "diet_plans"`, 'diet_plans');
+    await safeDelete(`DELETE FROM "workout_plan_exercises"`, 'workout_plan_exercises');
+    await safeDelete(`DELETE FROM "workout_plans"`, 'workout_plans');
 
-    // Level 5: Break circular dependency between members and member_subscriptions
-    // First, set all subscriptionId to NULL in members table
-    if (memberIds.length > 0) {
-      await safeDelete(
-        `UPDATE "members" SET "subscriptionId" = NULL WHERE "id" IN (${memberIdsStr})`,
-        'members_subscriptionId_null',
-      );
-    }
+    // Level 4: Member tracking & logs
+    await safeDelete(`DELETE FROM "attendance"`, 'attendance');
+    await safeDelete(`DELETE FROM "workout_logs"`, 'workout_logs');
+    await safeDelete(`DELETE FROM "goals"`, 'goals');
+    await safeDelete(`DELETE FROM "progress_tracking"`, 'progress_tracking');
+    await safeDelete(`DELETE FROM "attendance_goals"`, 'attendance_goals');
+    await safeDelete(`DELETE FROM "member_trainer_assignments"`, 'member_trainer_assignments');
 
-    // NOW delete member_subscriptions (circular reference broken)
+    // Level 5: System logs & notifications
+    await safeDelete(`DELETE FROM "audit_logs"`, 'audit_logs');
+    await safeDelete(`DELETE FROM "notifications"`, 'notifications');
+
+    // Level 6: Break circular dependency between members and member_subscriptions
+    await safeDelete(`UPDATE "members" SET "subscriptionId" = NULL`, 'members_subscriptionId_null');
+    await safeDelete(`DELETE FROM "member_subscriptions"`, 'member_subscriptions');
+
+    // Level 7: Members, Classes, Inquiries
+    await safeDelete(`DELETE FROM "members"`, 'members');
+    await safeDelete(`DELETE FROM "classes"`, 'classes');
+    await safeDelete(`DELETE FROM "inquiries"`, 'inquiries');
+
+    // Level 8: Trainers
+    await safeDelete(`DELETE FROM "trainers"`, 'trainers');
+
+    // Level 9: Membership plans
+    await safeDelete(`DELETE FROM "membership_plans"`, 'membership_plans');
+
+    // Level 10: Users for this gym / seeded accounts
     await safeDelete(
-      `DELETE FROM "member_subscriptions"`,
-      'member_subscriptions',
-    );
-
-    // Level 7: Trainers
-    if (branchIds.length > 0) {
-      await safeDelete(
-        `DELETE FROM "trainers" WHERE "branchBranchId" IN (${branchIdsStr})`,
-        'trainers',
-      );
-    }
-
-    // Level 8: Membership plans (must delete before branches)
-    if (branchIds.length > 0) {
-      await safeDelete(
-        `DELETE FROM "membership_plans" WHERE "branchBranchId" IN (${branchIdsStr})`,
-        'membership_plans',
-      );
-    }
-
-    // Level 9: Users
-    await safeDelete(
-      `DELETE FROM "users" WHERE "gymGymId" = '${fitnessFirstGym.gymId}'`,
+      `DELETE FROM "users" WHERE "gymGymId" = '${fitnessFirstGym.gymId}' OR email LIKE '%fitnessfirstelite.com'`,
       'users',
     );
 
-    // Level 10: Branches (must delete before gym)
+    // Level 11: Branches & Gym
     await safeDelete(
       `DELETE FROM "branches" WHERE "gymGymId" = '${fitnessFirstGym.gymId}'`,
       'branches',
     );
-
-    // Level 11: Gym
     await safeDelete(
       `DELETE FROM "gyms" WHERE "gymId" = '${fitnessFirstGym.gymId}'`,
       'gym',
@@ -1001,7 +949,7 @@ class FitnessFirstEliteSeeder {
         );
         checkOutDate.setMinutes(checkOutDate.getMinutes() + workoutDuration);
 
-        const memberAttendance = await attendanceRepository.save({
+        attendanceRecords.push({
           member: member,
           attendanceType: 'member',
           checkInTime: new Date(
@@ -1015,12 +963,11 @@ class FitnessFirstEliteSeeder {
           date: date,
           branch: member.branch,
         } as any);
-        attendanceRecords.push(memberAttendance);
       }
 
       // All trainers check in (they work every day)
       for (const trainer of trainers) {
-        const trainerAttendance = await attendanceRepository.save({
+        attendanceRecords.push({
           trainer: trainer,
           attendanceType: 'trainer',
           checkInTime: new Date(
@@ -1040,12 +987,19 @@ class FitnessFirstEliteSeeder {
           date: date,
           branch: trainer.branch,
         } as any);
-        attendanceRecords.push(trainerAttendance);
       }
     }
 
-    console.log(`Seeded ${attendanceRecords.length} attendance records`);
-    return attendanceRecords;
+    const savedRecords: Attendance[] = [];
+    const batchSize = 500;
+    for (let i = 0; i < attendanceRecords.length; i += batchSize) {
+      const batch = attendanceRecords.slice(i, i + batchSize);
+      const saved = await attendanceRepository.save(batch);
+      savedRecords.push(...saved);
+    }
+
+    console.log(`Seeded ${savedRecords.length} attendance records`);
+    return savedRecords;
   }
 
   private async seedClasses(branches: Branch[]): Promise<Class[]> {
@@ -1494,7 +1448,9 @@ class FitnessFirstEliteSeeder {
 
         subscriptions.push({
           member: member,
+          memberId: member.id,
           plan: randomPlan,
+          planId: randomPlan.id,
           startDate: startDate,
           endDate: endDate,
           isActive: true, // All subscriptions are active
@@ -1504,6 +1460,17 @@ class FitnessFirstEliteSeeder {
 
     const savedSubscriptions =
       await memberSubscriptionRepository.save(subscriptions);
+
+    // Update members with their subscriptionId
+    const memberRepository = this.dataSource.getRepository(Member);
+    for (const sub of savedSubscriptions) {
+      if (sub.memberId) {
+        await memberRepository.update(sub.memberId, {
+          subscriptionId: sub.id,
+        });
+      }
+    }
+
     console.log(`Seeded ${savedSubscriptions.length} member subscriptions`);
     return savedSubscriptions;
   }
@@ -1613,80 +1580,80 @@ class FitnessFirstEliteSeeder {
     if (users.length > 0) {
       const savedUsers = await userRepository.save(users);
       console.log(`Seeded ${savedUsers.length} new users`);
-      return savedUsers;
+
+      // Update members with their corresponding userId
+      const memberRepository = this.dataSource.getRepository(Member);
+      for (const u of savedUsers) {
+        if (u.memberId) {
+          await memberRepository.update(parseInt(u.memberId, 10), { userId: u.userId });
+        }
+      }
     } else {
       console.log('No new users to seed (all existing)');
-      return [];
     }
+
+    // Return all users for this gym with relations populated
+    const allUsers = await userRepository.find({
+      where: { gym: { gymId: gyms[0].gymId } },
+      relations: ['role', 'gym', 'branch'],
+    });
+    return allUsers;
   }
 
   private async seedNotifications(users: User[]): Promise<Notification[]> {
     console.log('Seeding notifications...');
     const notificationRepository = this.dataSource.getRepository(Notification);
 
-    // Get user IDs by role using QueryBuilder
-    const superadminUserId = await this.dataSource
-      .getRepository(User)
-      .createQueryBuilder('user')
-      .innerJoin('user.role', 'role')
-      .where('role.name = :roleName', { roleName: 'SUPERADMIN' })
-      .getOne()
-      .then((u) => u?.userId);
+    const superadminUser = users.find(u => u.role?.name === 'SUPERADMIN');
+    const adminUser = users.find(u => u.role?.name === 'ADMIN');
+    const trainerUser = users.find(u => u.role?.name === 'TRAINER');
+    const memberUser = users.find(u => u.role?.name === 'MEMBER');
 
-    const adminUserId = await this.dataSource
-      .getRepository(User)
-      .createQueryBuilder('user')
-      .innerJoin('user.role', 'role')
-      .where('role.name = :roleName', { roleName: 'ADMIN' })
-      .getOne()
-      .then((u) => u?.userId);
+    const notifications: any[] = [];
 
-    const trainerUserId = await this.dataSource
-      .getRepository(User)
-      .createQueryBuilder('user')
-      .innerJoin('user.role', 'role')
-      .where('role.name = :roleName', { roleName: 'TRAINER' })
-      .getOne()
-      .then((u) => u?.userId);
-
-    const memberUserId = await this.dataSource
-      .getRepository(User)
-      .createQueryBuilder('user')
-      .innerJoin('user.role', 'role')
-      .where('role.name = :roleName', { roleName: 'MEMBER' })
-      .getOne()
-      .then((u) => u?.userId);
-
-    const notifications = [
-      {
-        userId: superadminUserId,
+    if (superadminUser) {
+      notifications.push({
+        user: superadminUser,
+        userId: superadminUser.userId,
+        type: 'SYSTEM',
         title: 'Elite System Upgrade',
-        message:
-          'Fitness First Elite system has been upgraded with new premium features.',
+        message: 'Fitness First Elite system has been upgraded with new premium features.',
         is_read: false,
-      },
-      {
-        userId: adminUserId,
+      });
+    }
+
+    if (adminUser) {
+      notifications.push({
+        user: adminUser,
+        userId: adminUser.userId,
+        type: 'SYSTEM',
         title: 'New Elite Member Registration',
-        message:
-          'A new premium member has registered and is pending your approval.',
+        message: 'A new premium member has registered and is pending your approval.',
         is_read: true,
-      },
-      {
-        userId: trainerUserId,
+      });
+    }
+
+    if (trainerUser) {
+      notifications.push({
+        user: trainerUser,
+        userId: trainerUser.userId,
+        type: 'CHART_ASSIGNED',
         title: 'Elite Class Schedule Update',
-        message:
-          'Your premium yoga class schedule has been updated for next week.',
+        message: 'Your premium yoga class schedule has been updated for next week.',
         is_read: false,
-      },
-      {
-        userId: memberUserId,
+      });
+    }
+
+    if (memberUser) {
+      notifications.push({
+        user: memberUser,
+        userId: memberUser.userId,
+        type: 'REMINDER',
         title: 'Elite Membership Renewal',
-        message:
-          'Your Elite membership expires in 5 days. Renew now for continued access to premium facilities.',
+        message: 'Your Elite membership expires in 5 days. Renew now for continued access to premium facilities.',
         is_read: false,
-      },
-    ].filter((n) => n.userId);
+      });
+    }
 
     const savedNotifications = await notificationRepository.save(
       notifications as any,
@@ -1699,42 +1666,17 @@ class FitnessFirstEliteSeeder {
     console.log('Seeding audit logs...');
     const auditLogRepository = this.dataSource.getRepository(AuditLog);
 
-    // Get user IDs by role using QueryBuilder
-    const superadminUserId = await this.dataSource
-      .getRepository(User)
-      .createQueryBuilder('user')
-      .innerJoin('user.role', 'role')
-      .where('role.name = :roleName', { roleName: 'SUPERADMIN' })
-      .getOne()
-      .then((u) => u?.userId);
+    const superadminUser = users.find(u => u.role?.name === 'SUPERADMIN');
+    const adminUser = users.find(u => u.role?.name === 'ADMIN');
+    const trainerUser = users.find(u => u.role?.name === 'TRAINER');
+    const memberUser = users.find(u => u.role?.name === 'MEMBER');
 
-    const adminUserId = await this.dataSource
-      .getRepository(User)
-      .createQueryBuilder('user')
-      .innerJoin('user.role', 'role')
-      .where('role.name = :roleName', { roleName: 'ADMIN' })
-      .getOne()
-      .then((u) => u?.userId);
+    const auditLogs: any[] = [];
 
-    const trainerUserId = await this.dataSource
-      .getRepository(User)
-      .createQueryBuilder('user')
-      .innerJoin('user.role', 'role')
-      .where('role.name = :roleName', { roleName: 'TRAINER' })
-      .getOne()
-      .then((u) => u?.userId);
-
-    const memberUserId = await this.dataSource
-      .getRepository(User)
-      .createQueryBuilder('user')
-      .innerJoin('user.role', 'role')
-      .where('role.name = :roleName', { roleName: 'MEMBER' })
-      .getOne()
-      .then((u) => u?.userId);
-
-    const auditLogs = [
-      {
-        userId: superadminUserId,
+    if (superadminUser) {
+      auditLogs.push({
+        user: superadminUser,
+        userId: superadminUser.userId,
         action: 'CREATE',
         entity_type: 'Gym',
         entity_id: 'gym-fitness-first-elite',
@@ -1744,17 +1686,25 @@ class FitnessFirstEliteSeeder {
           email: 'admin@fitnessfirstelite.com',
           type: 'Premium',
         },
-      },
-      {
-        userId: adminUserId,
+      });
+    }
+
+    if (adminUser) {
+      auditLogs.push({
+        user: adminUser,
+        userId: adminUser.userId,
         action: 'UPDATE',
         entity_type: 'Member',
         entity_id: 'member-elite-1',
         previous_values: { status: 'inactive' },
         new_values: { status: 'active', tier: 'VIP' },
-      },
-      {
-        userId: trainerUserId,
+      });
+    }
+
+    if (trainerUser) {
+      auditLogs.push({
+        user: trainerUser,
+        userId: trainerUser.userId,
         action: 'CREATE',
         entity_type: 'Class',
         entity_id: 'class-elite-yoga',
@@ -1764,16 +1714,20 @@ class FitnessFirstEliteSeeder {
           schedule: 'Monday, Wednesday, Friday 8:00 AM',
           type: 'Premium',
         },
-      },
-      {
-        userId: memberUserId,
+      });
+    }
+
+    if (memberUser) {
+      auditLogs.push({
+        user: memberUser,
+        userId: memberUser.userId,
         action: 'UPDATE',
         entity_type: 'Profile',
         entity_id: 'member-profile-elite',
         previous_values: { phone: '+1-555-8001' },
         new_values: { phone: '+1-555-8013', emergencyContact: 'Updated' },
-      },
-    ].filter((log) => log.userId);
+      });
+    }
 
     const savedAuditLogs = await auditLogRepository.save(auditLogs as any);
     console.log(`Seeded ${savedAuditLogs.length} audit logs`);
@@ -1913,7 +1867,7 @@ class FitnessFirstEliteSeeder {
       }
     }
 
-    const savedExercises = await exerciseRepository.save(exercises);
+    const savedExercises = await exerciseRepository.save(exercises, { chunk: 500 });
     console.log(`Seeded ${savedExercises.length} workout plan exercises`);
     return savedExercises;
   }
@@ -3065,8 +3019,11 @@ class FitnessFirstEliteSeeder {
         const referenceDate = new Date();
         referenceDate.setDate(referenceDate.getDate() - daysAgo);
 
+        const user = users.find((u) => u.memberId === member.id.toString());
+        const userId = member.userId || user?.userId || '';
+
         logs.push({
-          userId: member.userId || '',
+          userId: userId,
           memberId: member.id,
           invoiceId: Math.random() < 0.3 ? `inv-${Math.floor(Math.random() * 1000)}` : null,
           renewalRequestId: Math.random() < 0.3 ? `req-${Math.floor(Math.random() * 1000)}` : null,
@@ -3078,7 +3035,7 @@ class FitnessFirstEliteSeeder {
       }
     }
 
-    await reminderRepository.save(logs);
+    await reminderRepository.save(logs, { chunk: 500 });
     console.log(`Seeded ${logs.length} reminder logs`);
     return logs;
   }
@@ -3151,7 +3108,7 @@ class FitnessFirstEliteSeeder {
     const goalTemplates = await goalTemplateRepository.find();
 
     const shares: TemplateShare[] = [];
-    const adminUser = users.find(u => u.role?.name === 'admin');
+    const adminUser = users.find(u => u.role?.name?.toUpperCase() === 'ADMIN');
 
     if (adminUser) {
       for (const template of [...workoutTemplates, ...dietTemplates, ...goalTemplates].slice(0, 20)) {

@@ -28,14 +28,22 @@ export class MemberSubscription {
     onDelete: 'CASCADE',
     eager: true,
   })
+  @JoinColumn({ name: 'memberId' })
   member: Member;
+
+  @Column({ name: 'memberId', type: 'int', nullable: false })
+  memberId: number;
 
   @ApiProperty({
     description: 'Membership plan assigned to the member',
     type: () => MembershipPlan,
   })
   @ManyToOne(() => MembershipPlan, (plan) => plan.members)
+  @JoinColumn({ name: 'planId' })
   plan: MembershipPlan;
+
+  @Column({ name: 'planId', type: 'int', nullable: false })
+  planId: number;
 
   @ApiProperty({
     description: 'Subscription start date',
